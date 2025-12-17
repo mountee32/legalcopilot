@@ -499,7 +499,7 @@ export default function DemoPage() {
                 </Button>
               </div>
 
-              <div className="border rounded-lg p-4 mt-4">
+              <div className="border rounded-lg p-4 mt-4" data-testid="users-panel">
                 <h3 className="font-semibold mb-3">Users ({users.length})</h3>
                 <div className="space-y-2">
                   {users.length === 0 ? (
@@ -511,9 +511,12 @@ export default function DemoPage() {
                       <div
                         key={user.id}
                         className="flex items-center justify-between p-3 border rounded"
+                        data-testid={`user-row-${user.email}`}
                       >
                         <div>
-                          <p className="font-medium">{user.email}</p>
+                          <p className="font-medium" data-testid="user-email">
+                            {user.email}
+                          </p>
                           {user.name && (
                             <p className="text-sm text-muted-foreground">{user.name}</p>
                           )}
@@ -590,22 +593,28 @@ export default function DemoPage() {
               </div>
 
               {cachedData && (
-                <div className="border rounded-lg p-4 mt-4">
+                <div className="border rounded-lg p-4 mt-4" data-testid="cache-result-panel">
                   <h3 className="font-semibold mb-2">Cache Result</h3>
                   <div className="space-y-1 text-sm">
                     <p>
                       <span className="font-medium">Status:</span>{" "}
                       {cachedData.hit ? (
-                        <Badge variant="success">Hit</Badge>
+                        <Badge variant="success" data-testid="cache-hit">
+                          Hit
+                        </Badge>
                       ) : (
-                        <Badge variant="warning">Miss</Badge>
+                        <Badge variant="warning" data-testid="cache-miss">
+                          Miss
+                        </Badge>
                       )}
                     </p>
                     <p>
-                      <span className="font-medium">Key:</span> {cachedData.key}
+                      <span className="font-medium">Key:</span>{" "}
+                      <span data-testid="cache-key">{cachedData.key}</span>
                     </p>
                     <p>
-                      <span className="font-medium">Value:</span> {cachedData.value || "null"}
+                      <span className="font-medium">Value:</span>{" "}
+                      <span data-testid="cache-value">{cachedData.value || "null"}</span>
                     </p>
                     {cachedData.ttl && (
                       <p>
@@ -657,7 +666,7 @@ export default function DemoPage() {
                 </Button>
               </div>
 
-              <div className="border rounded-lg p-4 mt-4">
+              <div className="border rounded-lg p-4 mt-4" data-testid="files-panel">
                 <h3 className="font-semibold mb-3">Uploaded Files ({files.length})</h3>
                 <div className="space-y-2">
                   {files.length === 0 ? (
@@ -667,9 +676,12 @@ export default function DemoPage() {
                       <div
                         key={file.id}
                         className="flex items-center justify-between p-3 border rounded"
+                        data-testid={`file-row-${file.originalName}`}
                       >
                         <div>
-                          <p className="font-medium">{file.originalName}</p>
+                          <p className="font-medium" data-testid="file-name">
+                            {file.originalName}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {file.mimeType} • {(parseInt(file.size) / 1024).toFixed(2)} KB
                           </p>

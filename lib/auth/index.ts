@@ -34,6 +34,9 @@ export const auth = betterAuth({
   },
   advanced: {
     cookiePrefix: "template",
+    database: {
+      generateId: "uuid",
+    },
   },
 });
 

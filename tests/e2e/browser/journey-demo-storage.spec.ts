@@ -10,8 +10,10 @@ test.describe("Demo journeys: MinIO storage", () => {
     await page.goto("/demo");
     await page.waitForLoadState("networkidle");
 
+    // Navigate to MinIO tab
     await page.getByRole("tab", { name: "MinIO" }).click();
 
+    // Upload file
     await page.getByLabel("Select File").setInputFiles({
       name: filename,
       mimeType: "text/plain",
@@ -21,15 +23,16 @@ test.describe("Demo journeys: MinIO storage", () => {
     await page.getByRole("button", { name: "Upload File" }).click();
     await expect(page.getByRole("alert").getByText("File uploaded successfully")).toBeVisible();
 
-    const uploadsPanel = page
-      .getByRole("heading", { name: /Uploaded Files \\(\\d+\\)/ })
-      .locator("..");
-    await expect(uploadsPanel.getByText(filename, { exact: true })).toBeVisible();
+    // Wait for file to appear in list using data-testid
+    const filesPanel = page.getByTestId("files-panel");
+    const fileRow = page.getByTestId(`file-row-${filename}`);
+    await expect(fileRow).toBeVisible({ timeout: 10000 });
 
-    const row = uploadsPanel.getByText(filename, { exact: true }).locator("..").locator("..");
-    await row.getByRole("button", { name: "Delete" }).click();
+    // Delete the file
+    await fileRow.getByRole("button", { name: "Delete" }).click();
 
+    // Verify deletion
     await expect(page.getByRole("alert").getByText("File deleted successfully")).toBeVisible();
-    await expect(uploadsPanel.getByText(filename, { exact: true })).toHaveCount(0);
+    await expect(fileRow).toHaveCount(0);
   });
 });

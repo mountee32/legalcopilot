@@ -11,26 +11,33 @@ test.describe("Demo journeys: Redis cache", () => {
     await page.goto("/demo");
     await page.waitForLoadState("networkidle");
 
+    // Navigate to Redis tab
     await page.getByRole("tab", { name: "Redis" }).click();
 
+    // Fill cache values
     await page.getByLabel("Cache Key").fill(key);
     await page.getByLabel("Cache Value").fill(value);
     await page.getByLabel("TTL (seconds)").fill("30");
 
+    // Set cache
     await page.getByRole("button", { name: "Set Cache" }).click();
     await expect(page.getByRole("alert").getByText("Cache value set successfully")).toBeVisible();
 
-    const resultPanel = page.getByRole("heading", { name: "Cache Result" }).locator("..");
-    await expect(resultPanel.getByText("Hit")).toBeVisible();
-    await expect(resultPanel.getByText(key, { exact: true })).toBeVisible();
-    await expect(resultPanel.getByText(value, { exact: true })).toBeVisible();
+    // Verify cache result using data-testid selectors
+    const resultPanel = page.getByTestId("cache-result-panel");
+    await expect(resultPanel).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("cache-hit")).toBeVisible();
+    await expect(page.getByTestId("cache-key")).toHaveText(key);
+    await expect(page.getByTestId("cache-value")).toHaveText(value);
 
+    // Clear cache
     await page.getByRole("button", { name: "Clear Cache" }).click();
     await expect(page.getByRole("alert").getByText("Cache cleared successfully")).toBeVisible();
 
+    // Get cache and verify miss
     await page.getByRole("button", { name: "Get Cache" }).click();
-    await expect(page.getByRole("heading", { name: "Cache Result" })).toBeVisible();
-    await expect(page.getByText("Miss")).toBeVisible();
-    await expect(page.getByText("null")).toBeVisible();
+    await expect(resultPanel).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("cache-miss")).toBeVisible();
+    await expect(page.getByTestId("cache-value")).toHaveText("null");
   });
 });

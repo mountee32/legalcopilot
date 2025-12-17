@@ -68,11 +68,13 @@ export const sessions = pgTable("sessions", {
   userAgent: text("user_agent"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 /**
  * OAuth provider accounts linked to users.
  * Supports Google, Microsoft, etc.
+ * Field names match Better Auth's expected schema.
  */
 export const accounts = pgTable("accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -82,11 +84,11 @@ export const accounts = pgTable("accounts", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
 
-  /** OAuth provider name (e.g., "google", "microsoft") */
-  provider: text("provider").notNull(),
+  /** OAuth provider ID (e.g., "google", "github", "credential") */
+  providerId: text("provider_id").notNull(),
 
-  /** User ID from the OAuth provider */
-  providerAccountId: text("provider_account_id").notNull(),
+  /** Account ID from the OAuth provider (or email for credential auth) */
+  accountId: text("account_id").notNull(),
 
   /** OAuth access token */
   accessToken: text("access_token"),
@@ -94,17 +96,20 @@ export const accounts = pgTable("accounts", {
   /** OAuth refresh token */
   refreshToken: text("refresh_token"),
 
-  /** Token expiration time */
-  expiresAt: timestamp("expires_at"),
+  /** Access token expiration time */
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
 
-  /** Token type (usually "Bearer") */
-  tokenType: text("token_type"),
+  /** Refresh token expiration time */
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
 
   /** OAuth scopes granted */
   scope: text("scope"),
 
   /** OpenID Connect ID token */
   idToken: text("id_token"),
+
+  /** Hashed password (for credential auth only) */
+  password: text("password"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -4,12 +4,55 @@ import { eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
-import { clients, roles, sessions, users } from "@/lib/db/schema";
+import { clients, roles, users } from "@/lib/db/schema";
+import { auth } from "@/lib/auth";
 import { ensureDefaultRoleForUser, getUserPermissions } from "@/lib/auth/rbac";
 import { setupIntegrationSuite } from "@tests/integration/setup";
 import { createUser } from "@tests/fixtures/factories/user";
 import { createFirm } from "@tests/fixtures/factories/firm";
 import { cleanupTestFirm } from "@tests/helpers/db";
+
+/**
+ * Extract session cookie from Better Auth's Set-Cookie header.
+ */
+function extractSessionCookie(setCookieHeader: string | null): string | null {
+  if (!setCookieHeader) return null;
+  const cookies = setCookieHeader.split(/[,\n]/).map((c) => c.trim());
+  const sessionCookie = cookies.find((c) => c.includes("session_token"));
+  if (!sessionCookie) return null;
+  return sessionCookie.split(";")[0] || null;
+}
+
+/**
+ * Create a user via Better Auth and return the signed session cookie.
+ */
+async function createAuthenticatedUser(firmId: string, roleId?: string) {
+  const email = `rbac-test-${randomUUID()}@example.com`;
+  const password = "test-password-123";
+
+  // Sign up via Better Auth to get a properly signed cookie
+  const signupResponse = await auth.api.signUpEmail({
+    body: { email, password, name: "RBAC Test User" },
+    asResponse: true,
+  });
+
+  const setCookie = signupResponse.headers.get("set-cookie");
+  const sessionCookie = extractSessionCookie(setCookie);
+
+  // Get the user ID from the session
+  const session = await auth.api.getSession({
+    headers: new Headers({ cookie: sessionCookie! }),
+  });
+  const userId = session!.user.id;
+
+  // Link the user to the firm and optionally set a role
+  await db
+    .update(users)
+    .set({ firmId, roleId: roleId ?? null })
+    .where(eq(users.id, userId));
+
+  return { userId, email, sessionCookie: sessionCookie! };
+}
 
 describe("Auth Integration - RBAC", () => {
   const ctx = setupIntegrationSuite();
@@ -46,6 +89,7 @@ describe("Auth Integration - RBAC", () => {
   });
 
   it("returns 403 for missing permission at route boundary", async () => {
+    // Create a role with limited permissions (no clients:read)
     const [role] = await db
       .insert(roles)
       .values({
@@ -56,17 +100,12 @@ describe("Auth Integration - RBAC", () => {
       })
       .returning({ id: roles.id });
 
-    const u = await createUser({ firmId: ctx.firmId, roleId: role.id });
-    const token = `tok_${randomUUID()}`;
-    await db.insert(sessions).values({
-      userId: u.id,
-      token,
-      expiresAt: new Date(Date.now() + 60_000),
-    });
+    // Create an authenticated user with the limited role
+    const { sessionCookie } = await createAuthenticatedUser(ctx.firmId, role.id);
 
     const { GET } = await import("@/app/api/clients/route");
     const req = new NextRequest("http://localhost/api/clients", {
-      headers: new Headers({ cookie: `template.session_token=${token}` }),
+      headers: new Headers({ cookie: sessionCookie }),
     });
 
     const res = await GET(req as any, {} as any);
@@ -76,16 +115,11 @@ describe("Auth Integration - RBAC", () => {
   it("prevents cross-firm resource access (404)", async () => {
     const firm2 = await createFirm({ name: `Other Firm ${Date.now()}` });
     try {
-      const u = await createUser({ firmId: ctx.firmId });
-      await ensureDefaultRoleForUser(u.id, ctx.firmId);
+      // Create an authenticated user in ctx.firmId with admin permissions
+      const { userId, sessionCookie } = await createAuthenticatedUser(ctx.firmId);
+      await ensureDefaultRoleForUser(userId, ctx.firmId);
 
-      const token = `tok_${randomUUID()}`;
-      await db.insert(sessions).values({
-        userId: u.id,
-        token,
-        expiresAt: new Date(Date.now() + 60_000),
-      });
-
+      // Create a client in a DIFFERENT firm
       const [otherClient] = await db
         .insert(clients)
         .values({
@@ -98,12 +132,13 @@ describe("Auth Integration - RBAC", () => {
         })
         .returning({ id: clients.id });
 
+      // Try to access the other firm's client - should get 404 (not 401 or 403)
       const { GET } = await import("@/app/api/clients/[id]/route");
       const req = new NextRequest(`http://localhost/api/clients/${otherClient.id}`, {
-        headers: new Headers({ cookie: `template.session_token=${token}` }),
+        headers: new Headers({ cookie: sessionCookie }),
       });
 
-      const res = await GET(req as any, { params: { id: otherClient.id } } as any);
+      const res = await GET(req as any, { params: Promise.resolve({ id: otherClient.id }) } as any);
       expect(res.status).toBe(404);
     } finally {
       await cleanupTestFirm(firm2.id);

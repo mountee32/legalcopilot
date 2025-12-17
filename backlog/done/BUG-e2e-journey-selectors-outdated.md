@@ -48,6 +48,36 @@ The demo page UI was updated but the journey test selectors weren't updated to m
 
 ## Acceptance Criteria
 
-- [ ] All 3 journey tests pass
-- [ ] Demo page has stable test selectors (data-testid)
-- [ ] `npm run test:e2e:browser` shows 20/20 passing
+- [x] All 3 journey tests pass
+- [x] Demo page has stable test selectors (data-testid)
+- [x] `npm run test:e2e:browser` shows 20/20 passing
+
+## Implementation Summary
+
+Added `data-testid` attributes to the demo page for stable E2E selectors:
+
+**Database tab:**
+
+- `data-testid="users-panel"` - Users list container
+- `data-testid="user-row-{email}"` - Individual user rows
+
+**Redis tab:**
+
+- `data-testid="cache-result-panel"` - Cache result container
+- `data-testid="cache-hit"` / `data-testid="cache-miss"` - Cache status badges
+- `data-testid="cache-key"` / `data-testid="cache-value"` - Cache data display
+
+**MinIO tab:**
+
+- `data-testid="files-panel"` - Files list container
+- `data-testid="file-row-{filename}"` - Individual file rows
+
+Updated all 3 journey tests to use `getByTestId()` selectors instead of fragile role/text selectors.
+
+## QA Results
+
+- **Vitest**: 406/406 tests pass
+- **E2E API**: 10/10 tests pass
+- **E2E Browser**: 20/20 tests pass ✓
+
+All acceptance criteria met.
