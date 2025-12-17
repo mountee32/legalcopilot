@@ -70,6 +70,12 @@ import {
   CreateTaskSchema,
   UpdateTaskSchema,
   GenerateTasksSchema,
+  EmailSchema,
+  EmailListSchema,
+  EmailQuerySchema,
+  CreateEmailSchema,
+  UpdateEmailSchema,
+  EmailAIProcessResponseSchema,
 } from "../lib/api/schemas";
 
 // Create registry
@@ -135,6 +141,12 @@ registry.register("TaskQuery", TaskQuerySchema);
 registry.register("CreateTaskRequest", CreateTaskSchema);
 registry.register("UpdateTaskRequest", UpdateTaskSchema);
 registry.register("GenerateTasksRequest", GenerateTasksSchema);
+registry.register("Email", EmailSchema);
+registry.register("EmailListResponse", EmailListSchema);
+registry.register("EmailQuery", EmailQuerySchema);
+registry.register("CreateEmailRequest", CreateEmailSchema);
+registry.register("UpdateEmailRequest", UpdateEmailSchema);
+registry.register("EmailAIProcessResponse", EmailAIProcessResponseSchema);
 
 // Define API paths
 
@@ -980,6 +992,121 @@ registry.registerPath({
     201: {
       description: "Approval request created",
       content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Emails
+registry.registerPath({
+  method: "get",
+  path: "/api/emails",
+  summary: "List emails",
+  description: "Retrieve firm emails with filters",
+  tags: ["Emails"],
+  request: { query: EmailQuerySchema },
+  responses: {
+    200: { description: "Emails", content: { "application/json": { schema: EmailListSchema } } },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/emails",
+  summary: "Create email",
+  description: "Create an email record",
+  tags: ["Emails"],
+  request: { body: { content: { "application/json": { schema: CreateEmailSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: EmailSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/emails/{id}",
+  summary: "Get email",
+  description: "Retrieve a single email by ID",
+  tags: ["Emails"],
+  request: { params: registry.register("EmailIdParam", EmailSchema.pick({ id: true })) },
+  responses: {
+    200: { description: "Email", content: { "application/json": { schema: EmailSchema } } },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/emails/{id}",
+  summary: "Update email",
+  description: "Update an email record",
+  tags: ["Emails"],
+  request: {
+    params: registry.register("EmailUpdateIdParam", EmailSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateEmailSchema } } },
+  },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: EmailSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/emails/{id}/ai/process",
+  summary: "AI process email",
+  description: "Analyze an email for intent/sentiment/urgency and propose matter matching",
+  tags: ["Emails"],
+  request: { params: registry.register("EmailAIProcessIdParam", EmailSchema.pick({ id: true })) },
+  responses: {
+    200: {
+      description: "AI processing result",
+      content: { "application/json": { schema: EmailAIProcessResponseSchema } },
     },
     400: {
       description: "Validation error",
