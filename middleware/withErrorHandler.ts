@@ -121,12 +121,17 @@ export function withErrorHandler(
         // Known error types
         errorResponse.message = error.message;
 
+        if (error.name === "ZodError") {
+          errorResponse.error = "Validation Error";
+          errorResponse.details = { issues: (error as any).issues ?? (error as any).errors };
+        }
+
         if (includeStack) {
           errorResponse.stack = error.stack;
         }
 
         // Check for specific error types
-        if (error.name === "ValidationError") {
+        if (error.name === "ValidationError" || error.name === "ZodError") {
           errorResponse.error = "Validation Error";
         } else if (error.name === "UnauthorizedError") {
           errorResponse.error = "Unauthorized";
@@ -188,6 +193,7 @@ export function withErrorHandler(
       // Determine HTTP status code
       let statusCode = 500;
       if (error instanceof Error) {
+        if (error.name === "ZodError") statusCode = 400;
         if (error.name === "ValidationError") statusCode = 400;
         if (error.name === "UnauthorizedError") statusCode = 401;
         if (error.name === "ForbiddenError") statusCode = 403;

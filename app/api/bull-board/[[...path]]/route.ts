@@ -6,14 +6,14 @@ import { emailQueue, imageQueue, jobQueue } from "@/lib/queue";
 // Simple in-memory adapter for Next.js
 class NextServerAdapter {
   private basePath: string = "";
-  private entryRoute: any;
-  private statics: any;
+  private entryRoute: ((options: { basePath: string }) => string) | null = null;
+  private statics: { route: string; path: string } | null = null;
 
   setBasePath(path: string) {
     this.basePath = path;
   }
 
-  setEntryRoute(route: any) {
+  setEntryRoute(route: (options: { basePath: string }) => string) {
     this.entryRoute = route;
   }
 
@@ -48,6 +48,8 @@ class NextServerAdapter {
 const serverAdapter = new NextServerAdapter();
 serverAdapter.setBasePath("/api/bull-board");
 
+type CreateBullBoardArgs = Parameters<typeof createBullBoard>[0];
+
 // Initialize Bull Board
 const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   queues: [
@@ -55,35 +57,26 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
     new BullMQAdapter(imageQueue),
     new BullMQAdapter(jobQueue),
   ],
-  serverAdapter: serverAdapter as any,
+  serverAdapter: serverAdapter as unknown as CreateBullBoardArgs["serverAdapter"],
 });
 
 // Export route handlers
-export async function GET(request: NextRequest, context: { params: Promise<{ path?: string[] }> }) {
+export async function GET(request: NextRequest, _context: { params: { path?: string[] } }) {
   return serverAdapter.handler(request);
 }
 
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ path?: string[] }> }
-) {
+export async function POST(request: NextRequest, _context: { params: { path?: string[] } }) {
   return serverAdapter.handler(request);
 }
 
-export async function PUT(request: NextRequest, context: { params: Promise<{ path?: string[] }> }) {
+export async function PUT(request: NextRequest, _context: { params: { path?: string[] } }) {
   return serverAdapter.handler(request);
 }
 
-export async function DELETE(
-  request: NextRequest,
-  context: { params: Promise<{ path?: string[] }> }
-) {
+export async function DELETE(request: NextRequest, _context: { params: { path?: string[] } }) {
   return serverAdapter.handler(request);
 }
 
-export async function PATCH(
-  request: NextRequest,
-  context: { params: Promise<{ path?: string[] }> }
-) {
+export async function PATCH(request: NextRequest, _context: { params: { path?: string[] } }) {
   return serverAdapter.handler(request);
 }

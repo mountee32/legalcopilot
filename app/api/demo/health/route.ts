@@ -3,9 +3,10 @@ import { db } from "@/lib/db";
 import redis from "@/lib/redis";
 import { minioClient } from "@/lib/storage/minio";
 import { emailQueue, imageQueue } from "@/lib/queue";
+import { sql } from "drizzle-orm";
 
 export async function GET() {
-  const services: Record<string, { status: string; message?: string; details?: any }> = {
+  const services: Record<string, { status: string; message?: string; details?: unknown }> = {
     database: { status: "unknown" },
     redis: { status: "unknown" },
     minio: { status: "unknown" },
@@ -14,7 +15,7 @@ export async function GET() {
 
   // Test PostgreSQL
   try {
-    await db.execute("SELECT 1" as any);
+    await db.execute(sql`SELECT 1`);
     services.database = { status: "healthy", message: "Connected" };
   } catch (error) {
     services.database = {

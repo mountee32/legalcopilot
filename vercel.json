@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "legalcopilot.uk"
+        }
+      ],
+      "destination": "https://legalcopilot.co.uk/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.legalcopilot.uk"
+        }
+      ],
+      "destination": "https://legalcopilot.co.uk/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.legalcopilot.co.uk"
+        }
+      ],
+      "destination": "https://legalcopilot.co.uk/:path*",
+      "permanent": true
+    }
+  ]
+}

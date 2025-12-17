@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,8 @@ interface QueueData {
 }
 
 export default function MonitoringPage() {
+  type BadgeVariant = ComponentProps<typeof Badge>["variant"];
+
   const [queueStats, setQueueStats] = useState<QueueData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export default function MonitoringPage() {
     );
   };
 
-  const getHealthStatus = (stats: QueueStats) => {
+  const getHealthStatus = (stats: QueueStats): { status: string; color: BadgeVariant } => {
     const failureRate = stats.failed / Math.max(1, getTotalJobs(stats));
     if (failureRate > 0.5) return { status: "unhealthy", color: "destructive" };
     if (failureRate > 0.2) return { status: "warning", color: "warning" };
@@ -125,7 +127,7 @@ export default function MonitoringPage() {
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-lg capitalize">{queue.name}</CardTitle>
-                          <Badge variant={health.color as any}>{health.status}</Badge>
+                          <Badge variant={health.color}>{health.status}</Badge>
                         </div>
                       </CardHeader>
                       <CardContent>

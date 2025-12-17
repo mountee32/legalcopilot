@@ -38,8 +38,8 @@ interface Job {
   id: string;
   name: string;
   status: string;
-  data: any;
-  result: any;
+  data: Record<string, unknown>;
+  result: unknown;
   error: string | null;
   createdAt: string;
   completedAt: string | null;
@@ -48,7 +48,7 @@ interface Job {
 interface ServiceHealth {
   status: string;
   message?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export default function DemoPage() {
@@ -65,7 +65,7 @@ export default function DemoPage() {
   const [cacheValue, setCacheValue] = useState("demo-value");
   const [cacheTTL, setCacheTTL] = useState("300");
   const [cachedData, setCachedData] = useState<CacheData | null>(null);
-  const [cacheStats, setCacheStats] = useState<any>(null);
+  const [cacheStats, setCacheStats] = useState<Record<string, unknown> | null>(null);
 
   // File upload state
   const [files, setFiles] = useState<FileUpload[]>([]);

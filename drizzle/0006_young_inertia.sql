@@ -1,0 +1,2 @@
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'task_created' BEFORE 'approval_decided';--> statement-breakpoint
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'task_completed' BEFORE 'approval_decided';

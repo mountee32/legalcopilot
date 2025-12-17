@@ -735,7 +735,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 ### Adding New Database Tables
 
-1. Update `lib/db/schema.ts`:
+1. Update `lib/db/schema/` (re-exported via `lib/db/schema/index.ts`):
 
 ```typescript
 export const posts = pgTable("posts", {

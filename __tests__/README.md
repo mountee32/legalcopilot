@@ -11,7 +11,7 @@ __tests__/
 ├── lib/
 │   ├── utils.test.ts          # Tests for lib/utils.ts
 │   └── db/
-│       └── schema.test.ts     # Tests for lib/db/schema.ts
+│       └── schema.test.ts     # Tests for lib/db/schema/
 └── app/
     └── api/
         └── demo/
@@ -115,5 +115,5 @@ describe('MyComponent', () => {
 See the existing test files in this directory for examples:
 
 - `lib/utils.test.ts` - Testing utility functions
-- `lib/db/schema.test.ts` - Testing Zod schema validation
+- `lib/db/schema.test.ts` - Testing Zod schema validation (template tables)
 - `app/api/demo/users/route.test.ts` - Testing API routes with mocks

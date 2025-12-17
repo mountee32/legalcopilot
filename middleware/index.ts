@@ -62,3 +62,6 @@ export {
   type Middleware,
   type RouteHandler as ComposeRouteHandler,
 } from "./compose";
+
+// Permissions (RBAC)
+export { withPermission } from "./withPermission";

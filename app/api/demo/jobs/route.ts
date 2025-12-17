@@ -35,7 +35,6 @@ export async function POST(request: NextRequest) {
     }
 
     let bullJob;
-    let dbJob;
 
     // Create job in database
     const newJob = await db
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    dbJob = newJob[0];
+    const dbJob = newJob[0];
 
     // Add to appropriate queue
     if (type === "email") {

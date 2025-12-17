@@ -1,0 +1,3413 @@
+openapi: 3.0.0
+info:
+  title: Legal Copilot API
+  version: 1.0.0
+  description: |-
+    AI-first practice management API for UK law firms.
+
+    ## Authentication
+    All endpoints require authentication via Bearer token.
+
+    ## Rate Limiting
+    API requests are rate limited to 100 requests per minute.
+
+    ## Pagination
+    List endpoints support pagination via `page` and `limit` query parameters.
+  contact:
+    name: Legal Copilot Support
+servers:
+  - url: http://localhost:3000
+    description: Development server
+tags:
+  - name: Clients
+    description: Client management endpoints
+  - name: Matters
+    description: Matter/case management endpoints
+  - name: Documents
+    description: Document management endpoints
+  - name: Billing
+    description: Time tracking and invoicing endpoints
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Validation failed
+        code:
+          type: string
+          description: Machine-readable error code
+          example: VALIDATION_ERROR
+        details:
+          type: object
+          additionalProperties:
+            nullable: true
+          description: Additional error details
+      required:
+        - error
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        message:
+          type: string
+      required:
+        - success
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Page number (1-indexed)
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: Items per page (max 100)
+          example: 20
+    ApprovalRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        sourceType:
+          type: string
+          enum:
+            - ai
+            - system
+            - user
+          description: Origin of the approval request
+          example: ai
+        sourceId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        action:
+          type: string
+          example: email.send
+        summary:
+          type: string
+        proposedPayload:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        entityType:
+          type: string
+          nullable: true
+        entityId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          type: string
+          enum: &a1
+            - pending
+            - approved
+            - rejected
+            - cancelled
+            - expired
+          description: Approval decision status
+          example: pending
+        decidedBy:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        decidedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        decisionReason:
+          type: string
+          nullable: true
+        executedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        executionStatus:
+          type: string
+          enum:
+            - not_executed
+            - executed
+            - failed
+          description: Execution status after approval
+          example: not_executed
+        executionError:
+          type: string
+          nullable: true
+        aiMetadata:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - sourceType
+        - sourceId
+        - action
+        - summary
+        - proposedPayload
+        - entityType
+        - entityId
+        - status
+        - decidedBy
+        - decidedAt
+        - decisionReason
+        - executedAt
+        - executionStatus
+        - executionError
+        - aiMetadata
+        - createdAt
+        - updatedAt
+    ApprovalListResponse:
+      type: object
+      properties:
+        approvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRequest"
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            total:
+              type: number
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - total
+            - totalPages
+      required:
+        - approvals
+        - pagination
+    ApprovalQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            status:
+              type: string
+              enum: *a1
+              description: Approval decision status
+              example: pending
+            action:
+              type: string
+            entityType:
+              type: string
+            entityId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+    ApproveRequest:
+      type: object
+      properties:
+        decisionReason:
+          type: string
+    BulkApproveRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          minItems: 1
+        decisionReason:
+          type: string
+      required:
+        - ids
+    BulkApproveResponse:
+      type: object
+      properties:
+        approvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApprovalRequest"
+      required:
+        - approvals
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        reference:
+          type: string
+          example: CLI-2024-0042
+        type:
+          type: string
+          enum: &a2
+            - individual
+            - company
+            - trust
+            - estate
+            - charity
+            - government
+          description: Type of client entity
+          example: individual
+        status:
+          type: string
+          enum: &a3
+            - prospect
+            - active
+            - dormant
+            - archived
+          description: Current status in client lifecycle
+          example: active
+        title:
+          type: string
+          nullable: true
+          example: Mr
+        firstName:
+          type: string
+          nullable: true
+          example: John
+        lastName:
+          type: string
+          nullable: true
+          example: Smith
+        companyName:
+          type: string
+          nullable: true
+          example: Acme Ltd
+        companyNumber:
+          type: string
+          nullable: true
+          example: "12345678"
+        email:
+          type: string
+          nullable: true
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        phone:
+          type: string
+          nullable: true
+          description: Phone number in E.164 or UK format
+          example: +44 20 7946 0958
+        mobile:
+          type: string
+          nullable: true
+          description: Phone number in E.164 or UK format
+          example: +44 20 7946 0958
+        addressLine1:
+          type: string
+          nullable: true
+        addressLine2:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+          example: London
+        county:
+          type: string
+          nullable: true
+          example: Greater London
+        postcode:
+          type: string
+          nullable: true
+          pattern: ^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$
+          description: UK postcode
+          example: SW1A 1AA
+        country:
+          type: string
+          nullable: true
+          example: United Kingdom
+        idVerified:
+          type: boolean
+        idVerifiedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        sofVerified:
+          type: boolean
+        sofVerifiedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - reference
+        - type
+        - status
+        - title
+        - firstName
+        - lastName
+        - companyName
+        - companyNumber
+        - email
+        - phone
+        - mobile
+        - addressLine1
+        - addressLine2
+        - city
+        - county
+        - postcode
+        - country
+        - idVerified
+        - idVerifiedAt
+        - sofVerified
+        - sofVerifiedAt
+        - notes
+        - createdAt
+        - updatedAt
+    CreateClientRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: *a2
+          default: individual
+          description: Type of client entity
+          example: individual
+        title:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+        companyNumber:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        phone:
+          type: string
+        mobile:
+          type: string
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        city:
+          type: string
+        county:
+          type: string
+        postcode:
+          type: string
+        country:
+          type: string
+          default: United Kingdom
+        notes:
+          type: string
+      required:
+        - email
+    UpdateClientRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+        companyNumber:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        phone:
+          type: string
+        mobile:
+          type: string
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        city:
+          type: string
+        county:
+          type: string
+        postcode:
+          type: string
+        country:
+          type: string
+          default: United Kingdom
+        notes:
+          type: string
+    ClientListResponse:
+      type: object
+      properties:
+        clients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            total:
+              type: number
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - total
+            - totalPages
+      required:
+        - clients
+        - pagination
+    ClientQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        status:
+          type: string
+          enum: *a3
+          description: Current status in client lifecycle
+          example: active
+        type:
+          type: string
+          enum: *a2
+          description: Type of client entity
+          example: individual
+        search:
+          type: string
+          description: Search by name, company name, or reference
+    Matter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        reference:
+          type: string
+          example: SMI-2024-0042
+        title:
+          type: string
+          example: Smith v Jones - Property Dispute
+        description:
+          type: string
+          nullable: true
+        clientId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        feeEarnerId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        supervisorId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          type: string
+          enum: &a6
+            - lead
+            - active
+            - on_hold
+            - closed
+            - archived
+          description: Current status in matter lifecycle
+          example: active
+        practiceArea:
+          type: string
+          enum: &a4
+            - conveyancing
+            - litigation
+            - family
+            - probate
+            - employment
+            - immigration
+            - personal_injury
+            - commercial
+            - criminal
+            - ip
+            - insolvency
+            - other
+          description: Legal practice area
+          example: conveyancing
+        billingType:
+          type: string
+          enum: &a5
+            - hourly
+            - fixed_fee
+            - conditional
+            - legal_aid
+            - pro_bono
+          description: Billing arrangement type
+          example: hourly
+        hourlyRate:
+          type: string
+          nullable: true
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        fixedFee:
+          type: string
+          nullable: true
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        estimatedValue:
+          type: string
+          nullable: true
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        openedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        closedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        keyDeadline:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - reference
+        - title
+        - description
+        - clientId
+        - feeEarnerId
+        - supervisorId
+        - status
+        - practiceArea
+        - billingType
+        - hourlyRate
+        - fixedFee
+        - estimatedValue
+        - openedAt
+        - closedAt
+        - keyDeadline
+        - notes
+        - createdAt
+        - updatedAt
+    CreateMatterRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        clientId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        feeEarnerId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        supervisorId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        practiceArea:
+          type: string
+          enum: *a4
+          description: Legal practice area
+          example: conveyancing
+        billingType:
+          type: string
+          enum: *a5
+          default: hourly
+          description: Billing arrangement type
+          example: hourly
+        hourlyRate:
+          type: string
+        fixedFee:
+          type: string
+        estimatedValue:
+          type: string
+        keyDeadline:
+          type: string
+          format: date-time
+        notes:
+          type: string
+      required:
+        - title
+        - clientId
+        - practiceArea
+    UpdateMatterRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        feeEarnerId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        supervisorId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          type: string
+          enum: *a6
+          description: Current status in matter lifecycle
+          example: active
+        billingType:
+          type: string
+          enum: *a5
+          description: Billing arrangement type
+          example: hourly
+        hourlyRate:
+          type: string
+          nullable: true
+        fixedFee:
+          type: string
+          nullable: true
+        estimatedValue:
+          type: string
+          nullable: true
+        keyDeadline:
+          type: string
+          nullable: true
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+    MatterListResponse:
+      type: object
+      properties:
+        matters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Matter"
+        pagination:
+          type: object
+          properties:
+            page:
+              type: number
+            limit:
+              type: number
+            total:
+              type: number
+            totalPages:
+              type: number
+          required:
+            - page
+            - limit
+            - total
+            - totalPages
+      required:
+        - matters
+        - pagination
+    MatterQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        status:
+          type: string
+          enum: *a6
+          description: Current status in matter lifecycle
+          example: active
+        practiceArea:
+          type: string
+          enum: *a4
+          description: Legal practice area
+          example: conveyancing
+        clientId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        feeEarnerId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        search:
+          type: string
+          description: Search by reference or title
+    DocumentType:
+      type: string
+      enum:
+        - letter_in
+        - letter_out
+        - email_in
+        - email_out
+        - contract
+        - court_form
+        - evidence
+        - note
+        - id_document
+        - financial
+        - other
+    DocumentStatus:
+      type: string
+      enum:
+        - draft
+        - pending_review
+        - approved
+        - sent
+        - archived
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        title:
+          type: string
+        type:
+          $ref: "#/components/schemas/DocumentType"
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        uploadId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        filename:
+          type: string
+          nullable: true
+        mimeType:
+          type: string
+          nullable: true
+        fileSize:
+          type: integer
+          nullable: true
+        createdBy:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        documentDate:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        recipient:
+          type: string
+          nullable: true
+        sender:
+          type: string
+          nullable: true
+        aiSummary:
+          type: string
+          nullable: true
+        extractedText:
+          type: string
+          nullable: true
+        chunkedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        chunkCount:
+          type: integer
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        version:
+          type: integer
+        parentId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - title
+        - type
+        - status
+        - uploadId
+        - filename
+        - mimeType
+        - fileSize
+        - createdBy
+        - documentDate
+        - recipient
+        - sender
+        - aiSummary
+        - extractedText
+        - chunkedAt
+        - chunkCount
+        - metadata
+        - version
+        - parentId
+        - createdAt
+        - updatedAt
+    DocumentListResponse:
+      type: object
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+      required:
+        - documents
+    CreateDocumentRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        type:
+          $ref: "#/components/schemas/DocumentType"
+        uploadId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        filename:
+          type: string
+        mimeType:
+          type: string
+        fileSize:
+          type: integer
+        documentDate:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        recipient:
+          type: string
+        sender:
+          type: string
+        extractedText:
+          type: string
+        metadata:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - matterId
+        - title
+        - type
+    AskMatterRequest:
+      type: object
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 5000
+      required:
+        - question
+    SourceCitation:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        documentChunkId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        quote:
+          type: string
+      required:
+        - documentId
+        - documentChunkId
+    AskMatterResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceCitation"
+          default: []
+      required:
+        - answer
+    DocumentChunk:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        documentId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        chunkIndex:
+          type: integer
+        text:
+          type: string
+        pageStart:
+          type: integer
+          nullable: true
+        pageEnd:
+          type: integer
+          nullable: true
+        charStart:
+          type: integer
+          nullable: true
+        charEnd:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - documentId
+        - matterId
+        - chunkIndex
+        - text
+        - pageStart
+        - pageEnd
+        - charStart
+        - charEnd
+        - createdAt
+    DocumentChunkListResponse:
+      type: object
+      properties:
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentChunk"
+      required:
+        - chunks
+    ChunkDocumentRequest:
+      type: object
+      properties:
+        maxChars:
+          type: integer
+          minimum: 200
+          maximum: 10000
+    ChunkDocumentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        chunkCount:
+          type: integer
+      required:
+        - success
+        - chunkCount
+    FirmSettings:
+      type: object
+      properties:
+        branding:
+          type: object
+          properties:
+            logoUrl:
+              type: string
+              format: uri
+            primaryColor:
+              type: string
+            portalName:
+              type: string
+        billing:
+          type: object
+          properties:
+            defaultVatRate:
+              type: number
+              minimum: 0
+              maximum: 100
+            defaultPaymentTermsDays:
+              type: integer
+              minimum: 1
+              maximum: 365
+            invoicePrefix:
+              type: string
+              minLength: 1
+              maxLength: 20
+            invoiceFooter:
+              type: string
+              maxLength: 5000
+        ai:
+          type: object
+          properties:
+            defaultModel:
+              type: string
+            autoApproveThreshold:
+              type: number
+              minimum: 0
+              maximum: 1
+            enabledFeatures:
+              type: array
+              items:
+                type: string
+        features:
+          type: object
+          properties:
+            emailIntegration:
+              type: boolean
+            calendarSync:
+              type: boolean
+            clientPortal:
+              type: boolean
+            eSignature:
+              type: boolean
+    FirmSettingsResponse:
+      type: object
+      properties:
+        settings:
+          $ref: "#/components/schemas/FirmSettings"
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - settings
+        - updatedAt
+    UpdateFirmSettingsRequest:
+      type: object
+      properties:
+        branding:
+          type: object
+          properties:
+            logoUrl:
+              type: string
+              format: uri
+            primaryColor:
+              type: string
+            portalName:
+              type: string
+        billing:
+          type: object
+          properties:
+            defaultVatRate:
+              type: number
+              minimum: 0
+              maximum: 100
+            defaultPaymentTermsDays:
+              type: integer
+              minimum: 1
+              maximum: 365
+            invoicePrefix:
+              type: string
+              minLength: 1
+              maxLength: 20
+            invoiceFooter:
+              type: string
+              maxLength: 5000
+        ai:
+          type: object
+          properties:
+            defaultModel:
+              type: string
+            autoApproveThreshold:
+              type: number
+              minimum: 0
+              maximum: 1
+            enabledFeatures:
+              type: array
+              items:
+                type: string
+        features:
+          type: object
+          properties:
+            emailIntegration:
+              type: boolean
+            calendarSync:
+              type: boolean
+            clientPortal:
+              type: boolean
+            eSignature:
+              type: boolean
+    Permission:
+      type: string
+      enum:
+        - cases:read
+        - cases:write
+        - cases:delete
+        - clients:read
+        - clients:write
+        - clients:delete
+        - documents:read
+        - documents:write
+        - documents:delete
+        - billing:read
+        - billing:write
+        - billing:approve
+        - time:read
+        - time:write
+        - time:approve
+        - calendar:read
+        - calendar:write
+        - emails:read
+        - emails:write
+        - emails:send
+        - approvals:view
+        - approvals:decide
+        - users:read
+        - users:write
+        - users:invite
+        - firm:settings
+        - firm:billing
+        - reports:view
+        - reports:export
+        - ai:use
+        - ai:configure
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+        isSystem:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - name
+        - description
+        - permissions
+        - isSystem
+        - createdAt
+        - updatedAt
+    RoleListResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+      required:
+        - roles
+    CreateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 500
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+          minItems: 1
+      required:
+        - name
+        - permissions
+    UpdateRoleRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 500
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+          minItems: 1
+    AssignRoleRequest:
+      type: object
+      properties:
+        roleId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - roleId
+    AssignRoleResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        roleId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - userId
+        - roleId
+    UserIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimelineEventType:
+      type: string
+      enum:
+        - matter_created
+        - matter_updated
+        - matter_archived
+        - document_uploaded
+        - document_chunked
+        - task_created
+        - task_completed
+        - approval_decided
+        - note_added
+    TimelineActorType:
+      type: string
+      enum:
+        - user
+        - system
+        - ai
+    TimelineEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        type:
+          $ref: "#/components/schemas/TimelineEventType"
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        actorType:
+          $ref: "#/components/schemas/TimelineActorType"
+        actorId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        entityType:
+          type: string
+          nullable: true
+        entityId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        occurredAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - type
+        - title
+        - description
+        - actorType
+        - actorId
+        - entityType
+        - entityId
+        - metadata
+        - occurredAt
+        - createdAt
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+      required:
+        - page
+        - limit
+        - total
+        - totalPages
+        - hasNext
+        - hasPrev
+    TimelineListResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineEvent"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - events
+        - pagination
+    TimelineQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/TimelineEventType"
+            entityType:
+              type: string
+            entityId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            from:
+              type: string
+              format: date-time
+              description: ISO 8601 date-time string
+              example: 2024-12-17T10:30:00Z
+            to:
+              type: string
+              format: date-time
+              description: ISO 8601 date-time string
+              example: 2024-12-17T10:30:00Z
+    CreateTimelineEventRequest:
+      type: object
+      properties:
+        type:
+          allOf:
+            - $ref: "#/components/schemas/TimelineEventType"
+            - default: note_added
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        occurredAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        metadata:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - title
+    NotificationType:
+      type: string
+      enum:
+        - task_assigned
+        - task_due
+        - task_overdue
+        - approval_required
+        - approval_decided
+        - deadline_approaching
+        - deadline_passed
+        - email_received
+        - document_uploaded
+        - invoice_paid
+        - payment_received
+        - system
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        title:
+          type: string
+        body:
+          type: string
+          nullable: true
+        link:
+          type: string
+          nullable: true
+        read:
+          type: boolean
+        readAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        channels:
+          type: array
+          nullable: true
+          items:
+            type: string
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - userId
+        - type
+        - title
+        - body
+        - link
+        - read
+        - readAt
+        - channels
+        - metadata
+        - createdAt
+    NotificationListResponse:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - notifications
+        - pagination
+    NotificationQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            read:
+              type: boolean
+            type:
+              $ref: "#/components/schemas/NotificationType"
+    NotificationPreferences:
+      type: object
+      properties:
+        channelsByType:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              enum: &a7
+                - in_app
+                - email
+                - push
+    NotificationPreferencesResponse:
+      type: object
+      properties:
+        preferences:
+          $ref: "#/components/schemas/NotificationPreferences"
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - preferences
+        - updatedAt
+    UpdateNotificationPreferencesRequest:
+      type: object
+      properties:
+        channelsByType:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              enum: *a7
+    TaskPriority:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+        - urgent
+    TaskStatus:
+      type: string
+      enum:
+        - pending
+        - in_progress
+        - completed
+        - cancelled
+    TaskAiSource:
+      type: string
+      nullable: true
+      enum:
+        - email
+        - document
+        - matter
+        - other
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        assigneeId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdById:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        priority:
+          $ref: "#/components/schemas/TaskPriority"
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        dueDate:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        completedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        checklistItems:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        aiGenerated:
+          type: boolean
+        aiSource:
+          $ref: "#/components/schemas/TaskAiSource"
+        sourceEntityType:
+          type: string
+          nullable: true
+        sourceEntityId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - title
+        - description
+        - assigneeId
+        - createdById
+        - priority
+        - status
+        - dueDate
+        - completedAt
+        - checklistItems
+        - tags
+        - aiGenerated
+        - aiSource
+        - sourceEntityType
+        - sourceEntityId
+        - createdAt
+        - updatedAt
+    TaskListResponse:
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - tasks
+        - pagination
+    TaskQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            matterId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            assigneeId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            status:
+              $ref: "#/components/schemas/TaskStatus"
+            priority:
+              $ref: "#/components/schemas/TaskPriority"
+    CreateTaskRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        assigneeId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        priority:
+          $ref: "#/components/schemas/TaskPriority"
+        dueDate:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        checklistItems:
+          type: array
+          items:
+            nullable: true
+        tags:
+          type: array
+          items:
+            nullable: true
+      required:
+        - matterId
+        - title
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        assigneeId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        priority:
+          $ref: "#/components/schemas/TaskPriority"
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        dueDate:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        checklistItems:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        tags:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+    GenerateTasksRequest:
+      type: object
+      properties:
+        goal:
+          type: string
+          maxLength: 2000
+    ApprovalIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ApprovalApproveIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ApprovalRejectIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ClientIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    DocumentIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    DocumentChunkIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    AskMatterIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    RoleIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    RoleDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    UserRoleAssignIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimelineMatterIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimelineMatterIdParamPost:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    NotificationIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TaskIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TaskUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TaskCompleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    GenerateTasksMatterIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+  parameters: {}
+paths:
+  /api/approvals:
+    get:
+      summary: List approval requests
+      description: Retrieve a paginated list of approval requests
+      tags:
+        - Approvals
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum: *a1
+            description: Approval decision status
+            example: pending
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: action
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: entityType
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: entityId
+          in: query
+      responses:
+        "200":
+          description: List of approval requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/approvals/{id}:
+    get:
+      summary: Get approval request
+      description: Retrieve a single approval request by ID
+      tags:
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Approval request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/approvals/{id}/approve:
+    post:
+      summary: Approve request
+      description: Approve an approval request
+      tags:
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveRequest"
+      responses:
+        "200":
+          description: Updated approval request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/approvals/{id}/reject:
+    post:
+      summary: Reject request
+      description: Reject an approval request
+      tags:
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveRequest"
+      responses:
+        "200":
+          description: Updated approval request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/approvals/bulk/approve:
+    post:
+      summary: Bulk approve
+      description: Bulk approve multiple approval requests
+      tags:
+        - Approvals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkApproveRequest"
+      responses:
+        "200":
+          description: Updated approval requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkApproveResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/approvals/bulk/reject:
+    post:
+      summary: Bulk reject
+      description: Bulk reject multiple approval requests
+      tags:
+        - Approvals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkApproveRequest"
+      responses:
+        "200":
+          description: Updated approval requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkApproveResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/clients:
+    get:
+      summary: List clients
+      description: Retrieve a paginated list of clients
+      tags:
+        - Clients
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum: *a3
+            description: Current status in client lifecycle
+            example: active
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: string
+            enum: *a2
+            description: Type of client entity
+            example: individual
+          required: false
+          name: type
+          in: query
+        - schema:
+            type: string
+            description: Search by name, company name, or reference
+          required: false
+          name: search
+          in: query
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create client
+      description: Create a new client record
+      tags:
+        - Clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClientRequest"
+      responses:
+        "201":
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/clients/{id}:
+    get:
+      summary: Get client
+      description: Retrieve a single client by ID
+      tags:
+        - Clients
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "404":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters:
+    get:
+      summary: List matters
+      description: Retrieve a paginated list of matters
+      tags:
+        - Matters
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum: *a6
+            description: Current status in matter lifecycle
+            example: active
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: string
+            enum: *a4
+            description: Legal practice area
+            example: conveyancing
+          required: false
+          name: practiceArea
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: clientId
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: feeEarnerId
+          in: query
+        - schema:
+            type: string
+            description: Search by reference or title
+          required: false
+          name: search
+          in: query
+      responses:
+        "200":
+          description: List of matters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatterListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create matter
+      description: Create a new matter/case
+      tags:
+        - Matters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMatterRequest"
+      responses:
+        "201":
+          description: Matter created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Matter"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/documents:
+    get:
+      summary: List documents
+      description: Retrieve documents, optionally filtered by matterId
+      tags:
+        - Documents
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create document
+      description: Create a new document record for a matter
+      tags:
+        - Documents
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentRequest"
+      responses:
+        "201":
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/documents/{id}/chunks:
+    get:
+      summary: List document chunks
+      description: Retrieve chunks for a document
+      tags:
+        - Documents
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Document chunks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentChunkListResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Generate document chunks
+      description: Chunk the document's extracted text for retrieval and citations
+      tags:
+        - Documents
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChunkDocumentRequest"
+      responses:
+        "200":
+          description: Chunking result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChunkDocumentResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}/ai/ask:
+    post:
+      summary: Ask matter with citations
+      description: Ask a question about a matter; response includes citations to
+        document chunks
+      tags:
+        - Matters
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AskMatterRequest"
+      responses:
+        "200":
+          description: Answer with citations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AskMatterResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/firm/settings:
+    get:
+      summary: Get firm settings
+      description: Retrieve settings for the authenticated user's firm
+      tags:
+        - Firms
+      responses:
+        "200":
+          description: Firm settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FirmSettingsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update firm settings
+      description: Patch settings for the authenticated user's firm
+      tags:
+        - Firms
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFirmSettingsRequest"
+      responses:
+        "200":
+          description: Updated firm settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FirmSettingsResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/roles:
+    get:
+      summary: List roles
+      description: Retrieve firm roles (RBAC)
+      tags:
+        - Roles
+      responses:
+        "200":
+          description: Roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create role
+      description: Create a custom role for the firm
+      tags:
+        - Roles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoleRequest"
+      responses:
+        "201":
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/roles/{id}:
+    patch:
+      summary: Update role
+      description: Update a custom role for the firm
+      tags:
+        - Roles
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleRequest"
+      responses:
+        "200":
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete role
+      description: Delete a custom role for the firm
+      tags:
+        - Roles
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/users/{id}/role:
+    patch:
+      summary: Assign role
+      description: Assign a role to a user within the firm
+      tags:
+        - Users
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignRoleRequest"
+      responses:
+        "200":
+          description: Role assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignRoleResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}/timeline:
+    get:
+      summary: List timeline events
+      description: Retrieve timeline events for a matter
+      tags:
+        - Timeline
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            $ref: "#/components/schemas/TimelineEventType"
+          required: false
+          name: type
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: entityType
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: entityId
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time string
+            example: 2024-12-17T10:30:00Z
+          required: false
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time string
+            example: 2024-12-17T10:30:00Z
+          required: false
+          name: to
+          in: query
+      responses:
+        "200":
+          description: Timeline events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimelineListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create timeline event
+      description: Create a manual timeline event for a matter
+      tags:
+        - Timeline
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTimelineEventRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimelineEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/notifications:
+    get:
+      summary: List notifications
+      description: List notifications for the authenticated user
+      tags:
+        - Notifications
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: boolean
+          required: false
+          name: read
+          in: query
+        - schema:
+            $ref: "#/components/schemas/NotificationType"
+          required: false
+          name: type
+          in: query
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/notifications/{id}/read:
+    post:
+      summary: Mark notification read
+      description: Mark a single notification as read
+      tags:
+        - Notifications
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/notifications/read-all:
+    post:
+      summary: Mark all notifications read
+      description: Mark all notifications as read for the authenticated user
+      tags:
+        - Notifications
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /api/notifications/preferences:
+    get:
+      summary: Get notification preferences
+      description: Retrieve notification preferences for the authenticated user
+      tags:
+        - Notifications
+      responses:
+        "200":
+          description: Preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferencesResponse"
+    patch:
+      summary: Update notification preferences
+      description: Patch notification preferences for the authenticated user
+      tags:
+        - Notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNotificationPreferencesRequest"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferencesResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/tasks:
+    get:
+      summary: List tasks
+      description: Retrieve firm tasks with filters
+      tags:
+        - Tasks
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: matterId
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: assigneeId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/TaskStatus"
+          required: false
+          name: status
+          in: query
+        - schema:
+            $ref: "#/components/schemas/TaskPriority"
+          required: false
+          name: priority
+          in: query
+      responses:
+        "200":
+          description: Tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create task
+      description: Create a new task for a matter
+      tags:
+        - Tasks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/tasks/{id}:
+    get:
+      summary: Get task
+      description: Retrieve a task by ID
+      tags:
+        - Tasks
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update task
+      description: Update a task by ID
+      tags:
+        - Tasks
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/tasks/{id}/complete:
+    post:
+      summary: Complete task
+      description: Mark a task complete
+      tags:
+        - Tasks
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}/ai/generate-tasks:
+    post:
+      summary: Generate tasks (approval required)
+      description: Generate AI-proposed tasks for a matter; returns an approval request
+      tags:
+        - Matters
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateTasksRequest"
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

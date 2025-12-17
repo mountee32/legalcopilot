@@ -215,7 +215,7 @@ SENTRY_DSN=<your-dsn>
 ### Adding New Features
 
 1. **Database Changes:**
-   - Update `lib/db/schema.ts`
+   - Update `lib/db/schema/` (re-exported via `lib/db/schema/index.ts`)
    - Run `npm run db:push`
 
 2. **API Routes:**

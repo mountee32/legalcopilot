@@ -253,7 +253,7 @@ docker compose logs postgres
    - Look at `components/ui/` for UI components
 
 2. **Start Building**
-   - Add your own database tables in `lib/db/schema.ts`
+   - Add your own database tables in `lib/db/schema/` (re-exported via `lib/db/schema/index.ts`)
    - Create new API routes in `app/api/`
    - Build your UI in `app/`
 

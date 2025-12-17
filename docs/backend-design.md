@@ -4,30 +4,32 @@
 
 This document defines the data models and API specifications for Legal Copilot's backend. The system is designed as a multi-tenant SaaS platform with AI-first architecture.
 
+### Source Of Truth
+
+- Database schema: `lib/db/schema/*.ts` (re-exported from `lib/db/schema/index.ts`)
+- API validation + OpenAPI: `lib/api/schemas/*.ts` and `scripts/generate-openapi.ts` (outputs `docs/api/openapi.yaml` via `npm run docs:api`)
+- Tenancy enforcement helper: `lib/db/tenant.ts` and `lib/tenancy.ts`
+
+This file is intended to capture **invariants and intent**. Prefer updating code and generated OpenAPI over adding/maintaining redundant Markdown tables and interface definitions.
+
 ### Design Principles
 
 1. **Multi-tenancy**: Strict data isolation per firm
 2. **AI-Native**: Every entity supports AI metadata and audit trails
 3. **Event-Audited**: All changes recorded as an immutable audit log for compliance and AI learning (can evolve into full event sourcing)
-4. **JSON-First**: Initial implementation uses JSON file storage, migrates to PostgreSQL
-5. **RESTful APIs**: Standard REST with real-time WebSocket support
+4. **PostgreSQL-First**: Use PostgreSQL from day one (JSONB for flexibility), with pgvector for embeddings
+5. **Minimal Schemas**: Start small; keep optional/experimental fields in JSONB and migrate when stable
+6. **No Premature Optimisation**: Prioritise correctness, isolation, and auditability; measure before adding caches/replicas/partitioning
+7. **RESTful APIs**: Standard REST with real-time WebSocket support
 
 ### Storage Strategy
 
-**Phase 1 (MVP)**: JSON files per tenant
-```
-/data
-  /{firmId}
-    /cases/{caseId}.json
-    /documents/{documentId}.json
-    /emails/{emailId}.json
-    ...
-```
+**MVP (Day 1)**: PostgreSQL + object storage (S3/MinIO)
 
-**Phase 2**: PostgreSQL with pgvector for AI embeddings
-- Row-level security for multi-tenancy
-- Vector columns for semantic search
-- JSONB for flexible metadata
+- PostgreSQL as the system of record for all entities, approvals, and audit logs
+- pgvector for semantic search and retrieval
+- JSONB for flexible metadata/practice-specific data while schemas stabilise
+- MinIO/S3 for file blobs; PostgreSQL stores metadata + `storageKey`
 
 ---
 
@@ -37,11 +39,11 @@ This document defines the data models and API specifications for Legal Copilot's
 
 ```typescript
 interface Firm {
-  id: string;                          // UUID
+  id: string; // UUID
   name: string;
-  sraNumber?: string;                  // SRA registration number
-  status: 'trial' | 'active' | 'suspended' | 'cancelled';
-  plan: 'starter' | 'professional' | 'enterprise';
+  sraNumber?: string; // SRA registration number
+  status: "trial" | "active" | "suspended" | "cancelled";
+  plan: "starter" | "professional" | "enterprise";
 
   // Contact
   email: string;
@@ -65,7 +67,7 @@ interface Firm {
   subscriptionId?: string;
 
   // Metadata
-  createdAt: string;                   // ISO 8601
+  createdAt: string; // ISO 8601
   updatedAt: string;
 }
 
@@ -84,7 +86,7 @@ interface Address {
   city: string;
   county?: string;
   postcode: string;
-  country: string;                     // ISO 3166-1 alpha-2
+  country: string; // ISO 3166-1 alpha-2
 }
 
 interface FirmSettings {
@@ -96,8 +98,8 @@ interface FirmSettings {
   practiceAreas: PracticeArea[];
 
   // Billing
-  defaultBillingModel: 'hourly' | 'fixed' | 'contingency';
-  defaultCurrency: string;             // ISO 4217
+  defaultBillingModel: "hourly" | "fixed" | "contingency";
+  defaultCurrency: string; // ISO 4217
   vatRegistered: boolean;
   vatNumber?: string;
 
@@ -127,24 +129,33 @@ interface PortalBranding {
 
 interface AIConfig {
   enabled: boolean;
-  autonomyLevel: 'suggest' | 'draft' | 'auto-with-approval' | 'full-auto';
-  toneProfile?: string;                // AI-learned tone
+  autonomyLevel: "suggest" | "draft" | "auto-with-approval" | "full-auto";
+  toneProfile?: string; // AI-learned tone
   customPrompts?: Record<string, string>;
+  approvalPolicy?: AIApprovalPolicy; // backend-enforced via ApprovalRequest
+}
+
+interface AIApprovalPolicy {
+  // High-risk actions that must always require explicit human approval
+  requireApprovalFor?: string[]; // e.g. ["email.send", "case.stage_change", "invoice.send"]
+
+  // Allow auto-approval (system-decided) only above this confidence threshold
+  autoApproveMinConfidence?: number; // 0-1
 }
 
 type PracticeArea =
-  | 'conveyancing'
-  | 'civil_litigation'
-  | 'family'
-  | 'wills_probate'
-  | 'employment'
-  | 'immigration'
-  | 'personal_injury'
-  | 'commercial'
-  | 'criminal'
-  | 'intellectual_property'
-  | 'insolvency'
-  | 'general';
+  | "conveyancing"
+  | "civil_litigation"
+  | "family"
+  | "wills_probate"
+  | "employment"
+  | "immigration"
+  | "personal_injury"
+  | "commercial"
+  | "criminal"
+  | "intellectual_property"
+  | "insolvency"
+  | "general";
 
 interface CaseStage {
   id: string;
@@ -158,11 +169,11 @@ interface AutoTransitionRule {
   id: string;
   toStageId: string;
   trigger:
-    | 'task.completed'
-    | 'document.uploaded'
-    | 'deadline.reached'
-    | 'email.received'
-    | 'ai.recommendation';
+    | "task.completed"
+    | "document.uploaded"
+    | "deadline.reached"
+    | "email.received"
+    | "ai.recommendation";
   conditions?: Record<string, any>;
   requiresApproval?: boolean;
   enabled?: boolean;
@@ -180,7 +191,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  title?: string;                      // Mr, Mrs, Ms, Dr, etc.
+  title?: string; // Mr, Mrs, Ms, Dr, etc.
 
   // Role
   role: UserRole;
@@ -188,9 +199,9 @@ interface User {
 
   // Professional
   jobTitle?: string;
-  sraId?: string;                      // Solicitor SRA ID
+  sraId?: string; // Solicitor SRA ID
   hourlyRate?: Money;
-  targetBillableHours?: number;        // Per month
+  targetBillableHours?: number; // Per month
 
   // Office
   officeId?: string;
@@ -199,7 +210,7 @@ interface User {
   settings: UserSettings;
 
   // Status
-  status: 'active' | 'inactive' | 'pending';
+  status: "active" | "inactive" | "pending";
   lastLoginAt?: string;
 
   // Metadata
@@ -207,17 +218,26 @@ interface User {
   updatedAt: string;
 }
 
-type UserRole = 'admin' | 'partner' | 'fee_earner' | 'paralegal' | 'support' | 'readonly';
+type UserRole = "admin" | "partner" | "fee_earner" | "paralegal" | "support" | "readonly";
 
 type Permission =
-  | 'cases:read' | 'cases:write' | 'cases:delete'
-  | 'billing:read' | 'billing:write' | 'billing:approve'
-  | 'clients:read' | 'clients:write'
-  | 'documents:read' | 'documents:write'
-  | 'reports:read' | 'reports:export'
-  | 'settings:read' | 'settings:write'
-  | 'users:read' | 'users:write'
-  | 'ai:configure';
+  | "cases:read"
+  | "cases:write"
+  | "cases:delete"
+  | "billing:read"
+  | "billing:write"
+  | "billing:approve"
+  | "clients:read"
+  | "clients:write"
+  | "documents:read"
+  | "documents:write"
+  | "reports:read"
+  | "reports:export"
+  | "settings:read"
+  | "settings:write"
+  | "users:read"
+  | "users:write"
+  | "ai:configure";
 
 interface UserSettings {
   timezone: string;
@@ -230,14 +250,14 @@ interface NotificationSettings {
   email: boolean;
   push: boolean;
   desktop: boolean;
-  digest: 'realtime' | 'hourly' | 'daily' | 'weekly';
+  digest: "realtime" | "hourly" | "daily" | "weekly";
 }
 
 interface CalendarSyncConfig {
   enabled: boolean;
-  provider: 'google' | 'microsoft';
+  provider: "google" | "microsoft";
   calendarId?: string;
-  syncDirection: 'push' | 'pull' | 'two_way';
+  syncDirection: "push" | "pull" | "two_way";
   lastSyncedAt?: string;
 }
 ```
@@ -250,7 +270,7 @@ interface Client {
   firmId: string;
 
   // Type
-  type: 'individual' | 'company';
+  type: "individual" | "company";
 
   // Individual fields
   title?: string;
@@ -260,7 +280,7 @@ interface Client {
 
   // Company fields
   companyName?: string;
-  companyNumber?: string;              // Companies House number
+  companyNumber?: string; // Companies House number
   vatNumber?: string;
 
   // Contact
@@ -276,7 +296,7 @@ interface Client {
   portalEmail?: string;
 
   // AML/KYC
-  amlStatus: 'pending' | 'verified' | 'failed' | 'expired';
+  amlStatus: "pending" | "verified" | "failed" | "expired";
   amlVerifiedAt?: string;
   amlProvider?: string;
   amlReference?: string;
@@ -294,15 +314,15 @@ interface Client {
 }
 
 interface ClientAIProfile {
-  communicationPreference?: 'formal' | 'casual';
-  responsiveness?: 'fast' | 'average' | 'slow';
-  sentiment?: 'positive' | 'neutral' | 'negative';
-  riskLevel?: 'low' | 'medium' | 'high';
-  notes?: string;                      // AI-generated observations
+  communicationPreference?: "formal" | "casual";
+  responsiveness?: "fast" | "average" | "slow";
+  sentiment?: "positive" | "neutral" | "negative";
+  riskLevel?: "low" | "medium" | "high";
+  notes?: string; // AI-generated observations
 }
 
 interface LeadSource {
-  type: 'website' | 'referral' | 'phone' | 'email' | 'walk_in' | 'marketing' | 'other';
+  type: "website" | "referral" | "phone" | "email" | "walk_in" | "marketing" | "other";
   campaign?: string;
   referrerId?: string;
   utmSource?: string;
@@ -319,24 +339,24 @@ interface Case {
   firmId: string;
 
   // Reference
-  reference: string;                   // Firm's case reference (e.g., "CONV-2024-001")
+  reference: string; // Firm's case reference (e.g., "CONV-2024-001")
 
   // Type
   practiceArea: PracticeArea;
-  matterType?: string;                 // Sub-type within practice area
+  matterType?: string; // Sub-type within practice area
 
   // Parties
-  clientId: string;                    // Primary client
+  clientId: string; // Primary client
   parties: CaseParty[];
 
   // Assignment
-  responsibleUserId: string;           // Lead fee earner
-  teamUserIds: string[];               // Other team members
+  responsibleUserId: string; // Lead fee earner
+  teamUserIds: string[]; // Other team members
   officeId?: string;
 
   // Status
   status: CaseStatus;
-  stage: string;                       // Current stage ID
+  stage: string; // Current stage ID
   stageHistory: StageChange[];
 
   // Dates
@@ -349,14 +369,14 @@ interface Case {
   budget?: Money;
 
   // Risk
-  riskScore?: number;                  // 0-100, AI-calculated
+  riskScore?: number; // 0-100, AI-calculated
   riskFactors?: string[];
 
   // AI
-  aiSummary?: string;                  // AI-generated summary
+  aiSummary?: string; // AI-generated summary
   aiSummaryUpdatedAt?: string;
   aiInsights?: AIInsight[];
-  embedding?: number[];                // Vector embedding for similarity search
+  embedding?: number[]; // Vector embedding for similarity search
 
   // Practice-specific data (polymorphic)
   conveyancingData?: ConveyancingData;
@@ -376,55 +396,51 @@ interface StageChange {
   fromStageId: string;
   toStageId: string;
   changedAt: string;
-  changedByType: 'user' | 'system' | 'ai';
+  changedByType: "user" | "system";
   changedById?: string;
+  source?: "manual" | "ai_suggestion" | "workflow_rule";
   reason?: string;
-  aiConfidence?: number;               // 0-1
+  approvalRequestId?: string;
+  aiConfidence?: number; // 0-1
 }
 
-type CaseStatus =
-  | 'intake'
-  | 'active'
-  | 'on_hold'
-  | 'completed'
-  | 'closed'
-  | 'archived';
+type CaseStatus = "intake" | "active" | "on_hold" | "completed" | "closed" | "archived";
 
 interface CaseParty {
   id: string;
-  clientId?: string;                   // Link to Client if exists
+  clientId?: string; // Link to Client if exists
 
   // Role
   role: PartyRole;
 
   // Details (if not linked to Client)
-  type: 'individual' | 'company';
+  type: "individual" | "company";
   name: string;
   email?: string;
   phone?: string;
   address?: Address;
 
   // Representative
-  representativeId?: string;           // Their solicitor (another Party)
+  representativeId?: string; // Their solicitor (another Party)
 
   // AI
-  sentiment?: 'cooperative' | 'neutral' | 'adversarial';
+  sentiment?: "cooperative" | "neutral" | "adversarial";
 }
 
 type PartyRole =
-  | 'client'
-  | 'opponent'
-  | 'respondent'
-  | 'third_party'
-  | 'witness'
-  | 'expert'
-  | 'solicitor'
-  | 'counsel'
-  | 'court'
-  | 'other';
+  | "client"
+  | "opponent"
+  | "respondent"
+  | "third_party"
+  | "witness"
+  | "expert"
+  | "solicitor"
+  | "counsel"
+  | "court"
+  | "other";
 
 interface BillingModel {
-  type: 'hourly' | 'fixed' | 'staged' | 'contingency' | 'legal_aid';
+  type: "hourly" | "fixed" | "staged" | "contingency" | "legal_aid";
 
   // Hourly
   hourlyRates?: Record<string, Money>; // userId -> rate
@@ -448,21 +464,21 @@ interface BillingStage {
   name: string;
   amount: Money;
   dueAt?: string;
-  status: 'pending' | 'invoiced' | 'paid';
+  status: "pending" | "invoiced" | "paid";
 }
 
 interface Money {
-  amount: number;                      // In smallest unit (pence)
-  currency: string;                    // ISO 4217
+  amount: number; // In smallest unit (pence)
+  currency: string; // ISO 4217
 }
 
 interface AIInsight {
   id: string;
-  type: 'risk' | 'action' | 'milestone' | 'anomaly' | 'suggestion';
+  type: "risk" | "action" | "milestone" | "anomaly" | "suggestion";
   title: string;
   description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'new' | 'acknowledged' | 'resolved' | 'dismissed';
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "new" | "acknowledged" | "resolved" | "dismissed";
   createdAt: string;
   resolvedAt?: string;
 }
@@ -473,9 +489,9 @@ interface AIInsight {
 ```typescript
 // Conveyancing
 interface ConveyancingData {
-  transactionType: 'sale' | 'purchase' | 'remortgage' | 'transfer';
+  transactionType: "sale" | "purchase" | "remortgage" | "transfer";
   propertyAddress: Address;
-  propertyType: 'freehold' | 'leasehold' | 'commonhold';
+  propertyType: "freehold" | "leasehold" | "commonhold";
   titleNumber?: string;
 
   // Pricing
@@ -510,9 +526,9 @@ interface ConveyancingData {
 
 interface ConveyancingSearch {
   id: string;
-  type: string;                        // e.g., "local", "drainage", "environmental"
+  type: string; // e.g., "local", "drainage", "environmental"
   provider: string;
-  status: 'ordered' | 'received' | 'reviewed';
+  status: "ordered" | "received" | "reviewed";
   orderedAt: string;
   receivedAt?: string;
   documentId?: string;
@@ -522,7 +538,7 @@ interface ConveyancingSearch {
 
 // Litigation
 interface LitigationData {
-  caseType: 'civil' | 'employment' | 'family' | 'immigration' | 'criminal';
+  caseType: "civil" | "employment" | "family" | "immigration" | "criminal";
   court?: string;
   courtReference?: string;
 
@@ -565,7 +581,7 @@ interface ProbateData {
   dateOfDeath: string;
 
   // Grant
-  grantType: 'probate' | 'letters_of_administration';
+  grantType: "probate" | "letters_of_administration";
   grantIssuedAt?: string;
   grantReference?: string;
 
@@ -589,7 +605,7 @@ interface Beneficiary {
   id: string;
   name: string;
   relationship: string;
-  share: number;                       // Percentage
+  share: number; // Percentage
   contactId?: string;
 }
 
@@ -618,7 +634,7 @@ interface Distribution {
 
 // Family Law
 interface FamilyData {
-  matterType: 'divorce' | 'children' | 'financial' | 'domestic_abuse' | 'other';
+  matterType: "divorce" | "children" | "financial" | "domestic_abuse" | "other";
 
   // Divorce
   marriageDate?: string;
@@ -650,7 +666,7 @@ interface ImmigrationData {
   submittedAt?: string;
   biometricsDate?: string;
   decisionDate?: string;
-  decision?: 'approved' | 'refused' | 'pending';
+  decision?: "approved" | "refused" | "pending";
 
   // Deadlines
   currentVisaExpiry?: string;
@@ -670,15 +686,15 @@ interface Document {
   filename: string;
   originalFilename: string;
   mimeType: string;
-  size: number;                        // Bytes
-  storageKey: string;                  // S3/MinIO key
+  size: number; // Bytes
+  storageKey: string; // S3/MinIO key
 
   // Classification
   type: DocumentType;
   category?: string;
 
   // Visibility
-  visibility: 'internal' | 'client_visible' | 'shared';
+  visibility: "internal" | "client_visible" | "shared";
 
   // Version control
   version: number;
@@ -693,12 +709,16 @@ interface Document {
   aiConfidence?: number;
   embedding?: number[];
 
+  // Chunking (for citations & retrieval)
+  chunkedAt?: string;
+  chunkCount?: number;
+
   // OCR
   ocrProcessed?: boolean;
   ocrText?: string;
 
   // Signatures
-  signatureStatus?: 'none' | 'pending' | 'partial' | 'completed';
+  signatureStatus?: "none" | "pending" | "partial" | "completed";
   signatureRequestId?: string;
 
   // Metadata
@@ -708,17 +728,39 @@ interface Document {
 }
 
 type DocumentType =
-  | 'correspondence'
-  | 'contract'
-  | 'pleading'
-  | 'evidence'
-  | 'form'
-  | 'id_document'
-  | 'financial'
-  | 'advice'
-  | 'attendance_note'
-  | 'bundle'
-  | 'other';
+  | "correspondence"
+  | "contract"
+  | "pleading"
+  | "evidence"
+  | "form"
+  | "id_document"
+  | "financial"
+  | "advice"
+  | "attendance_note"
+  | "bundle"
+  | "other";
+
+// Stored text spans used for retrieval and source citations
+interface DocumentChunk {
+  id: string;
+  firmId: string;
+  documentId: string;
+  caseId?: string;
+
+  chunkIndex: number; // 0..n ordering within a document version
+  text: string;
+
+  // Location hints for citations (best-effort depending on parser/OCR)
+  pageStart?: number;
+  pageEnd?: number;
+  charStart?: number;
+  charEnd?: number;
+
+  // AI
+  embedding: number[];
+
+  createdAt: string;
+}
 ```
 
 ### 7. Email / Communication
@@ -730,11 +772,11 @@ interface Email {
   caseId?: string;
 
   // Email details
-  messageId: string;                   // Email Message-ID header
+  messageId: string; // Email Message-ID header
   threadId?: string;
 
   // Direction
-  direction: 'inbound' | 'outbound';
+  direction: "inbound" | "outbound";
 
   // Addresses
   from: EmailAddress;
@@ -748,10 +790,10 @@ interface Email {
   bodyHtml?: string;
 
   // Attachments
-  attachmentIds: string[];             // Document IDs
+  attachmentIds: string[]; // Document IDs
 
   // Status
-  status: 'pending' | 'sent' | 'delivered' | 'failed' | 'bounced';
+  status: "pending" | "sent" | "delivered" | "failed" | "bounced";
   readAt?: string;
 
   // AI Processing
@@ -761,8 +803,8 @@ interface Email {
     confidence: number;
   };
   aiIntent?: EmailIntent;
-  aiUrgency?: number;                  // 1-5
-  aiSentiment?: 'positive' | 'neutral' | 'negative' | 'frustrated';
+  aiUrgency?: number; // 1-5
+  aiSentiment?: "positive" | "neutral" | "negative" | "frustrated";
   aiSummary?: string;
   aiSuggestedResponse?: string;
   aiSuggestedTasks?: string[];
@@ -783,22 +825,23 @@ interface EmailAddress {
 }
 
 type EmailIntent =
-  | 'request_information'
-  | 'provide_information'
-  | 'request_action'
-  | 'status_update'
-  | 'complaint'
-  | 'deadline'
-  | 'confirmation'
-  | 'general';
+  | "request_information"
+  | "provide_information"
+  | "request_action"
+  | "status_update"
+  | "complaint"
+  | "deadline"
+  | "confirmation"
+  | "general";
 
 interface DraftResponse {
   content: string;
   generatedAt: string;
-  generatedBy: 'ai' | 'user';
-  status: 'draft' | 'approved' | 'sent' | 'discarded';
+  generatedBy: "ai" | "user";
+  status: "draft" | "approved" | "sent" | "discarded";
   approvedBy?: string;
   approvedAt?: string;
+  approvalRequestId?: string; // links to central approval queue
 }
 ```
 
@@ -824,16 +867,16 @@ interface TimelineEvent {
   invoiceId?: string;
 
   // Actor
-  actorType: 'user' | 'client' | 'system' | 'ai';
+  actorType: "user" | "client" | "system" | "ai";
   actorId?: string;
 
   // AI
   aiGenerated: boolean;
   aiSummary?: string;
-  aiImportance?: 'low' | 'medium' | 'high' | 'critical';
+  aiImportance?: "low" | "medium" | "high" | "critical";
 
   // Visibility
-  visibility: 'internal' | 'client_visible';
+  visibility: "internal" | "client_visible";
 
   // Metadata
   occurredAt: string;
@@ -841,25 +884,25 @@ interface TimelineEvent {
 }
 
 type TimelineEventType =
-  | 'case_created'
-  | 'case_status_changed'
-  | 'case_stage_changed'
-  | 'email_received'
-  | 'email_sent'
-  | 'document_uploaded'
-  | 'document_signed'
-  | 'task_created'
-  | 'task_completed'
-  | 'note_added'
-  | 'call_logged'
-  | 'meeting_held'
-  | 'deadline_approaching'
-  | 'deadline_passed'
-  | 'invoice_sent'
-  | 'payment_received'
-  | 'milestone_reached'
-  | 'ai_insight'
-  | 'custom';
+  | "case_created"
+  | "case_status_changed"
+  | "case_stage_changed"
+  | "email_received"
+  | "email_sent"
+  | "document_uploaded"
+  | "document_signed"
+  | "task_created"
+  | "task_completed"
+  | "note_added"
+  | "call_logged"
+  | "meeting_held"
+  | "deadline_approaching"
+  | "deadline_passed"
+  | "invoice_sent"
+  | "payment_received"
+  | "milestone_reached"
+  | "ai_insight"
+  | "custom";
 ```
 
 ### 9. Task
@@ -875,12 +918,12 @@ interface Task {
   description?: string;
 
   // Assignment
-  assignedTo: string;                  // User ID
+  assignedTo: string; // User ID
   assignedBy?: string;
 
   // Priority & Status
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "pending" | "in_progress" | "completed" | "cancelled";
 
   // Dates
   dueAt?: string;
@@ -888,7 +931,7 @@ interface Task {
 
   // AI
   aiGenerated: boolean;
-  aiSource?: string;                   // e.g., "email:{emailId}"
+  aiSource?: string; // e.g., "email:{emailId}"
   aiConfidence?: number;
 
   // Checklist
@@ -959,30 +1002,30 @@ interface CalendarEvent {
 }
 
 type CalendarEventType =
-  | 'hearing'
-  | 'meeting'
-  | 'deadline'
-  | 'limitation_date'
-  | 'completion'
-  | 'exchange'
-  | 'appointment'
-  | 'reminder'
-  | 'other';
+  | "hearing"
+  | "meeting"
+  | "deadline"
+  | "limitation_date"
+  | "completion"
+  | "exchange"
+  | "appointment"
+  | "reminder"
+  | "other";
 
 interface Attendee {
   userId?: string;
   email: string;
   name?: string;
-  status: 'pending' | 'accepted' | 'declined' | 'tentative';
+  status: "pending" | "accepted" | "declined" | "tentative";
 }
 
 interface Reminder {
-  type: 'email' | 'push' | 'sms';
+  type: "email" | "push" | "sms";
   minutesBefore: number;
 }
 
 interface RecurrenceRule {
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  frequency: "daily" | "weekly" | "monthly" | "yearly";
   interval: number;
   until?: string;
   count?: number;
@@ -1015,11 +1058,12 @@ interface TimeEntry {
 
   // AI
   aiGenerated: boolean;
-  aiSource?: string;                   // e.g., "email:{emailId}"
+  aiSource?: string; // e.g., "email:{emailId}"
   aiConfidence?: number;
   aiApproved: boolean;
   aiApprovedBy?: string;
   aiApprovedAt?: string;
+  approvalRequestId?: string; // links to central approval queue
 
   // Metadata
   createdAt: string;
@@ -1066,7 +1110,7 @@ interface Invoice {
   paymentMethod?: string;
 
   // Documents
-  documentId?: string;                 // Generated PDF
+  documentId?: string; // Generated PDF
 
   // AI
   aiGeneratedNarrative?: boolean;
@@ -1079,19 +1123,19 @@ interface Invoice {
 }
 
 type InvoiceStatus =
-  | 'draft'
-  | 'approved'
-  | 'sent'
-  | 'viewed'
-  | 'partial'
-  | 'paid'
-  | 'overdue'
-  | 'void'
-  | 'written_off';
+  | "draft"
+  | "approved"
+  | "sent"
+  | "viewed"
+  | "partial"
+  | "paid"
+  | "overdue"
+  | "void"
+  | "written_off";
 
 interface InvoiceLineItem {
   id: string;
-  type: 'time' | 'fixed' | 'disbursement';
+  type: "time" | "fixed" | "disbursement";
   description: string;
   quantity?: number;
   unitPrice?: Money;
@@ -1114,14 +1158,14 @@ interface Payment {
   amount: Money;
 
   // Method
-  method: 'card' | 'bank_transfer' | 'direct_debit' | 'cash' | 'cheque';
+  method: "card" | "bank_transfer" | "direct_debit" | "cash" | "cheque";
 
   // Provider
-  provider?: 'stripe' | 'gocardless' | 'manual';
+  provider?: "stripe" | "gocardless" | "manual";
   providerReference?: string;
 
   // Status
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+  status: "pending" | "processing" | "completed" | "failed" | "refunded";
 
   // Dates
   receivedAt: string;
@@ -1159,7 +1203,7 @@ interface Lead {
   assignedTo?: string;
 
   // Scoring
-  aiScore?: number;                    // 0-100, quality/urgency
+  aiScore?: number; // 0-100, quality/urgency
   aiScoreFactors?: string[];
 
   // Conversion
@@ -1184,14 +1228,14 @@ interface Lead {
 }
 
 type LeadStatus =
-  | 'new'
-  | 'contacted'
-  | 'qualified'
-  | 'quoted'
-  | 'negotiating'
-  | 'converted'
-  | 'lost'
-  | 'unqualified';
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "quoted"
+  | "negotiating"
+  | "converted"
+  | "lost"
+  | "unqualified";
 ```
 
 ### 15. Quote
@@ -1221,7 +1265,7 @@ interface Quote {
   validUntil: string;
 
   // Status
-  status: 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined' | 'expired';
+  status: "draft" | "sent" | "viewed" | "accepted" | "declined" | "expired";
 
   // Documents
   documentId?: string;
@@ -1241,7 +1285,7 @@ interface Quote {
 interface QuoteLineItem {
   id: string;
   description: string;
-  type: 'fee' | 'disbursement' | 'vat';
+  type: "fee" | "disbursement" | "vat";
   amount: Money;
   isEstimate: boolean;
 }
@@ -1260,11 +1304,11 @@ interface ConflictCheck {
   companyNumbers?: string[];
 
   // Results
-  status: 'pending' | 'clear' | 'potential_conflict' | 'conflict';
+  status: "pending" | "clear" | "potential_conflict" | "conflict";
   matches: ConflictMatch[];
 
   // Decision
-  decision?: 'proceed' | 'decline' | 'waiver_obtained';
+  decision?: "proceed" | "decline" | "waiver_obtained";
   decisionBy?: string;
   decisionAt?: string;
   decisionNotes?: string;
@@ -1282,7 +1326,7 @@ interface ConflictMatch {
   caseId: string;
   caseReference: string;
   matchedParty: string;
-  matchType: 'exact' | 'fuzzy' | 'related';
+  matchType: "exact" | "fuzzy" | "related";
   confidence: number;
   relationship?: string;
 }
@@ -1296,11 +1340,11 @@ interface AuditLog {
   firmId: string;
 
   // Actor
-  actorType: 'user' | 'system' | 'ai' | 'api';
+  actorType: "user" | "system" | "ai" | "api";
   actorId?: string;
 
   // Action
-  action: string;                      // e.g., "case.create", "document.view"
+  action: string; // e.g., "case.create", "document.view"
 
   // Target
   entityType: string;
@@ -1339,15 +1383,15 @@ interface Holiday {
   userId: string;
 
   // Type
-  type: 'annual_leave' | 'sick' | 'personal' | 'training' | 'other';
+  type: "annual_leave" | "sick" | "personal" | "training" | "other";
 
   // Dates
   startDate: string;
   endDate: string;
-  halfDay?: 'am' | 'pm';
+  halfDay?: "am" | "pm";
 
   // Status
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  status: "pending" | "approved" | "rejected" | "cancelled";
 
   // Approval
   approvedBy?: string;
@@ -1375,7 +1419,7 @@ interface ReferralSource {
 
   // Details
   name: string;
-  type: 'individual' | 'company' | 'marketing' | 'directory' | 'other';
+  type: "individual" | "company" | "marketing" | "directory" | "other";
 
   // Contact
   contactName?: string;
@@ -1409,25 +1453,25 @@ interface Template {
   description?: string;
 
   // Type
-  type: 'document' | 'email' | 'sms' | 'letter';
+  type: "document" | "email" | "sms" | "letter";
 
   // Practice area
   practiceAreas: PracticeArea[];
 
   // Content
-  subject?: string;                    // For email
-  content: string;                     // With merge fields {{field}}
+  subject?: string; // For email
+  content: string; // With merge fields {{field}}
 
   // Merge fields
   mergeFields: MergeField[];
 
   // Settings
-  isSystem: boolean;                   // System-provided template
+  isSystem: boolean; // System-provided template
   isActive: boolean;
 
   // AI
   aiEnhanced: boolean;
-  aiPrompt?: string;                   // For AI customization
+  aiPrompt?: string; // For AI customization
 
   // Metadata
   createdBy: string;
@@ -1438,7 +1482,7 @@ interface Template {
 interface MergeField {
   name: string;
   description?: string;
-  source: string;                      // e.g., "case.reference", "client.name"
+  source: string; // e.g., "case.reference", "client.name"
   defaultValue?: string;
 }
 ```
@@ -1455,10 +1499,10 @@ interface SignatureRequest {
   documentId: string;
 
   // Status
-  status: 'draft' | 'sent' | 'viewed' | 'partial' | 'completed' | 'declined' | 'expired';
+  status: "draft" | "sent" | "viewed" | "partial" | "completed" | "declined" | "expired";
 
   // Provider
-  provider: 'docusign' | 'adobe_sign' | 'native';
+  provider: "docusign" | "adobe_sign" | "native";
   providerReference?: string;
 
   // Signers
@@ -1484,7 +1528,7 @@ interface Signer {
   name: string;
   email: string;
   role?: string;
-  status: 'pending' | 'sent' | 'viewed' | 'signed' | 'declined';
+  status: "pending" | "sent" | "viewed" | "signed" | "declined";
   signedAt?: string;
 }
 ```
@@ -1508,14 +1552,14 @@ interface Notification {
   actionUrl?: string;
 
   // Priority
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: "low" | "medium" | "high" | "urgent";
 
   // Status
   read: boolean;
   readAt?: string;
 
   // Delivery
-  channels: ('in_app' | 'email' | 'push' | 'sms')[];
+  channels: ("in_app" | "email" | "push" | "sms")[];
   deliveredVia: string[];
 
   // Metadata
@@ -1523,15 +1567,64 @@ interface Notification {
 }
 
 type NotificationType =
-  | 'task_assigned'
-  | 'task_due'
-  | 'deadline_approaching'
-  | 'email_received'
-  | 'document_signed'
-  | 'payment_received'
-  | 'case_update'
-  | 'ai_insight'
-  | 'system';
+  | "task_assigned"
+  | "task_due"
+  | "deadline_approaching"
+  | "email_received"
+  | "document_signed"
+  | "payment_received"
+  | "case_update"
+  | "ai_insight"
+  | "system";
+```
+
+### 23. Approval Request (AI & Workflow)
+
+AI is allowed to **propose** changes and drafts, but anything with external effect (sending comms, changing case stage/status, billing actions, etc.) must be applied via an approval request so autonomy is enforceable in backend code (not just UI).
+
+```typescript
+interface ApprovalRequest {
+  id: string;
+  firmId: string;
+
+  // Origin
+  sourceType: "ai" | "system" | "user";
+  sourceId?: string; // userId when sourceType === 'user'
+
+  // Proposed action
+  action: string; // e.g. "email.send", "case.stage_change"
+  summary: string; // human-readable, shown in approval queue
+  proposedPayload?: Record<string, any>; // e.g. email body, task details, field updates
+
+  // Target (optional for creates)
+  entityType?: string; // e.g. "case", "email", "invoice"
+  entityId?: string;
+
+  // Decision
+  status: ApprovalStatus;
+  decidedBy?: string; // userId (or "system" for auto-approve)
+  decidedAt?: string;
+  decisionReason?: string;
+
+  // Execution (optional)
+  executedAt?: string;
+  executionStatus?: "not_executed" | "executed" | "failed";
+  executionError?: string;
+
+  // AI metadata (when sourceType === "ai")
+  ai?: {
+    model: string;
+    promptVersion?: string;
+    reasoning?: string;
+    confidence?: number; // 0-1
+  };
+
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+}
+
+type ApprovalStatus = "pending" | "approved" | "rejected" | "cancelled" | "expired";
 ```
 
 ---
@@ -1659,6 +1752,17 @@ GET    /users/{id}/permissions         # Get permissions
 PATCH  /users/{id}/permissions         # Update permissions
 ```
 
+### Approvals
+
+```http
+GET    /approvals                       # List approval requests (filter by status/action/entity)
+GET    /approvals/{id}                  # Get approval request
+POST   /approvals/{id}/approve          # Approve (and execute if applicable)
+POST   /approvals/{id}/reject           # Reject
+POST   /approvals/bulk/approve          # Bulk approve
+POST   /approvals/bulk/reject           # Bulk reject
+```
+
 ### Clients
 
 ```http
@@ -1718,7 +1822,7 @@ POST   /cases/{id}/invoices            # Create invoice
 GET    /cases/{id}/ai/summary          # Get AI summary
 POST   /cases/{id}/ai/refresh          # Refresh AI analysis
 GET    /cases/{id}/ai/insights         # Get AI insights
-POST   /cases/{id}/ai/ask              # Ask question about case
+POST   /cases/{id}/ai/ask              # Ask question about case (returns citations)
 GET    /cases/{id}/ai/similar          # Find similar cases
 ```
 
@@ -1733,7 +1837,7 @@ DELETE /documents/{id}                 # Delete document
 GET    /documents/{id}/versions        # List versions
 POST   /documents/{id}/ai/summarize    # Generate AI summary
 POST   /documents/{id}/ai/extract      # Extract data
-GET    /documents/{id}/ai/search       # Semantic search within doc
+GET    /documents/{id}/ai/search       # Semantic search within doc (returns matching chunks)
 
 # Signatures
 POST   /documents/{id}/signatures      # Request signatures
@@ -1749,7 +1853,7 @@ GET    /emails/{id}                    # Get email
 POST   /emails/{id}/assign             # Assign to case
 POST   /emails/{id}/draft              # Generate AI draft response
 POST   /emails/{id}/send               # Send response
-POST   /emails/{id}/approve            # Approve AI draft
+POST   /emails/{id}/approve            # Approve AI draft (via ApprovalRequest)
 POST   /emails/compose                 # Compose new email
 ```
 
@@ -1790,7 +1894,7 @@ GET    /time-entries/{id}              # Get time entry
 PATCH  /time-entries/{id}              # Update time entry
 DELETE /time-entries/{id}              # Delete time entry
 GET    /time-entries/ai/suggestions    # Get AI-suggested entries
-POST   /time-entries/ai/approve        # Bulk approve AI entries
+POST   /time-entries/ai/approve        # Bulk approve AI entries (via ApprovalRequest)
 
 # Invoices
 GET    /invoices                       # List invoices
@@ -1913,7 +2017,7 @@ PATCH  /notifications/settings         # Update settings
 
 ```http
 # General AI
-POST   /ai/chat                        # Chat with AI assistant
+POST   /ai/chat                        # Chat with AI assistant (may include citations)
 POST   /ai/summarize                   # Summarize text
 POST   /ai/draft                       # Draft document/email
 POST   /ai/extract                     # Extract data from text
@@ -2085,9 +2189,18 @@ type EventType =
 
 ---
 
-## Database Schema (PostgreSQL Migration)
+## Database Schema (PostgreSQL)
 
-When migrating to PostgreSQL, use this schema structure:
+Use PostgreSQL from day one; keep the MVP schema minimal and add additional modules (billing, payments, etc.) once the core workflows are proven.
+
+MVP core tables:
+
+- `firms`, `users`, `clients`, `cases`
+- `documents`, `document_chunks`
+- `emails`, `timeline_events`, `tasks`
+- `approval_requests`, `audit_logs`
+
+Later modules (Phase 2+): `time_entries`, `invoices`, `payments`, `leads`, etc.
 
 ```sql
 -- Enable extensions
@@ -2114,7 +2227,7 @@ ALTER TABLE firms ENABLE ROW LEVEL SECURITY;
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   firm_id UUID NOT NULL REFERENCES firms(id),
-  email TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'fee_earner',
@@ -2122,7 +2235,9 @@ CREATE TABLE users (
   settings JSONB NOT NULL DEFAULT '{}',
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE(firm_id, email)
 );
 
 CREATE INDEX idx_users_firm_id ON users(firm_id);
@@ -2180,6 +2295,7 @@ CREATE INDEX idx_cases_firm_id ON cases(firm_id);
 CREATE INDEX idx_cases_client_id ON cases(client_id);
 CREATE INDEX idx_cases_status ON cases(status);
 CREATE INDEX idx_cases_practice_area ON cases(practice_area);
+-- Optional (premature on small datasets): add ANN index when you have enough rows
 CREATE INDEX idx_cases_embedding ON cases USING ivfflat (embedding vector_cosine_ops);
 ALTER TABLE cases ENABLE ROW LEVEL SECURITY;
 
@@ -2205,8 +2321,34 @@ CREATE TABLE documents (
 
 CREATE INDEX idx_documents_firm_id ON documents(firm_id);
 CREATE INDEX idx_documents_case_id ON documents(case_id);
+-- Optional (premature on small datasets): add ANN index when you have enough rows
 CREATE INDEX idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops);
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+-- Document chunks table (retrieval + source citations)
+CREATE TABLE document_chunks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  firm_id UUID NOT NULL REFERENCES firms(id),
+  document_id UUID NOT NULL REFERENCES documents(id),
+  case_id UUID REFERENCES cases(id),
+  chunk_index INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  page_start INTEGER,
+  page_end INTEGER,
+  char_start INTEGER,
+  char_end INTEGER,
+  embedding VECTOR(1536) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE(document_id, chunk_index)
+);
+
+CREATE INDEX idx_document_chunks_firm_id ON document_chunks(firm_id);
+CREATE INDEX idx_document_chunks_document_id ON document_chunks(document_id);
+CREATE INDEX idx_document_chunks_case_id ON document_chunks(case_id);
+-- Optional (premature on small datasets): add ANN index when you have enough rows
+CREATE INDEX idx_document_chunks_embedding ON document_chunks USING ivfflat (embedding vector_cosine_ops);
+ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
 
 -- Emails table
 CREATE TABLE emails (
@@ -2285,6 +2427,35 @@ CREATE INDEX idx_tasks_firm_id ON tasks(firm_id);
 CREATE INDEX idx_tasks_assigned_to ON tasks(assigned_to);
 CREATE INDEX idx_tasks_status ON tasks(status);
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+
+-- Approval requests table (centralised human-in-the-loop)
+CREATE TABLE approval_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  firm_id UUID NOT NULL REFERENCES firms(id),
+  source_type TEXT NOT NULL,           -- "ai" | "system" | "user"
+  source_id UUID,                      -- user_id when source_type = "user"
+  action TEXT NOT NULL,                -- e.g. "email.send", "case.stage_change"
+  summary TEXT NOT NULL,
+  proposed_payload JSONB,
+  entity_type TEXT,
+  entity_id UUID,
+  status TEXT NOT NULL DEFAULT 'pending',
+  decided_by UUID REFERENCES users(id),
+  decided_at TIMESTAMPTZ,
+  decision_reason TEXT,
+  executed_at TIMESTAMPTZ,
+  execution_status TEXT NOT NULL DEFAULT 'not_executed',
+  execution_error TEXT,
+  ai_metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_approval_requests_firm_id ON approval_requests(firm_id);
+CREATE INDEX idx_approval_requests_status ON approval_requests(status);
+CREATE INDEX idx_approval_requests_action ON approval_requests(action);
+CREATE INDEX idx_approval_requests_entity ON approval_requests(entity_type, entity_id);
+ALTER TABLE approval_requests ENABLE ROW LEVEL SECURITY;
 
 -- Time entries table
 CREATE TABLE time_entries (
@@ -2381,6 +2552,7 @@ CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Row Level Security Policies
+-- Application code must set: SET LOCAL app.current_firm_id = '<firmId>' for every transaction
 CREATE POLICY firm_isolation ON firms
   USING (id = current_setting('app.current_firm_id')::UUID);
 
@@ -2393,72 +2565,40 @@ CREATE POLICY firm_isolation ON clients
 CREATE POLICY firm_isolation ON cases
   USING (firm_id = current_setting('app.current_firm_id')::UUID);
 
+CREATE POLICY firm_isolation ON documents
+  USING (firm_id = current_setting('app.current_firm_id')::UUID);
+
+CREATE POLICY firm_isolation ON document_chunks
+  USING (firm_id = current_setting('app.current_firm_id')::UUID);
+
+CREATE POLICY firm_isolation ON approval_requests
+  USING (firm_id = current_setting('app.current_firm_id')::UUID);
+
+CREATE POLICY firm_isolation ON audit_logs
+  USING (firm_id = current_setting('app.current_firm_id')::UUID);
+
 -- Add similar policies for all tables...
 ```
 
 ---
 
-## Migration Strategy
+## Schema Evolution Strategy
 
-### Phase 1: JSON Storage (MVP)
+### Start Minimal
 
-```typescript
-// Storage interface
-interface Storage {
-  get<T>(key: string): Promise<T | null>;
-  set<T>(key: string, value: T): Promise<void>;
-  delete(key: string): Promise<void>;
-  list(prefix: string): Promise<string[]>;
-  query<T>(prefix: string, filter: (item: T) => boolean): Promise<T[]>;
-}
+- MVP core tables: `firms`, `users`, `clients`, `cases`, `documents`, `document_chunks`, `emails`, `tasks`, `approval_requests`, `audit_logs`
+- Prefer JSONB for optional/practice-specific fields and AI outputs while requirements stabilise
 
-// JSON file implementation
-class JSONFileStorage implements Storage {
-  constructor(private basePath: string) {}
+### Migrations
 
-  async get<T>(key: string): Promise<T | null> {
-    const path = `${this.basePath}/${key}.json`;
-    if (!existsSync(path)) return null;
-    return JSON.parse(await readFile(path, 'utf-8'));
-  }
+- Use schema migrations (e.g. Drizzle) for all changes; never edit production schemas manually
+- Add new columns as nullable, backfill via background jobs, then enforce constraints
+- For breaking changes, dual-write + backfill + cutover (with audit logging)
 
-  async set<T>(key: string, value: T): Promise<void> {
-    const path = `${this.basePath}/${key}.json`;
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, JSON.stringify(value, null, 2));
-  }
+### Re-chunking / Re-embedding
 
-  // ... other methods
-}
-```
-
-### Phase 2: PostgreSQL Migration
-
-1. Deploy PostgreSQL with pgvector
-2. Run schema migrations
-3. Create data migration scripts
-4. Run parallel writes (JSON + PostgreSQL)
-5. Validate data consistency
-6. Switch reads to PostgreSQL
-7. Deprecate JSON storage
-
-```typescript
-// PostgreSQL implementation
-class PostgreSQLStorage implements Storage {
-  constructor(private pool: Pool) {}
-
-  async get<T>(key: string): Promise<T | null> {
-    const [type, id] = key.split('/');
-    const result = await this.pool.query(
-      `SELECT * FROM ${type} WHERE id = $1`,
-      [id]
-    );
-    return result.rows[0] || null;
-  }
-
-  // ... other methods
-}
-```
+- Chunk + embed on ingestion and store per-document chunks for retrieval and citations
+- When chunking/embedding strategies change, reprocess in the background and keep the canonical file blob unchanged (`storageKey`)
 
 ---
 
@@ -2469,7 +2609,7 @@ class PostgreSQLStorage implements Storage {
 ```typescript
 interface AIService {
   // Text generation
-  chat(messages: Message[], options?: ChatOptions): Promise<string>;
+  chat(messages: Message[], options?: ChatOptions): Promise<AIChatResponse>;
 
   // Summarization
   summarize(text: string, maxLength?: number): Promise<string>;
@@ -2487,7 +2627,28 @@ interface AIService {
   findSimilar(embedding: number[], collection: string, limit: number): Promise<any[]>;
 }
 
-type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
+interface AIChatResponse {
+  content: string;
+  citations?: SourceCitation[]; // populated for RAG/Q&A flows
+  model: string;
+  usage?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
+  };
+}
+
+interface SourceCitation {
+  documentId: string;
+  documentChunkId: string;
+  caseId?: string;
+  pageStart?: number;
+  pageEnd?: number;
+  quote?: string;
+  confidence?: number; // 0-1
+}
+
+type MessageRole = "system" | "user" | "assistant" | "tool";
 
 interface Message {
   role: MessageRole;
@@ -2498,7 +2659,7 @@ interface Message {
 
 type JSONSchema = {
   $schema?: string;
-  type?: 'object' | 'array' | 'string' | 'number' | 'integer' | 'boolean' | 'null';
+  type?: "object" | "array" | "string" | "number" | "integer" | "boolean" | "null";
   description?: string;
   properties?: Record<string, JSONSchema>;
   required?: string[];
@@ -2508,7 +2669,7 @@ type JSONSchema = {
 };
 
 interface ChatOptions {
-  model?: 'gpt-4' | 'gpt-3.5-turbo' | 'claude-3-opus' | 'claude-3-haiku';
+  model?: "gpt-4" | "gpt-3.5-turbo" | "claude-3-opus" | "claude-3-haiku";
   temperature?: number;
   maxTokens?: number;
   systemPrompt?: string;
@@ -2520,21 +2681,21 @@ interface ChatOptions {
 ```typescript
 const MODEL_SELECTION = {
   // Complex reasoning tasks
-  'email.draft_response': 'gpt-4',
-  'document.generate': 'claude-3-opus',
-  'case.analyze': 'gpt-4',
+  "email.draft_response": "gpt-4",
+  "document.generate": "claude-3-opus",
+  "case.analyze": "gpt-4",
 
   // Classification tasks (fast, cheap)
-  'email.classify_intent': 'gpt-3.5-turbo',
-  'document.classify_type': 'claude-3-haiku',
-  'email.match_case': 'gpt-3.5-turbo',
+  "email.classify_intent": "gpt-3.5-turbo",
+  "document.classify_type": "claude-3-haiku",
+  "email.match_case": "gpt-3.5-turbo",
 
   // Extraction tasks
-  'document.extract_data': 'gpt-4',
-  'email.extract_entities': 'gpt-3.5-turbo',
+  "document.extract_data": "gpt-4",
+  "email.extract_entities": "gpt-3.5-turbo",
 
   // Embeddings
-  'embedding': 'text-embedding-3-small'
+  embedding: "text-embedding-3-small",
 };
 ```
 
@@ -2559,6 +2720,14 @@ const MODEL_SELECTION = {
 - Role-based access control (RBAC)
 - Row-level security in PostgreSQL
 - Firm isolation enforced at database level
+- Firm/tenant identity derived from authenticated session (never trusted from request body/query)
+
+### Session-Bound Tenancy Enforcement
+
+- Derive `firmId` from the access token/session and set it server-side on every created row.
+- For every DB transaction, set the tenant context once (transaction-scoped) and then run all queries in that context.
+- Current implementation: `lib/db/tenant.ts` uses `set_config('app.current_firm_id', ..., true)` inside a transaction, and all API queries still include an explicit `firmId` predicate (defence-in-depth until RLS policies are enabled).
+- Use `SET LOCAL` (transaction-scoped) to avoid cross-tenant leakage with connection pooling; background workers must also set `app.current_firm_id` per job before any queries.
 
 ### Audit Trail
 
@@ -2637,6 +2806,6 @@ Redis for:
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2024-12-17 | Initial design document |
+| Version | Date       | Changes                 |
+| ------- | ---------- | ----------------------- |
+| 1.0.0   | 2024-12-17 | Initial design document |

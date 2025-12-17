@@ -5,8 +5,17 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Template Project",
-  description: "Full-stack template with Next.js, PostgreSQL, Redis, MinIO, and more",
+  title: "Legal Copilot | AI-Powered Practice Management for UK Law Firms",
+  description:
+    "Legal Copilot automates 80% of administrative work for UK law firms. AI handles the drafting, you handle the approvals. Coming soon.",
+  keywords: ["legal tech", "law firm software", "practice management", "AI legal", "UK solicitors"],
+  openGraph: {
+    title: "Legal Copilot | Coming Soon",
+    description: "AI-powered practice management for UK law firms. Coming soon.",
+    url: "https://legalcopilot.co.uk",
+    siteName: "Legal Copilot",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

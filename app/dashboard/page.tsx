@@ -15,7 +15,14 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-  const [healthStatus, setHealthStatus] = useState<any>(null);
+  type HealthStatus = {
+    status: string;
+    timestamp: string;
+    services: { postgres: boolean; redis: boolean; minio: boolean; app: boolean };
+    details: Record<string, string>;
+  };
+
+  const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const [jobStatus, setJobStatus] = useState<string>("");
