@@ -1,0 +1,21 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+dist
+build
+out
+
+# Coverage
+coverage
+.nyc_output
+
+# Markdown files in node_modules
+node_modules/**/*.md
+
+# Other
+.git
+.cache
+.vercel
+.turbo
