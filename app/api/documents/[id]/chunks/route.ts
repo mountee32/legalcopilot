@@ -3,9 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { documents, documentChunks } from "@/lib/db/schema";
 import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
-import { chunkText } from "@/lib/documents/chunking";
+import { rechunkDocumentTx } from "@/lib/documents/rechunk";
 import { ChunkDocumentRequestSchema } from "@/lib/api/schemas";
-import { createTimelineEvent } from "@/lib/timeline/createEvent";
 import { withAuth } from "@/middleware/withAuth";
 import { ValidationError, withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
 
@@ -56,45 +55,16 @@ export const POST = withErrorHandler(
       if (!doc) throw new NotFoundError("Document not found");
       if (!doc.extractedText) throw new ValidationError("Document has no extracted text to chunk");
 
-      const chunks = chunkText(doc.extractedText, maxChars);
-      if (chunks.length === 0) throw new ValidationError("No chunks produced");
-
-      await tx
-        .delete(documentChunks)
-        .where(and(eq(documentChunks.documentId, id), eq(documentChunks.firmId, firmId)));
-
-      await tx.insert(documentChunks).values(
-        chunks.map((chunk, index) => ({
-          firmId,
-          documentId: id,
-          matterId: doc.matterId,
-          chunkIndex: index,
-          text: chunk.text,
-          charStart: chunk.charStart,
-          charEnd: chunk.charEnd,
-        }))
-      );
-
-      const [updated] = await tx
-        .update(documents)
-        .set({ chunkedAt: new Date(), chunkCount: chunks.length, updatedAt: new Date() })
-        .where(and(eq(documents.id, id), eq(documents.firmId, firmId)))
-        .returning({ chunkCount: documents.chunkCount });
-
-      await createTimelineEvent(tx, {
+      const count = await rechunkDocumentTx(tx, {
         firmId,
+        documentId: id,
         matterId: doc.matterId,
-        type: "document_chunked",
-        title: "Document processed for citations",
-        actorType: "system",
-        actorId: null,
-        entityType: "document",
-        entityId: id,
-        occurredAt: new Date(),
-        metadata: { chunkCount: chunks.length, maxChars },
+        extractedText: doc.extractedText,
+        maxChars,
       });
 
-      return updated?.chunkCount ?? chunks.length;
+      if (count === 0) throw new ValidationError("No chunks produced");
+      return count;
     });
 
     return NextResponse.json({ success: true, chunkCount });

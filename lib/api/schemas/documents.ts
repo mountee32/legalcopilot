@@ -89,6 +89,55 @@ export const ChunkDocumentResponseSchema = z
   })
   .openapi("ChunkDocumentResponse");
 
+export const DocumentJobAcceptedResponseSchema = z
+  .object({
+    accepted: z.literal(true),
+    jobId: UuidSchema,
+  })
+  .openapi("DocumentJobAcceptedResponse");
+
+export const ExtractDocumentRequestSchema = z
+  .object({
+    async: z.boolean().optional(),
+    force: z.boolean().optional(),
+    autoChunk: z.boolean().optional(),
+    maxChars: z.number().int().min(200).max(10_000).optional(),
+  })
+  .openapi("ExtractDocumentRequest");
+
+export const ExtractDocumentResponseSchema = z
+  .object({
+    success: z.literal(true),
+    extractedText: z.string(),
+    length: z.number().int(),
+    chunkCount: z.number().int().nullable(),
+  })
+  .openapi("ExtractDocumentResponse");
+
+export const SummarizeDocumentResponseSchema = z
+  .object({
+    success: z.literal(true),
+    summary: z.string(),
+    keyPoints: z.array(z.string()).default([]),
+  })
+  .openapi("SummarizeDocumentResponse");
+
+export const DocumentEntitiesSchema = z
+  .object({
+    dates: z.array(z.string()).default([]),
+    parties: z.array(z.string()).default([]),
+    amounts: z.array(z.string()).default([]),
+    addresses: z.array(z.string()).default([]),
+  })
+  .openapi("DocumentEntities");
+
+export const DocumentEntitiesResponseSchema = z
+  .object({
+    success: z.literal(true),
+    entities: DocumentEntitiesSchema,
+  })
+  .openapi("DocumentEntitiesResponse");
+
 export const SourceCitationSchema = z
   .object({
     documentId: UuidSchema,

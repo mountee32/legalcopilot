@@ -46,6 +46,11 @@ import {
   DocumentChunkListSchema,
   ChunkDocumentRequestSchema,
   ChunkDocumentResponseSchema,
+  DocumentJobAcceptedResponseSchema,
+  ExtractDocumentRequestSchema,
+  ExtractDocumentResponseSchema,
+  SummarizeDocumentResponseSchema,
+  DocumentEntitiesResponseSchema,
   FirmSettingsResponseSchema,
   UpdateFirmSettingsSchema,
   RoleSchema,
@@ -117,6 +122,11 @@ registry.register("AskMatterResponse", AskMatterResponseSchema);
 registry.register("DocumentChunkListResponse", DocumentChunkListSchema);
 registry.register("ChunkDocumentRequest", ChunkDocumentRequestSchema);
 registry.register("ChunkDocumentResponse", ChunkDocumentResponseSchema);
+registry.register("DocumentJobAcceptedResponse", DocumentJobAcceptedResponseSchema);
+registry.register("ExtractDocumentRequest", ExtractDocumentRequestSchema);
+registry.register("ExtractDocumentResponse", ExtractDocumentResponseSchema);
+registry.register("SummarizeDocumentResponse", SummarizeDocumentResponseSchema);
+registry.register("DocumentEntitiesResponse", DocumentEntitiesResponseSchema);
 registry.register("FirmSettingsResponse", FirmSettingsResponseSchema);
 registry.register("UpdateFirmSettingsRequest", UpdateFirmSettingsSchema);
 registry.register("Role", RoleSchema);
@@ -527,6 +537,82 @@ registry.registerPath({
     200: {
       description: "Chunking result",
       content: { "application/json": { schema: ChunkDocumentResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/documents/{id}/extract",
+  summary: "Extract document text",
+  description: "Extract text from the stored upload and persist on the document",
+  tags: ["Documents"],
+  request: {
+    params: registry.register("DocumentExtractIdParam", DocumentSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: ExtractDocumentRequestSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Extraction result",
+      content: { "application/json": { schema: ExtractDocumentResponseSchema } },
+    },
+    202: {
+      description: "Job accepted",
+      content: { "application/json": { schema: DocumentJobAcceptedResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/documents/{id}/summarize",
+  summary: "Summarize document",
+  description: "Generate and persist an AI summary for a document",
+  tags: ["Documents"],
+  request: {
+    params: registry.register("DocumentSummarizeIdParam", DocumentSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Summarization result",
+      content: { "application/json": { schema: SummarizeDocumentResponseSchema } },
+    },
+    202: {
+      description: "Job accepted",
+      content: { "application/json": { schema: DocumentJobAcceptedResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/documents/{id}/entities",
+  summary: "Extract document entities",
+  description: "Extract and persist structured entities on the document metadata",
+  tags: ["Documents"],
+  request: {
+    params: registry.register("DocumentEntitiesIdParam", DocumentSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Entities result",
+      content: { "application/json": { schema: DocumentEntitiesResponseSchema } },
+    },
+    202: {
+      description: "Job accepted",
+      content: { "application/json": { schema: DocumentJobAcceptedResponseSchema } },
     },
     400: {
       description: "Validation error",

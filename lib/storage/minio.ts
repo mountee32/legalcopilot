@@ -1,24 +1,41 @@
 import { Client } from "minio";
 
-if (!process.env.MINIO_ENDPOINT) {
-  throw new Error("MINIO_ENDPOINT environment variable is not set");
+function assertMinioEnv(): {
+  endPoint: string;
+  port: number;
+  useSSL: boolean;
+  accessKey: string;
+  secretKey: string;
+} {
+  const endPoint = process.env.MINIO_ENDPOINT;
+  if (!endPoint) throw new Error("MINIO_ENDPOINT environment variable is not set");
+
+  const accessKey = process.env.MINIO_ROOT_USER;
+  const secretKey = process.env.MINIO_ROOT_PASSWORD;
+  if (!accessKey || !secretKey) throw new Error("MinIO credentials are not set");
+
+  return {
+    endPoint,
+    port: parseInt(process.env.MINIO_PORT || "9000"),
+    useSSL: process.env.MINIO_USE_SSL === "true",
+    accessKey,
+    secretKey,
+  };
 }
 
-if (!process.env.MINIO_ROOT_USER || !process.env.MINIO_ROOT_PASSWORD) {
-  throw new Error("MinIO credentials are not set");
-}
+let cachedClient: Client | null = null;
 
-export const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT,
-  port: parseInt(process.env.MINIO_PORT || "9000"),
-  useSSL: process.env.MINIO_USE_SSL === "true",
-  accessKey: process.env.MINIO_ROOT_USER,
-  secretKey: process.env.MINIO_ROOT_PASSWORD,
-});
+export function getMinioClient(): Client {
+  if (cachedClient) return cachedClient;
+  const cfg = assertMinioEnv();
+  cachedClient = new Client(cfg);
+  return cachedClient;
+}
 
 // Initialize bucket on startup
 export async function initializeBucket(bucketName: string = "uploads") {
   try {
+    const minioClient = getMinioClient();
     const exists = await minioClient.bucketExists(bucketName);
     if (!exists) {
       await minioClient.makeBucket(bucketName, "us-east-1");
@@ -56,6 +73,7 @@ export async function uploadFile(
   contentType: string
 ) {
   try {
+    const minioClient = getMinioClient();
     await minioClient.putObject(bucketName, fileName, fileBuffer, fileBuffer.length, {
       "Content-Type": contentType,
     });
@@ -78,6 +96,7 @@ export async function getPresignedUrl(
   expirySeconds: number = 3600
 ) {
   try {
+    const minioClient = getMinioClient();
     const url = await minioClient.presignedGetObject(bucketName, fileName, expirySeconds);
     return url;
   } catch (error) {
@@ -89,10 +108,23 @@ export async function getPresignedUrl(
 // Helper function to delete file
 export async function deleteFile(bucketName: string, fileName: string) {
   try {
+    const minioClient = getMinioClient();
     await minioClient.removeObject(bucketName, fileName);
     return { success: true, fileName };
   } catch (error) {
     console.error("Error deleting file from MinIO:", error);
     throw error;
   }
+}
+
+export async function downloadFile(bucketName: string, fileName: string): Promise<Buffer> {
+  const minioClient = getMinioClient();
+  const stream = await minioClient.getObject(bucketName, fileName);
+  const chunks: Buffer[] = [];
+  await new Promise<void>((resolve, reject) => {
+    stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on("end", () => resolve());
+    stream.on("error", (err) => reject(err));
+  });
+  return Buffer.concat(chunks);
 }
