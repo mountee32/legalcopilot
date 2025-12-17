@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: template-postgres
     restart: unless-stopped
     environment:
@@ -11,7 +11,6 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
-      - ./init-schema.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
@@ -34,7 +33,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:RELEASE.2023-01-02T09-40-09Z
     container_name: template-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"

@@ -8,6 +8,7 @@ import { beforeAll, afterAll, beforeEach } from "vitest";
 import { db } from "@/lib/db";
 import { firms } from "@/lib/db/schema";
 import { waitForDatabase, cleanupTestFirm } from "@tests/helpers/db";
+import { ensureTestDatabaseMigrated } from "@tests/helpers/migrations";
 import { createFirm, TestFirm } from "@tests/fixtures/factories/firm";
 
 /**
@@ -41,6 +42,9 @@ export function setupIntegrationSuite(): IntegrationContext {
   };
 
   beforeAll(async () => {
+    ensureTestDatabase();
+    await ensureTestDatabaseMigrated();
+
     // Ensure database is ready
     await waitForDatabase();
 
@@ -88,6 +92,8 @@ export function setupFreshFirmPerTest(): IntegrationContext {
   const firmIds: string[] = [];
 
   beforeAll(async () => {
+    ensureTestDatabase();
+    await ensureTestDatabaseMigrated();
     await waitForDatabase();
   });
 

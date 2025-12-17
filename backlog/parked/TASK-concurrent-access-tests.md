@@ -4,6 +4,14 @@
 
 ## Effort: High
 
+## Status: PARKED
+
+**Reason**: The codebase does not yet have explicit optimistic locking or versioning across entities. Most of these tests are not enforceable in code today. Unpark when we implement:
+
+- `version` column on entities
+- 409 Conflict responses on stale updates
+- Idempotency keys on POST endpoints
+
 ## Summary
 
 Add tests for race conditions and concurrent modifications to ensure data integrity under parallel access.

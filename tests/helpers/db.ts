@@ -2,8 +2,37 @@
  * Database helpers for test setup and cleanup
  */
 import { db } from "@/lib/db";
-import { firms, users, clients, matters, documents, timeEntries, invoices } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  firms,
+  roles,
+  users,
+  clients,
+  matters,
+  documents,
+  documentChunks,
+  uploads,
+  timeEntries,
+  invoiceLineItems,
+  invoices,
+  payments,
+  approvalRequests,
+  timelineEvents,
+  auditLogs,
+  notificationPreferences,
+  notifications,
+  jobs,
+  emailAccounts,
+  emailProviderEvents,
+  calendarAccounts,
+  calendarProviderEvents,
+  paymentProviderAccounts,
+  paymentProviderEvents,
+  accountingConnections,
+  accountingSyncEvents,
+  signatureRequests,
+  esignatureProviderEvents,
+} from "@/lib/db/schema";
+import { eq, inArray, sql } from "drizzle-orm";
 
 /**
  * Clean up all test data for a specific firm
@@ -11,12 +40,50 @@ import { eq } from "drizzle-orm";
  */
 export async function cleanupTestFirm(firmId: string): Promise<void> {
   // Delete in reverse dependency order
+  const userRows = await db.select({ id: users.id }).from(users).where(eq(users.firmId, firmId));
+  const userIds = userRows.map((u) => u.id);
+
+  if (userIds.length > 0) {
+    await db.delete(uploads).where(inArray(uploads.userId, userIds));
+  }
+
+  await db
+    .delete(jobs)
+    .where(sql`(${jobs.data} ->> 'firmId') = ${firmId}`)
+    .catch(() => {});
+
+  await db.delete(esignatureProviderEvents).where(eq(esignatureProviderEvents.firmId, firmId));
+  await db.delete(signatureRequests).where(eq(signatureRequests.firmId, firmId));
+
+  await db.delete(accountingSyncEvents).where(eq(accountingSyncEvents.firmId, firmId));
+  await db.delete(accountingConnections).where(eq(accountingConnections.firmId, firmId));
+
+  await db.delete(paymentProviderEvents).where(eq(paymentProviderEvents.firmId, firmId));
+  await db.delete(paymentProviderAccounts).where(eq(paymentProviderAccounts.firmId, firmId));
+
+  await db.delete(calendarProviderEvents).where(eq(calendarProviderEvents.firmId, firmId));
+  await db.delete(calendarAccounts).where(eq(calendarAccounts.firmId, firmId));
+
+  await db.delete(emailProviderEvents).where(eq(emailProviderEvents.firmId, firmId));
+  await db.delete(emailAccounts).where(eq(emailAccounts.firmId, firmId));
+
+  await db.delete(notifications).where(eq(notifications.firmId, firmId));
+  await db.delete(notificationPreferences).where(eq(notificationPreferences.firmId, firmId));
+
+  await db.delete(auditLogs).where(eq(auditLogs.firmId, firmId));
+  await db.delete(timelineEvents).where(eq(timelineEvents.firmId, firmId));
+  await db.delete(approvalRequests).where(eq(approvalRequests.firmId, firmId));
+
+  await db.delete(payments).where(eq(payments.firmId, firmId));
+  await db.delete(invoiceLineItems).where(eq(invoiceLineItems.firmId, firmId));
+  await db.delete(documentChunks).where(eq(documentChunks.firmId, firmId));
   await db.delete(documents).where(eq(documents.firmId, firmId));
   await db.delete(timeEntries).where(eq(timeEntries.firmId, firmId));
   await db.delete(invoices).where(eq(invoices.firmId, firmId));
   await db.delete(matters).where(eq(matters.firmId, firmId));
   await db.delete(clients).where(eq(clients.firmId, firmId));
   await db.delete(users).where(eq(users.firmId, firmId));
+  await db.delete(roles).where(eq(roles.firmId, firmId));
   await db.delete(firms).where(eq(firms.id, firmId));
 }
 
@@ -44,12 +111,33 @@ export async function resetTestDatabase(): Promise<void> {
 
   // Truncate all tables in reverse dependency order
   // Add more tables as needed
+  await db.delete(esignatureProviderEvents);
+  await db.delete(signatureRequests);
+  await db.delete(accountingSyncEvents);
+  await db.delete(accountingConnections);
+  await db.delete(paymentProviderEvents);
+  await db.delete(paymentProviderAccounts);
+  await db.delete(calendarProviderEvents);
+  await db.delete(calendarAccounts);
+  await db.delete(emailProviderEvents);
+  await db.delete(emailAccounts);
+  await db.delete(notifications);
+  await db.delete(notificationPreferences);
+  await db.delete(auditLogs);
+  await db.delete(timelineEvents);
+  await db.delete(approvalRequests);
+  await db.delete(payments);
+  await db.delete(invoiceLineItems);
+  await db.delete(documentChunks);
   await db.delete(documents);
+  await db.delete(uploads);
+  await db.delete(jobs);
   await db.delete(timeEntries);
   await db.delete(invoices);
   await db.delete(matters);
   await db.delete(clients);
   await db.delete(users);
+  await db.delete(roles);
   await db.delete(firms);
 }
 
