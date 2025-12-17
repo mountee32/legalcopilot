@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 vi.mock("@/middleware/withAuth", () => ({
   withAuth: (handler: any) => (_request: any, ctx: any) =>
@@ -27,8 +28,11 @@ describe("Email AI process route", () => {
     delete process.env.OPENROUTER_API_KEY;
 
     const { POST } = await import("@/app/api/emails/[id]/ai/process/route");
+    const request = new NextRequest("http://localhost/api/emails/e1/ai/process", {
+      method: "POST",
+    });
     const response = await POST(
-      {} as any,
+      request as any,
       { params: { id: "123e4567-e89b-12d3-a456-426614174000" } } as any
     );
 
@@ -44,8 +48,11 @@ describe("Email AI process route", () => {
     vi.mocked(withFirmDb).mockResolvedValueOnce({ id: "e1" } as any);
 
     const { POST } = await import("@/app/api/emails/[id]/ai/process/route");
+    const request = new NextRequest("http://localhost/api/emails/e1/ai/process", {
+      method: "POST",
+    });
     const response = await POST(
-      {} as any,
+      request as any,
       { params: { id: "123e4567-e89b-12d3-a456-426614174000" } } as any
     );
 

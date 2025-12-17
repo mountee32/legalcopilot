@@ -1,5 +1,4 @@
-import { Queue, Worker, QueueEvents } from "bullmq";
-import redis from "@/lib/redis";
+import { Queue, QueueEvents } from "bullmq";
 
 // Create a BullMQ connection from the existing Redis client
 const connection = {

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import redis from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 import { minioClient } from "@/lib/storage/minio";
 import { sql } from "drizzle-orm";
 
@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
 
   // Check Redis
   try {
+    const redis = getRedis();
     await redis.ping();
     checks.redis = true;
     details.redis = "Connected";

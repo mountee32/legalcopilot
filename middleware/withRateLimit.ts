@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import redis from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 
 /**
  * Type definition for route handlers
@@ -126,6 +126,7 @@ export function withRateLimit(handler: RouteHandler, options: RateLimitOptions =
       const windowStart = now - windowSeconds;
 
       // Use Redis pipeline for atomic operations
+      const redis = getRedis();
       const pipeline = redis.pipeline();
 
       // Remove old entries outside the window
@@ -334,6 +335,7 @@ export async function getRateLimitStatus(
 
   try {
     // Count requests in current window
+    const redis = getRedis();
     const count = await redis.zcount(key, windowStart, now);
     const remaining = Math.max(0, max - count);
     const reset = now + windowSeconds;

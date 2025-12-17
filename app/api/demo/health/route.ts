@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import redis from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 import { minioClient } from "@/lib/storage/minio";
 import { emailQueue, imageQueue } from "@/lib/queue";
 import { sql } from "drizzle-orm";
@@ -26,6 +26,7 @@ export async function GET() {
 
   // Test Redis
   try {
+    const redis = getRedis();
     await redis.ping();
     const info = await redis.info("server");
     const version = info.match(/redis_version:([^\r\n]+)/)?.[1];

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import redis from "@/lib/redis";
+import { getRedis } from "@/lib/redis";
 
 export async function GET() {
   try {
+    const redis = getRedis();
     const info = await redis.info("stats");
     const lines = info.split("\r\n");
     const stats: Record<string, string> = {};
@@ -16,7 +17,7 @@ export async function GET() {
       }
     });
 
-    // Get memory info
+    // Get memory info - redis is already initialized above
     const memoryInfo = await redis.info("memory");
     const memoryLines = memoryInfo.split("\r\n");
 

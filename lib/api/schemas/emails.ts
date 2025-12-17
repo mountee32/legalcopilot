@@ -8,7 +8,7 @@ import {
   z,
   UuidSchema,
   DateTimeSchema,
-  EmailSchema,
+  EmailSchema as EmailStringSchema,
   PaginationSchema,
   PaginationMetaSchema,
 } from "./common";
@@ -38,12 +38,12 @@ export const EmailSentimentSchema = z
 
 export const EmailAddressSchema = z
   .object({
-    email: EmailSchema,
+    email: EmailStringSchema,
     name: z.string().optional(),
   })
   .openapi("EmailAddress");
 
-export const EmailSchema = z
+export const EmailMessageSchema = z
   .object({
     id: UuidSchema,
     matterId: UuidSchema.nullable(),
@@ -132,7 +132,7 @@ export const EmailQuerySchema = PaginationSchema.extend({
 
 export const EmailListSchema = z
   .object({
-    emails: z.array(EmailSchema),
+    emails: z.array(EmailMessageSchema),
     pagination: PaginationMetaSchema,
   })
   .openapi("EmailListResponse");
@@ -140,6 +140,6 @@ export const EmailListSchema = z
 export const EmailAIProcessResponseSchema = z
   .object({
     success: z.literal(true),
-    email: EmailSchema,
+    email: EmailMessageSchema,
   })
   .openapi("EmailAIProcessResponse");
