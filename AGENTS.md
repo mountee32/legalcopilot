@@ -144,7 +144,7 @@ npm run dev
 docker compose up -d
 
 # Run tests
-npm test                  # All unit + integration tests
+npm test                  # Unit tests (Vitest)
 npm run test:unit         # Unit tests only
 npm run test:integration  # Integration tests only (real DB)
 npm run test:e2e          # All Playwright tests
@@ -189,7 +189,16 @@ npm run format            # Run Prettier
 
 ## Testing
 
-All tests live under the `tests/` directory with a layered structure:
+All tests live under the `tests/` directory with a layered structure.
+
+### Current Coverage (353+ tests)
+
+| Category          | Tests | Status                            |
+| ----------------- | ----- | --------------------------------- |
+| Unit tests        | 353   | All passing                       |
+| Integration tests | 53    | 50 passing (3 auth config issues) |
+| E2E browser tests | 20    | 17 passing (3 selector issues)    |
+| E2E API tests     | 10    | Blocked by auth UUID issue        |
 
 ### Test Structure
 
@@ -199,6 +208,21 @@ All tests live under the `tests/` directory with a layered structure:
 | `tests/integration/` | Vitest     | API tests against real database      | Real     |
 | `tests/e2e/api/`     | Playwright | Multi-step API scenario tests        | Real     |
 | `tests/e2e/browser/` | Playwright | Full browser UI tests                | Real     |
+
+### Test Coverage by Domain
+
+| Domain              | Unit                                                                                         | Integration                                                                                 | E2E                                      |
+| ------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Auth/RBAC**       | `middleware/withAuth.test.ts`                                                                | `auth/session.test.ts`, `auth/rbac.test.ts`                                                 | -                                        |
+| **Database**        | -                                                                                            | `db/constraints.test.ts`, `db/transactions.test.ts`, `db/queries.test.ts`                   | -                                        |
+| **Storage (MinIO)** | `lib/storage/minio.test.ts`                                                                  | `storage/upload-download.test.ts`, `storage/presigned-urls.test.ts`                         | `journey-demo-storage.spec.ts`           |
+| **Queue (BullMQ)**  | `lib/queue/jobs.test.ts`                                                                     | `queue/processing.test.ts`, `queue/retry.test.ts`                                           | -                                        |
+| **AI/OpenRouter**   | `lib/ai/openrouter.test.ts`, `lib/documents/*.test.ts`                                       | -                                                                                           | -                                        |
+| **Webhooks**        | -                                                                                            | `webhooks/stripe.test.ts`, `webhooks/gocardless.test.ts`, `webhooks/email-provider.test.ts` | -                                        |
+| **Calendar Sync**   | -                                                                                            | `sync/google-calendar.test.ts`, `sync/outlook-calendar.test.ts`                             | -                                        |
+| **Accounting Sync** | -                                                                                            | `sync/xero.test.ts`                                                                         | -                                        |
+| **Edge Cases**      | `edge-cases/security.test.ts`, `edge-cases/money.test.ts`, `edge-cases/empty-states.test.ts` | -                                                                                           | -                                        |
+| **Demo Pages**      | -                                                                                            | -                                                                                           | `demo.spec.ts`, `journey-demo-*.spec.ts` |
 
 ### Writing Tests
 
@@ -274,15 +298,33 @@ const matter = await createMatter({ firmId: firm.id, clientId: client.id });
 ### Running Tests
 
 ```bash
+# Unit tests (no dependencies required)
+npm run test:unit         # Fast, mocked - always run first
+
+# Integration tests (requires Docker services)
+docker compose up -d      # Start PostgreSQL, Redis, MinIO
+npm run db:push           # Ensure schema is current
+npm run test:integration  # Tests against real database
+
+# E2E tests (requires Docker services + dev server)
+docker compose up -d
+npm run test:e2e:browser  # Browser UI tests (Chromium)
+npm run test:e2e:api      # API workflow tests
+
+# Combined commands
 npm test                  # All Vitest tests (unit + integration)
-npm run test:unit         # Unit tests only (fast, mocked)
-npm run test:integration  # Integration tests only (requires DB)
-npm run test:e2e          # All Playwright tests
-npm run test:e2e:api      # API scenario tests only
-npm run test:e2e:browser  # Browser tests only
-npm run test:seed         # Seed realistic test data
-npm run test:all          # Run everything
+npm run test:all          # Everything (Vitest + Playwright)
+npm run test:seed         # Seed realistic test data for manual testing
 ```
+
+### Prerequisites
+
+| Test Type   | Docker | Database   | Dev Server         |
+| ----------- | ------ | ---------- | ------------------ |
+| Unit        | No     | No         | No                 |
+| Integration | Yes    | Yes (real) | No                 |
+| E2E Browser | Yes    | Yes (real) | Yes (auto-started) |
+| E2E API     | Yes    | Yes (real) | Yes (auto-started) |
 
 ### Test Database Strategy
 
