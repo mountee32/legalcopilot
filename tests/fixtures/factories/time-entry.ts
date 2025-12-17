@@ -6,6 +6,12 @@ import { timeEntries } from "@/lib/db/schema";
 import { randomUUID } from "crypto";
 
 export type TimeEntryStatus = "draft" | "submitted" | "approved" | "billed" | "written_off";
+export type TimeEntrySource =
+  | "manual"
+  | "ai_suggested"
+  | "email_inferred"
+  | "document_activity"
+  | "calendar";
 
 export interface TimeEntryFactoryOptions {
   id?: string;
@@ -18,6 +24,8 @@ export interface TimeEntryFactoryOptions {
   hourlyRate?: string;
   amount?: string;
   status?: TimeEntryStatus;
+  source?: TimeEntrySource;
+  isBillable?: boolean;
   invoiceId?: string | null;
   activityCode?: string | null;
 }
@@ -33,6 +41,8 @@ export interface TestTimeEntry {
   hourlyRate: string;
   amount: string;
   status: string;
+  source: string;
+  isBillable: boolean;
   invoiceId: string | null;
 }
 
@@ -65,6 +75,8 @@ export async function createTimeEntry(options: TimeEntryFactoryOptions): Promise
     hourlyRate,
     amount,
     status: options.status || "draft",
+    source: options.source || "manual",
+    isBillable: options.isBillable ?? true,
     invoiceId: options.invoiceId ?? null,
     activityCode: options.activityCode ?? null,
     createdAt: new Date(),
@@ -84,6 +96,8 @@ export async function createTimeEntry(options: TimeEntryFactoryOptions): Promise
     hourlyRate: timeEntry.hourlyRate,
     amount: timeEntry.amount,
     status: timeEntry.status,
+    source: timeEntry.source,
+    isBillable: timeEntry.isBillable,
     invoiceId: timeEntry.invoiceId,
   };
 }
@@ -110,6 +124,8 @@ export function buildTimeEntryData(
     hourlyRate,
     amount: options.amount ?? calculateAmount(durationMinutes, hourlyRate),
     status: options.status || "draft",
+    source: options.source || "manual",
+    isBillable: options.isBillable ?? true,
   };
 }
 

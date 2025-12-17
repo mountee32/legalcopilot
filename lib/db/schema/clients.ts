@@ -43,6 +43,24 @@ export const clientStatusEnum = pgEnum("client_status", [
 ]);
 
 /**
+ * Client acquisition source.
+ * Tracks where/how the client was acquired for marketing attribution.
+ */
+export const clientSourceEnum = pgEnum("client_source", [
+  "website", // Direct website enquiry
+  "referral", // Referred by existing client/contact
+  "walk_in", // Walk-in enquiry
+  "phone", // Phone enquiry
+  "email", // Email enquiry
+  "lead_conversion", // Converted from lead
+  "existing_client", // Existing client (new matter)
+  "partner_firm", // Referral from partner law firm
+  "marketing", // Marketing campaign
+  "social_media", // Social media enquiry
+  "other", // Other source
+]);
+
+/**
  * Core client record.
  *
  * For individuals: name fields used directly
@@ -62,6 +80,12 @@ export const clients = pgTable(
 
     type: clientTypeEnum("type").notNull().default("individual"),
     status: clientStatusEnum("status").notNull().default("prospect"),
+
+    // Acquisition tracking
+    /** How the client was acquired (for marketing attribution) */
+    source: clientSourceEnum("source"),
+    /** Optional link to source record (e.g., lead ID if converted from lead) */
+    sourceId: uuid("source_id"),
 
     // Individual fields
     /** Title (Mr, Mrs, Ms, Dr, etc.) */

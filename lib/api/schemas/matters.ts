@@ -79,6 +79,25 @@ export const MatterSchema = z
     keyDeadline: DateTimeSchema.nullable(),
 
     notes: z.string().nullable(),
+
+    riskScore: z.number().int().min(0).max(100).nullable().openapi({
+      description: "AI-calculated risk score (0-100, higher = more risky)",
+      example: 35,
+    }),
+    riskFactors: z
+      .array(z.any())
+      .nullable()
+      .openapi({
+        description: "AI risk assessment factors for explainability",
+        example: [
+          { factor: "tight_deadline", weight: 0.4 },
+          { factor: "high_value", weight: 0.3 },
+        ],
+      }),
+    riskAssessedAt: DateTimeSchema.nullable().openapi({
+      description: "When AI last calculated the risk score",
+    }),
+
     createdAt: DateTimeSchema,
     updatedAt: DateTimeSchema,
   })
@@ -128,6 +147,10 @@ export const UpdateMatterSchema = z
 
     keyDeadline: z.string().datetime().nullable().optional(),
     notes: z.string().nullable().optional(),
+
+    riskScore: z.number().int().min(0).max(100).nullable().optional(),
+    riskFactors: z.array(z.any()).nullable().optional(),
+    riskAssessedAt: z.string().datetime().nullable().optional(),
   })
   .openapi("UpdateMatterRequest");
 

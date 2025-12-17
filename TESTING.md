@@ -28,6 +28,32 @@ This will:
 4. Start Docker services
 5. Initialize database
 
+## Automated Tests
+
+### Vitest (unit)
+
+```bash
+npm test
+```
+
+### Vitest (integration)
+
+Requires Docker services running (`docker compose up -d`) and the app DB migrated/pushed.
+
+```bash
+npm run test:integration
+```
+
+### Playwright (E2E)
+
+Requires Docker services running (`docker compose up -d`) and the app DB migrated/pushed. Playwright will start the Next dev server automatically via `playwright.config.ts`.
+
+```bash
+npm run test:e2e         # all projects (API + browsers)
+npm run test:e2e:api     # API scenarios only
+npm run test:e2e:browser # browser UI tests (chromium)
+```
+
 ## Manual Testing
 
 ### 1. Install Dependencies

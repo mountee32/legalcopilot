@@ -49,10 +49,13 @@ export const PATCH = withErrorHandler(
             companyName: data.companyName ?? undefined,
             email: data.email ?? undefined,
             phone: data.phone ?? undefined,
+            enquiryType: data.enquiryType ?? undefined,
+            message: data.message ?? undefined,
             source: data.source ?? undefined,
             status: data.status ?? undefined,
             score: data.score ?? undefined,
             notes: data.notes ?? undefined,
+            assignedTo: data.assignedTo ?? undefined,
             updatedAt: new Date(),
           })
           .where(and(eq(leads.id, id), eq(leads.firmId, firmId)))

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { getRedis } from "@/lib/redis";
-import { minioClient } from "@/lib/storage/minio";
+import { getMinioClient } from "@/lib/storage/minio";
 import { sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
 
   // Check MinIO
   try {
+    const minioClient = getMinioClient();
     await minioClient.listBuckets();
     checks.minio = true;
     details.minio = "Connected";

@@ -20,6 +20,7 @@ export type GenerateInvoiceInput = {
   notes?: string;
   invoiceDate: Date;
   dueDate: Date;
+  vatRate?: string;
 };
 
 function buildInvoiceNumber(allocated: number, date: Date): string {
@@ -110,7 +111,8 @@ export async function generateInvoiceTx(
   );
   const subtotal = roundMoney(timeSubtotal + manualSubtotal);
 
-  const vatRate = 0.2;
+  const vatRateStr = input.vatRate ?? "20.00";
+  const vatRate = parseMoney(vatRateStr) / 100;
   const vatAmount = roundMoney(subtotal * vatRate);
   const total = roundMoney(subtotal + vatAmount);
 
@@ -122,10 +124,11 @@ export async function generateInvoiceTx(
       clientId: input.clientId,
       matterId: input.matterId ?? null,
       status: "draft",
-      invoiceDate: input.invoiceDate,
-      dueDate: input.dueDate,
+      invoiceDate: input.invoiceDate.toISOString().split("T")[0],
+      dueDate: input.dueDate.toISOString().split("T")[0],
       subtotal: formatMoney(subtotal),
       vatAmount: formatMoney(vatAmount),
+      vatRate: vatRateStr,
       total: formatMoney(total),
       paidAmount: "0",
       balanceDue: formatMoney(total),

@@ -101,6 +101,8 @@ export const POST = withErrorHandler(
             hourlyRate: data.hourlyRate,
             amount: formatMoney(amount),
             status: "draft",
+            source: data.source ?? "manual",
+            isBillable: data.isBillable ?? true,
             activityCode: data.activityCode ?? null,
             updatedAt: new Date(),
           })

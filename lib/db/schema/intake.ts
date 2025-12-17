@@ -20,7 +20,7 @@ import {
 import { firms } from "./firms";
 import { users } from "./users";
 import { clients } from "./clients";
-import { matters } from "./matters";
+import { matters, practiceAreaEnum } from "./matters";
 
 export const leadStatusEnum = pgEnum("lead_status", [
   "new",
@@ -55,10 +55,15 @@ export const leads = pgTable(
     email: text("email"),
     phone: text("phone"),
 
+    enquiryType: practiceAreaEnum("enquiry_type"),
+    message: text("message"),
+
     source: text("source"),
     status: leadStatusEnum("status").notNull().default("new"),
     score: integer("score"),
     notes: text("notes"),
+
+    assignedTo: uuid("assigned_to").references(() => users.id, { onDelete: "set null" }),
 
     convertedToClientId: uuid("converted_to_client_id").references(() => clients.id, {
       onDelete: "set null",
@@ -88,8 +93,12 @@ export const quotes = pgTable(
       .notNull()
       .references(() => leads.id, { onDelete: "cascade" }),
 
+    type: practiceAreaEnum("type").notNull(),
     status: quoteStatusEnum("status").notNull().default("draft"),
+
     items: jsonb("items"),
+    fees: jsonb("fees"), // Array of { description: string, amount: number } for professional fees
+    disbursements: jsonb("disbursements"), // Array of { description: string, amount: number } for third-party costs
 
     subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull().default("0"),
     vatAmount: numeric("vat_amount", { precision: 10, scale: 2 }).notNull().default("0"),

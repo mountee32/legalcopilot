@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getRedis } from "@/lib/redis";
-import { minioClient } from "@/lib/storage/minio";
+import { getMinioClient } from "@/lib/storage/minio";
 import { emailQueue, imageQueue } from "@/lib/queue";
 import { sql } from "drizzle-orm";
 
@@ -44,6 +44,7 @@ export async function GET() {
 
   // Test MinIO
   try {
+    const minioClient = getMinioClient();
     const buckets = await minioClient.listBuckets();
     services.minio = {
       status: "healthy",

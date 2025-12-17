@@ -1,0 +1,48 @@
+=== Real API Integration Tests ===
+
+Step 1: Creating test user...
+   ✓ User created/authenticated: test-1766008694577@example.com
+
+=== Testing Lead API ===
+
+Creating lead with new fields...
+   ✓ Lead created: cfbe2be8-9ddd-4be4-bc6a-02be7cab9714
+   ✓ Lead has enquiryType: conveyancing
+   ✓ Lead has message field
+
+=== Testing Client API ===
+
+Creating client with new fields...
+   ✓ Client created: c34f99aa-f217-4d18-882a-cd3316ecbd77
+   ✓ Client has source: lead_conversion
+
+=== Testing Matter API ===
+
+Creating matter with new fields...
+   ✓ Matter created: 46959bac-ee09-4045-b390-d472bd1496d0
+Updating matter with risk assessment...
+   ✓ Matter has riskScore: 25
+
+=== Testing Time Entry API ===
+
+Creating time entry with new fields...
+   ✓ Time entry created: e94ef9d8-5a00-461d-bb1e-f3a212737856
+   ✓ Time entry has source: ai_suggested
+   ✓ Time entry has isBillable: true
+
+=== Testing Invoice API ===
+
+Submitting time entry for approval...
+   ✓ Time entry submitted, approval request: 317a820b-b64f-4f4f-a429-21c80341a124
+Approving time entry...
+   ✓ Time entry approved
+Generating invoice with vatRate...
+   ✓ Invoice generated: 01e2721c-46f5-42d1-ad33-737de1cbda6b
+   ✓ Invoice has vatRate: 20.00%
+
+========================================
+=== TEST SUMMARY ===
+========================================
+
+✅ All API tests passed! New fields working correctly.
+

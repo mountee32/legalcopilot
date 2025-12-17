@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, streamText } from "ai";
 
-if (!process.env.OPENROUTER_API_KEY) {
+if (!process.env.OPENROUTER_API_KEY && process.env.NODE_ENV !== "test") {
   console.warn("⚠️ OPENROUTER_API_KEY is not set - AI features will be disabled");
 }
 

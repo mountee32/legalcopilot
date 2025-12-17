@@ -37,6 +37,7 @@ export const ApprovalRequestSchema = z
     proposedPayload: z.record(z.unknown()).nullable(),
     entityType: z.string().nullable(),
     entityId: UuidSchema.nullable(),
+    matterId: UuidSchema.nullable(),
     status: ApprovalStatusSchema,
     decidedBy: UuidSchema.nullable(),
     decidedAt: DateTimeSchema.nullable(),
@@ -56,6 +57,20 @@ export const ApprovalQuerySchema = PaginationSchema.extend({
   entityType: z.string().optional(),
   entityId: UuidSchema.optional(),
 }).openapi("ApprovalQuery");
+
+export const CreateApprovalRequestSchema = z
+  .object({
+    sourceType: ApprovalSourceSchema.optional(),
+    sourceId: UuidSchema.optional(),
+    action: z.string().openapi({ example: "email.send" }),
+    summary: z.string(),
+    proposedPayload: z.record(z.unknown()).optional(),
+    entityType: z.string().optional(),
+    entityId: UuidSchema.optional(),
+    matterId: UuidSchema.optional(),
+    aiMetadata: z.record(z.unknown()).optional(),
+  })
+  .openapi("CreateApprovalRequest");
 
 export const ApprovalListSchema = z
   .object({
@@ -90,3 +105,4 @@ export const BulkApproveResponseSchema = z
 
 export type ApprovalRequest = z.infer<typeof ApprovalRequestSchema>;
 export type ApprovalQuery = z.infer<typeof ApprovalQuerySchema>;
+export type CreateApprovalRequest = z.infer<typeof CreateApprovalRequestSchema>;

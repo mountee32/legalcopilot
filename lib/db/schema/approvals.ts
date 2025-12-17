@@ -8,6 +8,7 @@
 import { pgTable, text, timestamp, uuid, pgEnum, jsonb, index } from "drizzle-orm/pg-core";
 import { firms } from "./firms";
 import { users } from "./users";
+import { matters } from "./matters";
 
 export const approvalSourceEnum = pgEnum("approval_source", ["ai", "system", "user"]);
 
@@ -44,6 +45,9 @@ export const approvalRequests = pgTable(
     entityType: text("entity_type"),
     entityId: uuid("entity_id"),
 
+    /** Optional direct reference to matter for matter-level approvals */
+    matterId: uuid("matter_id").references(() => matters.id, { onDelete: "cascade" }),
+
     status: approvalStatusEnum("status").notNull().default("pending"),
     decidedBy: uuid("decided_by").references(() => users.id, { onDelete: "set null" }),
     decidedAt: timestamp("decided_at"),
@@ -64,6 +68,7 @@ export const approvalRequests = pgTable(
     firmStatusIdx: index("approval_requests_firm_status_idx").on(t.firmId, t.status),
     actionIdx: index("approval_requests_action_idx").on(t.action),
     entityIdx: index("approval_requests_entity_idx").on(t.entityType, t.entityId),
+    matterIdx: index("approval_requests_matter_idx").on(t.matterId),
   })
 );
 

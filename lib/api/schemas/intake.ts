@@ -15,6 +15,7 @@ import {
   PaginationSchema,
   PaginationMetaSchema,
 } from "./common";
+import { PracticeAreaSchema } from "./matters";
 
 export const LeadStatusSchema = z
   .enum(["new", "contacted", "qualified", "won", "lost", "archived"])
@@ -28,10 +29,13 @@ export const LeadSchema = z
     companyName: z.string().nullable(),
     email: EmailSchema.nullable(),
     phone: PhoneSchema.nullable(),
+    enquiryType: PracticeAreaSchema.nullable(),
+    message: z.string().nullable(),
     source: z.string().nullable(),
     status: LeadStatusSchema,
     score: z.number().int().nullable(),
     notes: z.string().nullable(),
+    assignedTo: UuidSchema.nullable(),
     convertedToClientId: UuidSchema.nullable(),
     createdById: UuidSchema.nullable(),
     createdAt: DateTimeSchema,
@@ -45,9 +49,12 @@ const LeadInputSchema = z.object({
   companyName: z.string().optional(),
   email: EmailSchema.optional(),
   phone: PhoneSchema.optional(),
+  enquiryType: PracticeAreaSchema.optional(),
+  message: z.string().optional(),
   source: z.string().optional(),
   score: z.number().int().min(0).max(100).optional(),
   notes: z.string().optional(),
+  assignedTo: UuidSchema.optional(),
 });
 
 export const CreateLeadSchema = LeadInputSchema.refine(
@@ -77,12 +84,25 @@ export const QuoteStatusSchema = z
   .enum(["draft", "sent", "accepted", "rejected", "expired", "converted"])
   .openapi("QuoteStatus");
 
+const QuoteFeeSchema = z.object({
+  description: z.string(),
+  amount: z.number(),
+});
+
+const QuoteDisbursementSchema = z.object({
+  description: z.string(),
+  amount: z.number(),
+});
+
 export const QuoteSchema = z
   .object({
     id: UuidSchema,
     leadId: UuidSchema,
+    type: PracticeAreaSchema,
     status: QuoteStatusSchema,
     items: z.array(z.unknown()).nullable(),
+    fees: z.array(QuoteFeeSchema).nullable(),
+    disbursements: z.array(QuoteDisbursementSchema).nullable(),
     subtotal: MoneySchema,
     vatAmount: MoneySchema,
     total: MoneySchema,
@@ -98,7 +118,10 @@ export const QuoteSchema = z
 export const CreateQuoteSchema = z
   .object({
     leadId: UuidSchema,
+    type: PracticeAreaSchema,
     items: z.array(z.unknown()).optional(),
+    fees: z.array(QuoteFeeSchema).optional(),
+    disbursements: z.array(QuoteDisbursementSchema).optional(),
     subtotal: MoneySchema.optional(),
     vatAmount: MoneySchema.optional(),
     total: MoneySchema,
@@ -109,8 +132,11 @@ export const CreateQuoteSchema = z
 
 export const UpdateQuoteSchema = z
   .object({
+    type: PracticeAreaSchema.optional(),
     status: QuoteStatusSchema.optional(),
     items: z.array(z.unknown()).nullable().optional(),
+    fees: z.array(QuoteFeeSchema).nullable().optional(),
+    disbursements: z.array(QuoteDisbursementSchema).nullable().optional(),
     subtotal: MoneySchema.optional(),
     vatAmount: MoneySchema.optional(),
     total: MoneySchema.optional(),
@@ -135,22 +161,7 @@ export const ConvertLeadSchema = z
   .object({
     clientType: z.enum(["individual", "company"]).default("individual"),
     matterTitle: z.string().min(1).max(200),
-    practiceArea: z
-      .enum([
-        "conveyancing",
-        "litigation",
-        "family",
-        "probate",
-        "employment",
-        "immigration",
-        "personal_injury",
-        "commercial",
-        "criminal",
-        "ip",
-        "insolvency",
-        "other",
-      ])
-      .default("other"),
+    practiceArea: PracticeAreaSchema.default("other"),
   })
   .openapi("ConvertLeadRequest");
 

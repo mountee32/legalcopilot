@@ -52,7 +52,7 @@ export const PATCH = withErrorHandler(
 
       const updated = await withFirmDb(firmId, async (tx) => {
         const [current] = await tx
-          .select({ status: invoices.status })
+          .select({ status: invoices.status, subtotal: invoices.subtotal })
           .from(invoices)
           .where(and(eq(invoices.id, id), eq(invoices.firmId, firmId)))
           .limit(1);
@@ -61,14 +61,29 @@ export const PATCH = withErrorHandler(
         if (current.status !== "draft")
           throw new ValidationError("Only draft invoices can be updated");
 
+        const updateData: Record<string, any> = {
+          dueDate: data.dueDate ?? undefined,
+          terms: data.terms ?? undefined,
+          notes: data.notes ?? undefined,
+          updatedAt: new Date(),
+        };
+
+        if (data.vatRate !== undefined) {
+          const { parseMoney, roundMoney, formatMoney } = await import("@/lib/billing/money");
+          const subtotal = parseMoney(current.subtotal);
+          const vatRate = parseMoney(data.vatRate) / 100;
+          const vatAmount = roundMoney(subtotal * vatRate);
+          const total = roundMoney(subtotal + vatAmount);
+
+          updateData.vatRate = data.vatRate;
+          updateData.vatAmount = formatMoney(vatAmount);
+          updateData.total = formatMoney(total);
+          updateData.balanceDue = formatMoney(total);
+        }
+
         const [row] = await tx
           .update(invoices)
-          .set({
-            dueDate: data.dueDate ?? undefined,
-            terms: data.terms ?? undefined,
-            notes: data.notes ?? undefined,
-            updatedAt: new Date(),
-          })
+          .set(updateData)
           .where(and(eq(invoices.id, id), eq(invoices.firmId, firmId)))
           .returning();
 

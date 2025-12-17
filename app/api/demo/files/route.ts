@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { uploads } from "@/lib/db/schema";
-import { minioClient, uploadFile, deleteFile } from "@/lib/storage/minio";
+import { deleteFile, initializeBucket, uploadFile } from "@/lib/storage/minio";
 import { eq } from "drizzle-orm";
 
 const BUCKET_NAME = "uploads";
@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
+
+    await initializeBucket(BUCKET_NAME);
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer();

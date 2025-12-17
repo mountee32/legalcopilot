@@ -28,6 +28,28 @@ export const ClientStatusSchema = z.enum(["prospect", "active", "dormant", "arch
 });
 
 /**
+ * Client source values.
+ */
+export const ClientSourceSchema = z
+  .enum([
+    "website",
+    "referral",
+    "walk_in",
+    "phone",
+    "email",
+    "lead_conversion",
+    "existing_client",
+    "partner_firm",
+    "marketing",
+    "social_media",
+    "other",
+  ])
+  .openapi({
+    example: "website",
+    description: "How the client was acquired (for marketing attribution)",
+  });
+
+/**
  * Client entity for API responses.
  */
 export const ClientSchema = z
@@ -36,6 +58,12 @@ export const ClientSchema = z
     reference: z.string().openapi({ example: "CLI-2024-0042" }),
     type: ClientTypeSchema,
     status: ClientStatusSchema,
+
+    // Acquisition tracking
+    source: ClientSourceSchema.nullable(),
+    sourceId: UuidSchema.nullable().openapi({
+      description: "Link to source record (e.g., lead ID if converted from lead)",
+    }),
 
     // Individual fields
     title: z.string().nullable().openapi({ example: "Mr" }),
@@ -73,6 +101,10 @@ export const ClientSchema = z
 
 const ClientInputSchema = z.object({
   type: ClientTypeSchema.default("individual"),
+
+  // Acquisition tracking
+  source: ClientSourceSchema.optional(),
+  sourceId: UuidSchema.optional(),
 
   // Individual fields (required if type is individual)
   title: z.string().optional(),

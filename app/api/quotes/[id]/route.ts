@@ -44,8 +44,11 @@ export const PATCH = withErrorHandler(
         const [updated] = await tx
           .update(quotes)
           .set({
+            type: data.type ?? undefined,
             status: data.status ?? undefined,
             items: data.items ?? undefined,
+            fees: data.fees ?? undefined,
+            disbursements: data.disbursements ?? undefined,
             subtotal: data.subtotal ?? undefined,
             vatAmount: data.vatAmount ?? undefined,
             total: data.total ?? undefined,

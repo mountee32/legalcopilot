@@ -18,6 +18,10 @@ export const TimeEntryStatusSchema = z
   .enum(["draft", "submitted", "approved", "billed", "written_off"])
   .openapi("TimeEntryStatus");
 
+export const TimeEntrySourceSchema = z
+  .enum(["manual", "ai_suggested", "email_inferred", "document_activity", "calendar"])
+  .openapi("TimeEntrySource");
+
 export const TimeEntrySchema = z
   .object({
     id: UuidSchema,
@@ -29,6 +33,8 @@ export const TimeEntrySchema = z
     hourlyRate: MoneySchema,
     amount: MoneySchema,
     status: TimeEntryStatusSchema,
+    source: TimeEntrySourceSchema,
+    isBillable: z.boolean(),
     invoiceId: UuidSchema.nullable(),
     activityCode: z.string().nullable(),
     createdAt: DateTimeSchema,
@@ -49,6 +55,8 @@ export const CreateTimeEntrySchema = z
       .max(24 * 60)
       .refine((n) => n % 6 === 0, "Duration must be in 6-minute units"),
     hourlyRate: MoneySchema,
+    source: TimeEntrySourceSchema.optional(),
+    isBillable: z.boolean().optional(),
     activityCode: z.string().optional(),
   })
   .openapi("CreateTimeEntryRequest");
@@ -65,6 +73,8 @@ export const UpdateTimeEntrySchema = z
       .refine((n) => n % 6 === 0, "Duration must be in 6-minute units")
       .optional(),
     hourlyRate: MoneySchema.optional(),
+    source: TimeEntrySourceSchema.optional(),
+    isBillable: z.boolean().optional(),
     activityCode: z.string().nullable().optional(),
   })
   .openapi("UpdateTimeEntryRequest");

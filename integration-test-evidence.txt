@@ -1,0 +1,531 @@
+
+> template-project@0.1.0 test:integration
+> vitest run tests/integration
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /home/andy/dev/legalcopilot
+
+ ✓ tests/integration/search/semantic.test.ts (24 tests) 923ms
+ ✓ tests/integration/signatures/requests.test.ts (30 tests) 609ms
+ ✓ tests/integration/approvals/crud.test.ts (41 tests) 463ms
+ ✓ tests/integration/tasks/crud.test.ts (31 tests) 706ms
+stdout | tests/integration/invoices/crud.test.ts > Invoices Integration - Invoice Generation > generates invoice from approved time entries
+✅ Redis connected
+
+ ✓ tests/integration/invoices/crud.test.ts (38 tests) 577ms
+ ✓ tests/integration/time-entries/crud.test.ts (36 tests) 496ms
+ ✓ tests/integration/documents/crud.test.ts (25 tests) 551ms
+ ✓ tests/integration/emails/crud.test.ts (38 tests) 579ms
+ ✓ tests/integration/notifications/crud.test.ts (35 tests) 625ms
+ ✓ tests/integration/payments/crud.test.ts (35 tests) 550ms
+ ✓ tests/integration/ai/features.test.ts (25 tests) 508ms
+ ✓ tests/integration/conflicts/search.test.ts (16 tests) 383ms
+ ✓ tests/integration/matters/timeline.test.ts (17 tests) 415ms
+ ❯ tests/integration/intake/leads-quotes.test.ts (33 tests | 15 failed) 429ms
+   × Quotes Integration - CRUD > Create > creates quote for a lead 5ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - CRUD > Create > creates quote with line items 12ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - CRUD > Create > persists quote data to database 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - CRUD > Read > retrieves quote by ID 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - CRUD > Read > lists quotes for a lead 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - CRUD > Update > updates quote amounts 5ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - CRUD > Update > updates quote status 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Workflow > sends quote to lead (draft -> sent) 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Workflow > marks quote as accepted 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Workflow > marks quote as rejected 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Workflow > accepted quote can trigger conversion 3ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Multi-Tenancy > isolates quotes between firms 5ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Multi-Tenancy > cannot access quotes from another firm's leads 5ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Filtering > filters quotes by status 6ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Quotes Integration - Filtering > filters quotes by leadId 7ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+ ✓ tests/integration/integrations/accounts.test.ts (37 tests) 472ms
+ ✓ tests/integration/calendar/crud.test.ts (26 tests) 364ms
+ ✓ tests/integration/matters/crud.test.ts (27 tests) 530ms
+ ✓ tests/integration/firm/settings.test.ts (22 tests) 302ms
+ ✓ tests/integration/templates/generation.test.ts (27 tests) 217ms
+ ✓ tests/integration/auth/roles.test.ts (31 tests) 377ms
+ ❯ tests/integration/intake/conversion.test.ts (12 tests | 2 failed) 196ms
+   × Lead Conversion Integration > Convert with quote - verify quote linked to new client > maintains quote relationship through conversion 7ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+   × Lead Conversion Integration > Convert with quote - verify quote linked to new client > converts multiple quotes from same lead 14ms
+     → null value in column "type" of relation "quotes" violates not-null constraint
+ ✓ tests/integration/calendar/upcoming.test.ts (12 tests) 217ms
+ ✓ tests/integration/matters/ai.test.ts (14 tests) 308ms
+ ✓ tests/integration/templates/crud.test.ts (22 tests) 419ms
+ ✓ tests/integration/invoices/actions.test.ts (16 tests) 308ms
+ ✓ tests/integration/time-entries/bulk.test.ts (11 tests) 263ms
+ ✓ tests/integration/clients/crud.test.ts (19 tests) 329ms
+ ✓ tests/integration/tasks/completion.test.ts (10 tests) 228ms
+stderr | tests/integration/webhooks/handlers.test.ts > Webhooks - Integration Tests > Email Webhooks > rejects invalid webhook secret
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/email/29490117-89cd-478d-be92-69d0011afe4a/5a01c4b1-b0d1-420c-9b76-497ef6d48423',
+  method: 'POST',
+  error: 'Invalid webhook secret',
+  stack: 'ValidationError: Invalid webhook secret\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/email/[firmId]/[accountId]/route.ts:29:13\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/email/[firmId]/[accountId]/route.ts:20:18\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/webhooks/handlers.test.ts:126:24\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+stderr | tests/integration/webhooks/handlers.test.ts > Webhooks - Integration Tests > Calendar Webhooks > rejects webhook for disconnected account
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/calendar/29490117-89cd-478d-be92-69d0011afe4a/733775d0-d0e6-4ea2-8076-957eb4530016',
+  method: 'POST',
+  error: 'Calendar account is not connected',
+  stack: 'ValidationError: Calendar account is not connected\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/calendar/[firmId]/[accountId]/route.ts:28:13\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/calendar/[firmId]/[accountId]/route.ts:20:18\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/webhooks/handlers.test.ts:333:24\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+stderr | tests/integration/webhooks/handlers.test.ts > Webhooks - Integration Tests > Accounting Webhooks > rejects invalid connection ID
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/accounting/29490117-89cd-478d-be92-69d0011afe4a/00000000-0000-0000-0000-000000000000',
+  method: 'POST',
+  error: 'Unknown accounting connection',
+  stack: 'ValidationError: Unknown accounting connection\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/accounting/[firmId]/[connectionId]/route.ts:30:28\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/accounting/[firmId]/[connectionId]/route.ts:22:3\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/webhooks/handlers.test.ts:728:24\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+stderr | tests/integration/webhooks/handlers.test.ts > Webhooks - Integration Tests > E-Signature Webhooks > rejects invalid webhook signature
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/esignature/29490117-89cd-478d-be92-69d0011afe4a/7c739eee-2da8-428a-b2ee-eeb6370bbd08',
+  method: 'POST',
+  error: 'Invalid webhook secret',
+  stack: 'ValidationError: Invalid webhook secret\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/esignature/[firmId]/[requestId]/route.ts:15:42\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:20\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/webhooks/handlers.test.ts:927:30\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runFiles (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1262:5)'
+}
+
+ ✓ tests/integration/webhooks/handlers.test.ts (20 tests) 754ms
+   ✓ Webhooks - Integration Tests > Email Webhooks > handles new email notification and stores in database 383ms
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > uploads small file successfully
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > uploads file with metadata (description, tags)
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects file that is too large
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects disallowed file type
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > allows file to be accessed via presigned URL
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > Storage Operations > performs upload and download round-trip
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > Storage Operations > deletes file successfully
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > Storage Operations > lists files for firm
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Multi-Tenancy > isolates files between firms
+✅ MinIO bucket already exists: test-uploads
+
+stdout | tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Multi-Tenancy > prevents firm A from accessing firm B files
+✅ MinIO bucket already exists: test-uploads
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts (12 tests | 7 failed) 1428ms
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > uploads small file successfully 240ms
+     → expected false to be true // Object.is equality
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > uploads file with metadata (description, tags) 142ms
+     → expected false to be true // Object.is equality
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects file that is too large 177ms
+     → expected 500 to be 400 // Object.is equality
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects disallowed file type 215ms
+     → expected 500 to be 400 // Object.is equality
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects request with no file provided 139ms
+     → expected 500 to be 400 // Object.is equality
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects request with no firmId 140ms
+     → expected 500 to be 400 // Object.is equality
+   × Storage Integration - Upload Endpoint > POST /api/storage/upload > allows file to be accessed via presigned URL 155ms
+     → expected false to be true // Object.is equality
+ ✓ tests/integration/notifications/preferences.test.ts (8 tests) 480ms
+ ✓ tests/integration/queue/advanced.test.ts (7 tests) 1293ms
+   ✓ Queue Integration - Advanced Features > Priority Queues > higher priority job (lower number) processes before lower priority 505ms
+   ✓ Queue Integration - Advanced Features > Multiple Priorities Ordering > processes multiple jobs in correct priority order 506ms
+ ✓ tests/integration/db/constraints.test.ts (9 tests) 324ms
+stderr | tests/integration/documents/chunks.test.ts > Document Chunks API - Integration Tests > GET /api/documents/[id]/chunks > returns 404 for non-existent document
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/documents/6b54ba7a-fad1-4ed2-9ff7-d3679ad53b84/chunks',
+  method: 'GET',
+  error: 'Document not found',
+  stack: 'NotFoundError: Document not found\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/documents/[id]/chunks/route.ts:25:23\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/documents/[id]/chunks/route.ts:18:20\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/documents/chunks.test.ts:141:24\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+stderr | tests/integration/documents/chunks.test.ts > Document Chunks API - Integration Tests > GET /api/documents/[id]/chunks > returns 404 for document from different firm
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/documents/e10d0833-da20-412a-b402-360474fc5bf8/chunks',
+  method: 'GET',
+  error: 'Document not found',
+  stack: 'NotFoundError: Document not found\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/documents/[id]/chunks/route.ts:25:23\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/documents/[id]/chunks/route.ts:18:20\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/documents/chunks.test.ts:167:24\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+ ✓ tests/integration/documents/chunks.test.ts (5 tests) 460ms
+   ✓ Document Chunks API - Integration Tests > GET /api/documents/[id]/chunks > returns chunks for document with chunks 318ms
+stderr | tests/integration/auth/rbac.test.ts > Auth Integration - RBAC > returns 403 for missing permission at route boundary
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/clients',
+  method: 'GET',
+  error: 'Missing permission: clients:read',
+  stack: 'ForbiddenError: Missing permission: clients:read\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withPermission.ts:16:15\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/auth/rbac.test.ts:111:17\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runFiles (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1262:5)\n' +
+    '    at startTests (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1271:3)'
+}
+
+stderr | tests/integration/auth/rbac.test.ts > Auth Integration - RBAC > prevents cross-firm resource access (404)
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/clients/87aa373a-d200-4962-807a-6496d4219716',
+  method: 'GET',
+  error: 'Client not found',
+  stack: 'NotFoundError: Client not found\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/clients/[id]/route.ts:15:22\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withPermission.ts:19:14\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/auth/rbac.test.ts:141:19\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)\n' +
+    '    at runFiles (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1262:5)'
+}
+
+ ✓ tests/integration/auth/rbac.test.ts (4 tests) 786ms
+   ✓ Auth Integration - RBAC > returns 403 for missing permission at route boundary 448ms
+stderr | tests/integration/webhooks/stripe.test.ts > Webhooks - Payments (Stripe) > rejects invalid webhook secret
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/payments/ed15267d-8257-4939-bc0a-b933c50246bf/65518bb9-bd55-42a3-8e65-42c0f0707ad1',
+  method: 'POST',
+  error: 'Invalid webhook secret',
+  stack: 'ValidationError: Invalid webhook secret\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/payments/[firmId]/[accountId]/route.ts:51:13\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/payments/[firmId]/[accountId]/route.ts:39:18\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/webhooks/stripe.test.ts:44:17\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+ ✓ tests/integration/webhooks/stripe.test.ts (2 tests) 419ms
+   ✓ Webhooks - Payments (Stripe) > rejects invalid webhook secret 309ms
+ ✓ tests/integration/db/queries.test.ts (4 tests) 157ms
+ ✓ tests/integration/auth/session.test.ts (3 tests) 281ms
+ ✓ tests/integration/webhooks/gocardless.test.ts (1 test) 392ms
+   ✓ Webhooks - Payments (GoCardless) > records bank transfer payment and updates invoice 314ms
+stderr | tests/integration/sync/xero.test.ts > Webhooks - Accounting (Xero) > rejects invalid secret
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/accounting/3b280d3e-13b9-4ac4-8f01-1554e6e4ae00/1b91e030-280c-4926-a805-4c0d7913b530',
+  method: 'POST',
+  error: 'Invalid webhook secret',
+  stack: 'ValidationError: Invalid webhook secret\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/accounting/[firmId]/[connectionId]/route.ts:34:13\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/accounting/[firmId]/[connectionId]/route.ts:22:3\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/sync/xero.test.ts:36:17\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+ ✓ tests/integration/sync/xero.test.ts (2 tests) 378ms
+ ✓ tests/integration/db/transactions.test.ts (2 tests) 104ms
+stderr | tests/integration/webhooks/email-provider.test.ts > Webhooks - Email Provider > validates secret and enforces idempotency
+API Error: {
+  requestId: undefined,
+  url: 'http://localhost/api/webhooks/email/efa5b896-add9-4596-9cb2-657fb4a8f1f2/32b5801f-5af8-4fcb-a156-5ac20c856f63',
+  method: 'POST',
+  error: 'Invalid webhook secret',
+  stack: 'ValidationError: Invalid webhook secret\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/email/[firmId]/[accountId]/route.ts:29:13\n' +
+    '    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at scope (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:260:18)\n' +
+    '    at Function.begin (file:///home/andy/dev/legalcopilot/node_modules/postgres/src/index.js:243:14)\n' +
+    '    at /home/andy/dev/legalcopilot/app/api/webhooks/email/[firmId]/[accountId]/route.ts:20:18\n' +
+    '    at /home/andy/dev/legalcopilot/middleware/withErrorHandler.ts:106:14\n' +
+    '    at /home/andy/dev/legalcopilot/tests/integration/webhooks/email-provider.test.ts:40:17\n' +
+    '    at file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:533:5\n' +
+    '    at runTest (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1056:11)\n' +
+    '    at runSuite (file:///home/andy/dev/legalcopilot/node_modules/@vitest/runner/dist/index.js:1205:15)'
+}
+
+ ✓ tests/integration/webhooks/email-provider.test.ts (1 test) 380ms
+ ✓ tests/integration/sync/outlook-calendar.test.ts (1 test) 374ms
+ ✓ tests/integration/sync/google-calendar.test.ts (1 test) 436ms
+   ✓ Webhooks - Calendar (Google) > validates secret and enforces idempotency 359ms
+ ✓ tests/integration/queue/retry.test.ts (1 test) 105ms
+ ✓ tests/integration/queue/processing.test.ts (1 test) 24ms
+stdout | tests/integration/storage/presigned-urls.test.ts > Storage Integration - Presigned URLs > supports presigned upload then download
+✅ Created MinIO bucket: test-bucket-476ca9b7-09c7-42df-80ce-b76b3a82cdd1
+
+stdout | tests/integration/storage/presigned-urls.test.ts > Storage Integration - Presigned URLs > supports presigned upload then download
+✅ Set public read policy for bucket: test-bucket-476ca9b7-09c7-42df-80ce-b76b3a82cdd1
+
+ ✓ tests/integration/storage/presigned-urls.test.ts (1 test) 75ms
+stdout | tests/integration/storage/upload-download.test.ts > Storage Integration - Upload/Download > uploads and downloads a file round-trip
+✅ Created MinIO bucket: test-bucket-35ac1e2b-aeec-4ed5-b011-f6403b54105d
+
+stdout | tests/integration/storage/upload-download.test.ts > Storage Integration - Upload/Download > uploads and downloads a file round-trip
+✅ Set public read policy for bucket: test-bucket-35ac1e2b-aeec-4ed5-b011-f6403b54105d
+
+ ✓ tests/integration/storage/upload-download.test.ts (1 test) 49ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 24 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/integration/intake/conversion.test.ts > Lead Conversion Integration > Convert with quote - verify quote linked to new client > maintains quote relationship through conversion
+ FAIL  tests/integration/intake/conversion.test.ts > Lead Conversion Integration > Convert with quote - verify quote linked to new client > converts multiple quotes from same lead
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Create > creates quote for a lead
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Create > creates quote with line items
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Create > persists quote data to database
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Read > retrieves quote by ID
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Read > lists quotes for a lead
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Update > updates quote amounts
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - CRUD > Update > updates quote status
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Workflow > sends quote to lead (draft -> sent)
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Workflow > marks quote as accepted
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Workflow > marks quote as rejected
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Workflow > accepted quote can trigger conversion
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Multi-Tenancy > isolates quotes between firms
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Multi-Tenancy > cannot access quotes from another firm's leads
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Filtering > filters quotes by status
+ FAIL  tests/integration/intake/leads-quotes.test.ts > Quotes Integration - Filtering > filters quotes by leadId
+PostgresError: null value in column "type" of relation "quotes" violates not-null constraint
+ ❯ ErrorResponse node_modules/postgres/src/connection.js:794:26
+ ❯ handle node_modules/postgres/src/connection.js:480:6
+ ❯ Socket.data node_modules/postgres/src/connection.js:315:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > uploads small file successfully
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:48:27
+     46|       });
+     47| 
+     48|       expect(response.ok).toBe(true);
+       |                           ^
+     49|       const data = await response.json();
+     50| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > uploads file with metadata (description, tags)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:86:27
+     84|       });
+     85| 
+     86|       expect(response.ok).toBe(true);
+       |                           ^
+     87|       const data = await response.json();
+     88| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects file that is too large
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:117:31
+    115| 
+    116|       expect(response.ok).toBe(false);
+    117|       expect(response.status).toBe(400);
+       |                               ^
+    118|       const data = await response.json();
+    119|       expect(data.error).toContain("exceeds");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects disallowed file type
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:139:31
+    137| 
+    138|       expect(response.ok).toBe(false);
+    139|       expect(response.status).toBe(400);
+       |                               ^
+    140|       const data = await response.json();
+    141|       expect(data.error).toContain("not allowed");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects request with no file provided
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:154:31
+    152| 
+    153|       expect(response.ok).toBe(false);
+    154|       expect(response.status).toBe(400);
+       |                               ^
+    155|       const data = await response.json();
+    156|       expect(data.error).toBe("No file provided");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > rejects request with no firmId
+AssertionError: expected 500 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 500
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:173:31
+    171| 
+    172|       expect(response.ok).toBe(false);
+    173|       expect(response.status).toBe(400);
+       |                               ^
+    174|       const data = await response.json();
+    175|       expect(data.error).toBe("firmId is required");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/24]⎯
+
+ FAIL  tests/integration/storage/upload-endpoint.test.ts > Storage Integration - Upload Endpoint > POST /api/storage/upload > allows file to be accessed via presigned URL
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ tests/integration/storage/upload-endpoint.test.ts:194:33
+    192|       });
+    193| 
+    194|       expect(uploadResponse.ok).toBe(true);
+       |                                 ^
+    195|       const uploadData = await uploadResponse.json();
+    196| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/24]⎯
+
+ Test Files  3 failed | 45 passed (48)
+      Tests  24 failed | 772 passed (796)
+   Start at  21:58:34
+   Duration  61.98s (transform 1.25s, setup 6.85s, collect 17.77s, tests 21.04s, environment 8.75s, prepare 2.51s)
+

@@ -105,6 +105,21 @@ export async function getPresignedUrl(
   }
 }
 
+export async function getPresignedUploadUrl(
+  bucketName: string,
+  fileName: string,
+  expirySeconds: number = 3600
+) {
+  try {
+    const minioClient = getMinioClient();
+    const url = await minioClient.presignedPutObject(bucketName, fileName, expirySeconds);
+    return url;
+  } catch (error) {
+    console.error("Error getting presigned upload URL:", error);
+    throw error;
+  }
+}
+
 // Helper function to delete file
 export async function deleteFile(bucketName: string, fileName: string) {
   try {

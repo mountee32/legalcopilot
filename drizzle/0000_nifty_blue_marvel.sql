@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";--> statement-breakpoint
 CREATE TYPE "public"."client_status" AS ENUM('prospect', 'active', 'dormant', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."client_type" AS ENUM('individual', 'company', 'trust', 'estate', 'charity', 'government');--> statement-breakpoint
 CREATE TYPE "public"."billing_type" AS ENUM('hourly', 'fixed_fee', 'conditional', 'legal_aid', 'pro_bono');--> statement-breakpoint

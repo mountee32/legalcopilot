@@ -15,6 +15,7 @@ import {
   pgEnum,
   numeric,
   jsonb,
+  integer,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { clients } from "./clients";
@@ -122,6 +123,15 @@ export const matters = pgTable(
 
     /** Free-text notes */
     notes: text("notes"),
+
+    /** AI-calculated risk score (0-100 scale, higher = more risky) */
+    riskScore: integer("risk_score"),
+
+    /** AI risk assessment factors for explainability */
+    riskFactors: jsonb("risk_factors"),
+
+    /** When AI last calculated the risk score */
+    riskAssessedAt: timestamp("risk_assessed_at"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

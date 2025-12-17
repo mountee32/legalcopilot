@@ -78,8 +78,11 @@ export const POST = withErrorHandler(
           .values({
             firmId,
             leadId: data.leadId,
+            type: data.type,
             status: "draft",
             items: data.items ?? null,
+            fees: data.fees ?? null,
+            disbursements: data.disbursements ?? null,
             subtotal: data.subtotal ?? "0.00",
             vatAmount: data.vatAmount ?? "0.00",
             total: data.total,

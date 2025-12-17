@@ -40,6 +40,7 @@ export const POST = withErrorHandler(
           notes: data.notes,
           invoiceDate,
           dueDate,
+          vatRate: data.vatRate,
         });
 
         const [inv] = await tx

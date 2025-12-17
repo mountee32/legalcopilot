@@ -19,11 +19,23 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { matters } from "./matters";
 import { clients } from "./clients";
 import { firms } from "./firms";
 import { users } from "./users";
+
+/**
+ * Time entry source - how the time entry was created.
+ */
+export const timeEntrySourceEnum = pgEnum("time_entry_source", [
+  "manual", // Manually entered by user
+  "ai_suggested", // Suggested by AI
+  "email_inferred", // Inferred from email activity
+  "document_activity", // Inferred from document work
+  "calendar", // Imported from calendar
+]);
 
 /**
  * Time entry billing status.
@@ -97,6 +109,12 @@ export const timeEntries = pgTable("time_entries", {
 
   status: timeEntryStatusEnum("status").notNull().default("draft"),
 
+  /** How this time entry was created */
+  source: timeEntrySourceEnum("source").notNull().default("manual"),
+
+  /** Whether this time entry is billable or non-billable */
+  isBillable: boolean("is_billable").notNull().default(true),
+
   /** Invoice this entry is on (when billed) */
   invoiceId: uuid("invoice_id"),
 
@@ -143,6 +161,9 @@ export const invoices = pgTable(
 
     /** VAT amount (UK standard 20%) */
     vatAmount: numeric("vat_amount", { precision: 10, scale: 2 }).notNull(),
+
+    /** VAT rate as percentage (20.00 = 20%, 5.00 = 5%, 0.00 = zero-rated) */
+    vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).notNull().default("20.00"),
 
     /** Total including VAT */
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),

@@ -29,6 +29,7 @@ export const InvoiceSchema = z
     dueDate: DateSchema,
     subtotal: MoneySchema,
     vatAmount: MoneySchema,
+    vatRate: MoneySchema,
     total: MoneySchema,
     paidAmount: MoneySchema.nullable(),
     balanceDue: MoneySchema,
@@ -91,6 +92,7 @@ export const GenerateInvoiceSchema = z
     notes: z.string().optional(),
     invoiceDate: DateSchema.optional(),
     dueDate: DateSchema.optional(),
+    vatRate: MoneySchema.optional(),
   })
   .openapi("GenerateInvoiceRequest");
 
@@ -99,5 +101,6 @@ export const UpdateInvoiceSchema = z
     dueDate: DateSchema.optional(),
     terms: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
+    vatRate: MoneySchema.optional(),
   })
   .openapi("UpdateInvoiceRequest");

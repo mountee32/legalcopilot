@@ -70,6 +70,8 @@ export const PATCH = withErrorHandler(
             durationMinutes: data.durationMinutes ?? undefined,
             hourlyRate: data.hourlyRate ?? undefined,
             amount: formatMoney(amount),
+            source: data.source ?? undefined,
+            isBillable: data.isBillable ?? undefined,
             activityCode: data.activityCode ?? undefined,
             updatedAt: new Date(),
           })
