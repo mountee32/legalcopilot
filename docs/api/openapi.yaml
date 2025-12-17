@@ -1428,6 +1428,8 @@ components:
         - matter_archived
         - document_uploaded
         - document_chunked
+        - email_received
+        - email_sent
         - task_created
         - task_completed
         - approval_decided
@@ -1947,6 +1949,330 @@ components:
         goal:
           type: string
           maxLength: 2000
+    EmailDirection:
+      type: string
+      enum:
+        - inbound
+        - outbound
+    EmailAddress:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        name:
+          type: string
+      required:
+        - email
+    EmailStatus:
+      type: string
+      enum:
+        - draft
+        - pending
+        - sent
+        - delivered
+        - received
+        - failed
+        - bounced
+        - archived
+    EmailIntent:
+      type: string
+      nullable: true
+      enum:
+        - request_information
+        - provide_information
+        - request_action
+        - status_update
+        - complaint
+        - deadline
+        - confirmation
+        - general
+    EmailSentiment:
+      type: string
+      nullable: true
+      enum:
+        - positive
+        - neutral
+        - negative
+        - frustrated
+    Email:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        direction:
+          $ref: "#/components/schemas/EmailDirection"
+        fromAddress:
+          $ref: "#/components/schemas/EmailAddress"
+        toAddresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        ccAddresses:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        bccAddresses:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        subject:
+          type: string
+        bodyText:
+          type: string
+          nullable: true
+        bodyHtml:
+          type: string
+          nullable: true
+        messageId:
+          type: string
+          nullable: true
+        threadId:
+          type: string
+          nullable: true
+        inReplyTo:
+          type: string
+          nullable: true
+        hasAttachments:
+          type: boolean
+        attachmentCount:
+          type: integer
+        attachmentIds:
+          type: array
+          nullable: true
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          $ref: "#/components/schemas/EmailStatus"
+        readAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        aiProcessed:
+          type: boolean
+        aiProcessedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        aiIntent:
+          $ref: "#/components/schemas/EmailIntent"
+        aiSentiment:
+          $ref: "#/components/schemas/EmailSentiment"
+        aiUrgency:
+          type: integer
+          nullable: true
+        aiSummary:
+          type: string
+          nullable: true
+        aiSuggestedResponse:
+          type: string
+          nullable: true
+        aiSuggestedTasks:
+          type: array
+          nullable: true
+          items:
+            type: string
+        aiMatchedMatterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        aiMatchConfidence:
+          type: integer
+          nullable: true
+        createdBy:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        receivedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        sentAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - direction
+        - fromAddress
+        - toAddresses
+        - ccAddresses
+        - bccAddresses
+        - subject
+        - bodyText
+        - bodyHtml
+        - messageId
+        - threadId
+        - inReplyTo
+        - hasAttachments
+        - attachmentCount
+        - attachmentIds
+        - status
+        - readAt
+        - aiProcessed
+        - aiProcessedAt
+        - aiIntent
+        - aiSentiment
+        - aiUrgency
+        - aiSummary
+        - aiSuggestedResponse
+        - aiSuggestedTasks
+        - aiMatchedMatterId
+        - aiMatchConfidence
+        - createdBy
+        - receivedAt
+        - sentAt
+        - createdAt
+        - updatedAt
+    EmailListResponse:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/Email"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - emails
+        - pagination
+    EmailQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            matterId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            direction:
+              $ref: "#/components/schemas/EmailDirection"
+            status:
+              $ref: "#/components/schemas/EmailStatus"
+            aiProcessed:
+              type: boolean
+            search:
+              type: string
+    CreateEmailRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        direction:
+          $ref: "#/components/schemas/EmailDirection"
+        fromAddress:
+          $ref: "#/components/schemas/EmailAddress"
+        toAddresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+          minItems: 1
+        ccAddresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        bccAddresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAddress"
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 500
+        bodyText:
+          type: string
+        bodyHtml:
+          type: string
+        messageId:
+          type: string
+        threadId:
+          type: string
+        inReplyTo:
+          type: string
+        attachmentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - direction
+        - fromAddress
+        - toAddresses
+        - subject
+    UpdateEmailRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          $ref: "#/components/schemas/EmailStatus"
+        readAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+    EmailAIProcessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        email:
+          $ref: "#/components/schemas/Email"
+      required:
+        - success
+        - email
     ApprovalIdParam:
       type: object
       properties:
@@ -2108,6 +2434,36 @@ components:
       required:
         - id
     GenerateTasksMatterIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailAIProcessIdParam:
       type: object
       properties:
         id:
@@ -3393,6 +3749,226 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/emails:
+    get:
+      summary: List emails
+      description: Retrieve firm emails with filters
+      tags:
+        - Emails
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: matterId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/EmailDirection"
+          required: false
+          name: direction
+          in: query
+        - schema:
+            $ref: "#/components/schemas/EmailStatus"
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: boolean
+          required: false
+          name: aiProcessed
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: search
+          in: query
+      responses:
+        "200":
+          description: Emails
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create email
+      description: Create an email record
+      tags:
+        - Emails
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmailRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/emails/{id}:
+    get:
+      summary: Get email
+      description: Retrieve a single email by ID
+      tags:
+        - Emails
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update email
+      description: Update an email record
+      tags:
+        - Emails
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmailRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/emails/{id}/ai/process:
+    post:
+      summary: AI process email
+      description: Analyze an email for intent/sentiment/urgency and propose matter matching
+      tags:
+        - Emails
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: AI processing result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailAIProcessResponse"
         "400":
           description: Validation error
           content:

@@ -70,7 +70,7 @@ import {
   CreateTaskSchema,
   UpdateTaskSchema,
   GenerateTasksSchema,
-  EmailSchema,
+  EmailMessageSchema,
   EmailListSchema,
   EmailQuerySchema,
   CreateEmailSchema,
@@ -141,7 +141,7 @@ registry.register("TaskQuery", TaskQuerySchema);
 registry.register("CreateTaskRequest", CreateTaskSchema);
 registry.register("UpdateTaskRequest", UpdateTaskSchema);
 registry.register("GenerateTasksRequest", GenerateTasksSchema);
-registry.register("Email", EmailSchema);
+registry.register("Email", EmailMessageSchema);
 registry.register("EmailListResponse", EmailListSchema);
 registry.register("EmailQuery", EmailQuerySchema);
 registry.register("CreateEmailRequest", CreateEmailSchema);
@@ -1037,7 +1037,10 @@ registry.registerPath({
   tags: ["Emails"],
   request: { body: { content: { "application/json": { schema: CreateEmailSchema } } } },
   responses: {
-    201: { description: "Created", content: { "application/json": { schema: EmailSchema } } },
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: EmailMessageSchema } },
+    },
     400: {
       description: "Validation error",
       content: { "application/json": { schema: ErrorResponseSchema } },
@@ -1055,9 +1058,9 @@ registry.registerPath({
   summary: "Get email",
   description: "Retrieve a single email by ID",
   tags: ["Emails"],
-  request: { params: registry.register("EmailIdParam", EmailSchema.pick({ id: true })) },
+  request: { params: registry.register("EmailIdParam", EmailMessageSchema.pick({ id: true })) },
   responses: {
-    200: { description: "Email", content: { "application/json": { schema: EmailSchema } } },
+    200: { description: "Email", content: { "application/json": { schema: EmailMessageSchema } } },
     403: {
       description: "Forbidden",
       content: { "application/json": { schema: ErrorResponseSchema } },
@@ -1076,11 +1079,14 @@ registry.registerPath({
   description: "Update an email record",
   tags: ["Emails"],
   request: {
-    params: registry.register("EmailUpdateIdParam", EmailSchema.pick({ id: true })),
+    params: registry.register("EmailUpdateIdParam", EmailMessageSchema.pick({ id: true })),
     body: { content: { "application/json": { schema: UpdateEmailSchema } } },
   },
   responses: {
-    200: { description: "Updated", content: { "application/json": { schema: EmailSchema } } },
+    200: {
+      description: "Updated",
+      content: { "application/json": { schema: EmailMessageSchema } },
+    },
     400: {
       description: "Validation error",
       content: { "application/json": { schema: ErrorResponseSchema } },
@@ -1102,7 +1108,9 @@ registry.registerPath({
   summary: "AI process email",
   description: "Analyze an email for intent/sentiment/urgency and propose matter matching",
   tags: ["Emails"],
-  request: { params: registry.register("EmailAIProcessIdParam", EmailSchema.pick({ id: true })) },
+  request: {
+    params: registry.register("EmailAIProcessIdParam", EmailMessageSchema.pick({ id: true })),
+  },
   responses: {
     200: {
       description: "AI processing result",
