@@ -6,7 +6,6 @@ import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { withAuth } from "@/middleware/withAuth";
 import { withPermission } from "@/middleware/withPermission";
 import { NotFoundError, ValidationError, withErrorHandler } from "@/middleware/withErrorHandler";
-import { addGenericJob } from "@/lib/queue";
 import { extractEntities } from "@/lib/documents/entities";
 import { deepMerge } from "@/lib/settings/merge";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
@@ -41,6 +40,7 @@ export const POST = withErrorHandler(
 
             if (!job) throw new ValidationError("Failed to create job");
 
+            const { addGenericJob } = await import("@/lib/queue");
             await addGenericJob("document:entities", {
               type: "document:entities",
               data: { firmId, documentId: id, jobId: job.id },

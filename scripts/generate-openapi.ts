@@ -81,6 +81,91 @@ import {
   CreateEmailSchema,
   UpdateEmailSchema,
   EmailAIProcessResponseSchema,
+  // Time entries
+  TimeEntrySchema,
+  TimeEntryListSchema,
+  TimeEntryQuerySchema,
+  CreateTimeEntrySchema,
+  UpdateTimeEntrySchema,
+  BulkSubmitTimeEntriesSchema,
+  BulkSubmitTimeEntriesResponseSchema,
+  // Invoices
+  InvoiceSchema,
+  InvoiceWithItemsSchema,
+  InvoiceListSchema,
+  InvoiceQuerySchema,
+  GenerateInvoiceSchema,
+  UpdateInvoiceSchema,
+  // Payments
+  PaymentSchema,
+  PaymentListSchema,
+  PaymentQuerySchema,
+  CreatePaymentSchema,
+  // Calendar
+  CalendarEventSchema,
+  CalendarListSchema,
+  CalendarQuerySchema,
+  CreateCalendarEventSchema,
+  UpdateCalendarEventSchema,
+  UpcomingCalendarQuerySchema,
+  UpcomingEventsSchema,
+  CalendarAISuggestRequestSchema,
+  // Templates
+  TemplateSchema,
+  TemplateListSchema,
+  TemplateQuerySchema,
+  CreateTemplateSchema,
+  UpdateTemplateSchema,
+  PreviewTemplateSchema,
+  PreviewTemplateResponseSchema,
+  GenerateTemplateResponseSchema,
+  ProposeTemplateSchema,
+  // Intake
+  LeadSchema,
+  LeadListSchema,
+  LeadQuerySchema,
+  CreateLeadSchema,
+  UpdateLeadSchema,
+  ConvertLeadSchema,
+  ConvertLeadResponseSchema,
+  QuoteSchema,
+  QuoteListSchema,
+  QuoteQuerySchema,
+  CreateQuoteSchema,
+  UpdateQuoteSchema,
+  // Conflicts
+  ConflictCheckSchema,
+  ConflictSearchRequestSchema,
+  ConflictSearchResponseSchema,
+  ConflictDecisionRequestSchema,
+  // Integrations
+  EmailAccountSchema,
+  EmailAccountListSchema,
+  EmailAccountQuerySchema,
+  CreateEmailAccountSchema,
+  EmailAccountCreateResponseSchema,
+  CalendarAccountSchema,
+  CalendarAccountListSchema,
+  CalendarAccountQuerySchema,
+  CreateCalendarAccountSchema,
+  CalendarAccountCreateResponseSchema,
+  PaymentProviderAccountSchema,
+  PaymentProviderAccountListSchema,
+  CreatePaymentProviderAccountSchema,
+  PaymentProviderAccountCreateResponseSchema,
+  AccountingConnectionSchema,
+  AccountingConnectionListSchema,
+  CreateAccountingConnectionSchema,
+  AccountingConnectionCreateResponseSchema,
+  SignatureRequestSchema,
+  SignatureRequestListSchema,
+  SignatureRequestQuerySchema,
+  CreateSignatureRequestSchema,
+  CreateSignatureRequestResponseSchema,
+  // Search
+  SemanticSearchRequestSchema,
+  SemanticSearchResponseSchema,
+  MatterSemanticSearchQuerySchema,
 } from "../lib/api/schemas";
 
 // Create registry
@@ -157,6 +242,85 @@ registry.register("EmailQuery", EmailQuerySchema);
 registry.register("CreateEmailRequest", CreateEmailSchema);
 registry.register("UpdateEmailRequest", UpdateEmailSchema);
 registry.register("EmailAIProcessResponse", EmailAIProcessResponseSchema);
+registry.register("TimeEntry", TimeEntrySchema);
+registry.register("TimeEntryListResponse", TimeEntryListSchema);
+registry.register("TimeEntryQuery", TimeEntryQuerySchema);
+registry.register("CreateTimeEntryRequest", CreateTimeEntrySchema);
+registry.register("UpdateTimeEntryRequest", UpdateTimeEntrySchema);
+registry.register("BulkSubmitTimeEntriesRequest", BulkSubmitTimeEntriesSchema);
+registry.register("BulkSubmitTimeEntriesResponse", BulkSubmitTimeEntriesResponseSchema);
+registry.register("Invoice", InvoiceSchema);
+registry.register("InvoiceWithItemsResponse", InvoiceWithItemsSchema);
+registry.register("InvoiceListResponse", InvoiceListSchema);
+registry.register("InvoiceQuery", InvoiceQuerySchema);
+registry.register("GenerateInvoiceRequest", GenerateInvoiceSchema);
+registry.register("UpdateInvoiceRequest", UpdateInvoiceSchema);
+registry.register("Payment", PaymentSchema);
+registry.register("PaymentListResponse", PaymentListSchema);
+registry.register("PaymentQuery", PaymentQuerySchema);
+registry.register("CreatePaymentRequest", CreatePaymentSchema);
+registry.register("CalendarEvent", CalendarEventSchema);
+registry.register("CalendarListResponse", CalendarListSchema);
+registry.register("CalendarQuery", CalendarQuerySchema);
+registry.register("CreateCalendarEventRequest", CreateCalendarEventSchema);
+registry.register("UpdateCalendarEventRequest", UpdateCalendarEventSchema);
+registry.register("UpcomingCalendarQuery", UpcomingCalendarQuerySchema);
+registry.register("UpcomingEventsResponse", UpcomingEventsSchema);
+registry.register("CalendarAISuggestRequest", CalendarAISuggestRequestSchema);
+registry.register("Template", TemplateSchema);
+registry.register("TemplateListResponse", TemplateListSchema);
+registry.register("TemplateQuery", TemplateQuerySchema);
+registry.register("CreateTemplateRequest", CreateTemplateSchema);
+registry.register("UpdateTemplateRequest", UpdateTemplateSchema);
+registry.register("PreviewTemplateRequest", PreviewTemplateSchema);
+registry.register("PreviewTemplateResponse", PreviewTemplateResponseSchema);
+registry.register("GenerateTemplateResponse", GenerateTemplateResponseSchema);
+registry.register("ProposeTemplateRequest", ProposeTemplateSchema);
+registry.register("Lead", LeadSchema);
+registry.register("LeadListResponse", LeadListSchema);
+registry.register("LeadQuery", LeadQuerySchema);
+registry.register("CreateLeadRequest", CreateLeadSchema);
+registry.register("UpdateLeadRequest", UpdateLeadSchema);
+registry.register("ConvertLeadRequest", ConvertLeadSchema);
+registry.register("ConvertLeadResponse", ConvertLeadResponseSchema);
+registry.register("Quote", QuoteSchema);
+registry.register("QuoteListResponse", QuoteListSchema);
+registry.register("QuoteQuery", QuoteQuerySchema);
+registry.register("CreateQuoteRequest", CreateQuoteSchema);
+registry.register("UpdateQuoteRequest", UpdateQuoteSchema);
+registry.register("ConflictCheck", ConflictCheckSchema);
+registry.register("ConflictSearchRequest", ConflictSearchRequestSchema);
+registry.register("ConflictSearchResponse", ConflictSearchResponseSchema);
+registry.register("ConflictDecisionRequest", ConflictDecisionRequestSchema);
+registry.register("EmailAccount", EmailAccountSchema);
+registry.register("EmailAccountListResponse", EmailAccountListSchema);
+registry.register("EmailAccountQuery", EmailAccountQuerySchema);
+registry.register("CreateEmailAccountRequest", CreateEmailAccountSchema);
+registry.register("EmailAccountCreateResponse", EmailAccountCreateResponseSchema);
+registry.register("CalendarAccount", CalendarAccountSchema);
+registry.register("CalendarAccountListResponse", CalendarAccountListSchema);
+registry.register("CalendarAccountQuery", CalendarAccountQuerySchema);
+registry.register("CreateCalendarAccountRequest", CreateCalendarAccountSchema);
+registry.register("CalendarAccountCreateResponse", CalendarAccountCreateResponseSchema);
+registry.register("PaymentProviderAccount", PaymentProviderAccountSchema);
+registry.register("PaymentProviderAccountListResponse", PaymentProviderAccountListSchema);
+registry.register("CreatePaymentProviderAccountRequest", CreatePaymentProviderAccountSchema);
+registry.register(
+  "PaymentProviderAccountCreateResponse",
+  PaymentProviderAccountCreateResponseSchema
+);
+registry.register("AccountingConnection", AccountingConnectionSchema);
+registry.register("AccountingConnectionListResponse", AccountingConnectionListSchema);
+registry.register("CreateAccountingConnectionRequest", CreateAccountingConnectionSchema);
+registry.register("AccountingConnectionCreateResponse", AccountingConnectionCreateResponseSchema);
+registry.register("SignatureRequest", SignatureRequestSchema);
+registry.register("SignatureRequestListResponse", SignatureRequestListSchema);
+registry.register("SignatureRequestQuery", SignatureRequestQuerySchema);
+registry.register("CreateSignatureRequestRequest", CreateSignatureRequestSchema);
+registry.register("CreateSignatureRequestResponse", CreateSignatureRequestResponseSchema);
+registry.register("SemanticSearchRequest", SemanticSearchRequestSchema);
+registry.register("SemanticSearchResponse", SemanticSearchResponseSchema);
+registry.register("MatterSemanticSearchQuery", MatterSemanticSearchQuerySchema);
 
 // Define API paths
 
@@ -1217,6 +1381,1175 @@ registry.registerPath({
   },
 });
 
+// Time entries
+registry.registerPath({
+  method: "get",
+  path: "/api/time-entries",
+  summary: "List time entries",
+  description: "Retrieve firm time entries with filters",
+  tags: ["Time Entries"],
+  request: { query: TimeEntryQuerySchema },
+  responses: {
+    200: {
+      description: "Time entries",
+      content: { "application/json": { schema: TimeEntryListSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/time-entries",
+  summary: "Create time entry",
+  description: "Create a draft time entry",
+  tags: ["Time Entries"],
+  request: { body: { content: { "application/json": { schema: CreateTimeEntrySchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: TimeEntrySchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/time-entries/{id}",
+  summary: "Get time entry",
+  description: "Retrieve a single time entry",
+  tags: ["Time Entries"],
+  request: { params: registry.register("TimeEntryIdParam", TimeEntrySchema.pick({ id: true })) },
+  responses: {
+    200: {
+      description: "Time entry",
+      content: { "application/json": { schema: TimeEntrySchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/time-entries/{id}",
+  summary: "Update time entry",
+  description: "Update a draft time entry",
+  tags: ["Time Entries"],
+  request: {
+    params: registry.register("TimeEntryUpdateIdParam", TimeEntrySchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateTimeEntrySchema } } },
+  },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: TimeEntrySchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/time-entries/{id}",
+  summary: "Delete time entry",
+  description: "Delete a draft time entry",
+  tags: ["Time Entries"],
+  request: {
+    params: registry.register("TimeEntryDeleteIdParam", TimeEntrySchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Deleted",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/time-entries/{id}/submit",
+  summary: "Submit time entry",
+  description: "Submit a draft time entry for approval (creates an approval request)",
+  tags: ["Time Entries", "Approvals"],
+  request: {
+    params: registry.register("TimeEntrySubmitIdParam", TimeEntrySchema.pick({ id: true })),
+  },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/time-entries/bulk/submit",
+  summary: "Bulk submit time entries",
+  description: "Bulk submit draft time entries for approval",
+  tags: ["Time Entries", "Approvals"],
+  request: { body: { content: { "application/json": { schema: BulkSubmitTimeEntriesSchema } } } },
+  responses: {
+    201: {
+      description: "Submitted",
+      content: { "application/json": { schema: BulkSubmitTimeEntriesResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Invoices
+registry.registerPath({
+  method: "get",
+  path: "/api/invoices",
+  summary: "List invoices",
+  description: "Retrieve firm invoices with filters",
+  tags: ["Invoices"],
+  request: { query: InvoiceQuerySchema },
+  responses: {
+    200: {
+      description: "Invoices",
+      content: { "application/json": { schema: InvoiceListSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/invoices/generate",
+  summary: "Generate invoice",
+  description: "Generate an invoice from approved time entries",
+  tags: ["Invoices"],
+  request: { body: { content: { "application/json": { schema: GenerateInvoiceSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: InvoiceSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/invoices/{id}",
+  summary: "Get invoice",
+  description: "Retrieve invoice details including line items",
+  tags: ["Invoices"],
+  request: { params: registry.register("InvoiceIdParam", InvoiceSchema.pick({ id: true })) },
+  responses: {
+    200: {
+      description: "Invoice details",
+      content: { "application/json": { schema: InvoiceWithItemsSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/invoices/{id}",
+  summary: "Update invoice",
+  description: "Update draft invoice fields",
+  tags: ["Invoices"],
+  request: {
+    params: registry.register("InvoiceUpdateIdParam", InvoiceSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateInvoiceSchema } } },
+  },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: InvoiceSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/invoices/{id}/send",
+  summary: "Send invoice (approval required)",
+  description: "Create an approval request to send an invoice",
+  tags: ["Invoices", "Approvals"],
+  request: { params: registry.register("InvoiceSendIdParam", InvoiceSchema.pick({ id: true })) },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/invoices/{id}/void",
+  summary: "Void invoice",
+  description: "Void a draft invoice (marks written off)",
+  tags: ["Invoices"],
+  request: { params: registry.register("InvoiceVoidIdParam", InvoiceSchema.pick({ id: true })) },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: InvoiceSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Payments
+registry.registerPath({
+  method: "get",
+  path: "/api/payments",
+  summary: "List payments",
+  description: "Retrieve firm payments with filters",
+  tags: ["Payments"],
+  request: { query: PaymentQuerySchema },
+  responses: {
+    200: {
+      description: "Payments",
+      content: { "application/json": { schema: PaymentListSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/payments",
+  summary: "Record payment",
+  description: "Record a payment against an invoice",
+  tags: ["Payments"],
+  request: { body: { content: { "application/json": { schema: CreatePaymentSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: PaymentSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/payments/{id}",
+  summary: "Get payment",
+  description: "Retrieve a payment record",
+  tags: ["Payments"],
+  request: { params: registry.register("PaymentIdParam", PaymentSchema.pick({ id: true })) },
+  responses: {
+    200: { description: "Payment", content: { "application/json": { schema: PaymentSchema } } },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/payments/{id}",
+  summary: "Delete payment",
+  description: "Delete a payment and recalculate invoice totals",
+  tags: ["Payments"],
+  request: { params: registry.register("PaymentDeleteIdParam", PaymentSchema.pick({ id: true })) },
+  responses: {
+    200: {
+      description: "Deleted",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Calendar
+registry.registerPath({
+  method: "get",
+  path: "/api/calendar",
+  summary: "List calendar events",
+  description: "List calendar events in a date range",
+  tags: ["Calendar"],
+  request: { query: CalendarQuerySchema },
+  responses: {
+    200: { description: "Events", content: { "application/json": { schema: CalendarListSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/calendar",
+  summary: "Create calendar event",
+  description: "Create a calendar event (human-created)",
+  tags: ["Calendar"],
+  request: { body: { content: { "application/json": { schema: CreateCalendarEventSchema } } } },
+  responses: {
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: CalendarEventSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/calendar/{id}",
+  summary: "Get calendar event",
+  description: "Retrieve a calendar event",
+  tags: ["Calendar"],
+  request: {
+    params: registry.register("CalendarEventIdParam", CalendarEventSchema.pick({ id: true })),
+  },
+  responses: {
+    200: { description: "Event", content: { "application/json": { schema: CalendarEventSchema } } },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/calendar/{id}",
+  summary: "Update calendar event",
+  description: "Update a calendar event",
+  tags: ["Calendar"],
+  request: {
+    params: registry.register("CalendarEventUpdateIdParam", CalendarEventSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateCalendarEventSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Updated",
+      content: { "application/json": { schema: CalendarEventSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/calendar/{id}",
+  summary: "Delete calendar event",
+  description: "Delete a calendar event",
+  tags: ["Calendar"],
+  request: {
+    params: registry.register("CalendarEventDeleteIdParam", CalendarEventSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Deleted",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/calendar/upcoming",
+  summary: "Upcoming calendar events",
+  description: "Convenience endpoint for upcoming events",
+  tags: ["Calendar"],
+  request: { query: UpcomingCalendarQuerySchema },
+  responses: {
+    200: {
+      description: "Upcoming events",
+      content: { "application/json": { schema: UpcomingEventsSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/matters/{id}/ai/suggest-calendar",
+  summary: "Suggest calendar events (approval required)",
+  description: "Generate AI-proposed calendar events for a matter; returns an approval request",
+  tags: ["Matters", "Calendar", "Approvals"],
+  request: {
+    params: registry.register("SuggestCalendarMatterIdParam", MatterSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: CalendarAISuggestRequestSchema } } },
+  },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Templates
+registry.registerPath({
+  method: "get",
+  path: "/api/templates",
+  summary: "List templates",
+  description: "List templates (firm + optionally system)",
+  tags: ["Templates"],
+  request: { query: TemplateQuerySchema },
+  responses: {
+    200: {
+      description: "Templates",
+      content: { "application/json": { schema: TemplateListSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/templates",
+  summary: "Create template",
+  description: "Create a firm template",
+  tags: ["Templates"],
+  request: { body: { content: { "application/json": { schema: CreateTemplateSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: TemplateSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/templates/{id}",
+  summary: "Get template",
+  description: "Retrieve a template by id",
+  tags: ["Templates"],
+  request: { params: registry.register("TemplateIdParam", TemplateSchema.pick({ id: true })) },
+  responses: {
+    200: { description: "Template", content: { "application/json": { schema: TemplateSchema } } },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/templates/{id}",
+  summary: "Update template",
+  description: "Update a firm template (creates a new version)",
+  tags: ["Templates"],
+  request: {
+    params: registry.register("TemplateUpdateIdParam", TemplateSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateTemplateSchema } } },
+  },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: TemplateSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/templates/{id}/preview",
+  summary: "Preview template",
+  description: "Render a template with provided data",
+  tags: ["Templates"],
+  request: {
+    params: registry.register("TemplatePreviewIdParam", TemplateSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: PreviewTemplateSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Rendered",
+      content: { "application/json": { schema: PreviewTemplateResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/templates/{id}/generate",
+  summary: "Generate from template",
+  description: "Render a template (MVP returns rendered content)",
+  tags: ["Templates"],
+  request: {
+    params: registry.register("TemplateGenerateIdParam", TemplateSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: PreviewTemplateSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Rendered",
+      content: { "application/json": { schema: GenerateTemplateResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/templates/propose",
+  summary: "Propose template (approval required)",
+  description: "Create an approval request for an AI-proposed template create/update",
+  tags: ["Templates", "Approvals"],
+  request: { body: { content: { "application/json": { schema: ProposeTemplateSchema } } } },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Intake: leads + quotes
+registry.registerPath({
+  method: "get",
+  path: "/api/leads",
+  summary: "List leads",
+  description: "List firm leads",
+  tags: ["Intake"],
+  request: { query: LeadQuerySchema },
+  responses: {
+    200: { description: "Leads", content: { "application/json": { schema: LeadListSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/leads",
+  summary: "Create lead",
+  description: "Create a lead/enquiry",
+  tags: ["Intake"],
+  request: { body: { content: { "application/json": { schema: CreateLeadSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: LeadSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/leads/{id}",
+  summary: "Get lead",
+  description: "Retrieve a lead by id",
+  tags: ["Intake"],
+  request: { params: registry.register("LeadIdParam", LeadSchema.pick({ id: true })) },
+  responses: {
+    200: { description: "Lead", content: { "application/json": { schema: LeadSchema } } },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/leads/{id}",
+  summary: "Update lead",
+  description: "Update a lead",
+  tags: ["Intake"],
+  request: {
+    params: registry.register("LeadUpdateIdParam", LeadSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateLeadSchema } } },
+  },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: LeadSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/leads/{id}/convert",
+  summary: "Convert lead",
+  description: "Convert lead into a client and a matter",
+  tags: ["Intake", "Matters", "Clients"],
+  request: {
+    params: registry.register("LeadConvertIdParam", LeadSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: ConvertLeadSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Converted",
+      content: { "application/json": { schema: ConvertLeadResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/quotes",
+  summary: "List quotes",
+  description: "List firm quotes",
+  tags: ["Intake"],
+  request: { query: QuoteQuerySchema },
+  responses: {
+    200: { description: "Quotes", content: { "application/json": { schema: QuoteListSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/quotes",
+  summary: "Create quote",
+  description: "Create a quote for a lead",
+  tags: ["Intake"],
+  request: { body: { content: { "application/json": { schema: CreateQuoteSchema } } } },
+  responses: {
+    201: { description: "Created", content: { "application/json": { schema: QuoteSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/quotes/{id}",
+  summary: "Get quote",
+  description: "Retrieve a quote",
+  tags: ["Intake"],
+  request: { params: registry.register("QuoteIdParam", QuoteSchema.pick({ id: true })) },
+  responses: {
+    200: { description: "Quote", content: { "application/json": { schema: QuoteSchema } } },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/quotes/{id}",
+  summary: "Update quote",
+  description: "Update a quote",
+  tags: ["Intake"],
+  request: {
+    params: registry.register("QuoteUpdateIdParam", QuoteSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: UpdateQuoteSchema } } },
+  },
+  responses: {
+    200: { description: "Updated", content: { "application/json": { schema: QuoteSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Conflicts
+registry.registerPath({
+  method: "post",
+  path: "/api/conflicts/search",
+  summary: "Run conflict search",
+  description: "Run a conflict search and persist results",
+  tags: ["Conflicts"],
+  request: { body: { content: { "application/json": { schema: ConflictSearchRequestSchema } } } },
+  responses: {
+    200: {
+      description: "Results",
+      content: { "application/json": { schema: ConflictSearchResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/conflicts/{matterId}",
+  summary: "Get conflict check",
+  description: "Retrieve conflict check for a matter",
+  tags: ["Conflicts"],
+  request: {
+    params: registry.register(
+      "ConflictMatterIdParam",
+      ConflictCheckSchema.pick({ matterId: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Conflict check",
+      content: { "application/json": { schema: ConflictCheckSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/conflicts/{id}/clear",
+  summary: "Clear conflict check (approval required)",
+  description: "Create an approval request to clear a conflict check",
+  tags: ["Conflicts", "Approvals"],
+  request: {
+    params: registry.register("ConflictClearIdParam", ConflictCheckSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: ConflictDecisionRequestSchema } } },
+  },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/conflicts/{id}/waive",
+  summary: "Waive conflict check (approval required)",
+  description: "Create an approval request to waive a conflict check",
+  tags: ["Conflicts", "Approvals"],
+  request: {
+    params: registry.register("ConflictWaiveIdParam", ConflictCheckSchema.pick({ id: true })),
+    body: { content: { "application/json": { schema: ConflictDecisionRequestSchema } } },
+  },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Integrations
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/email/accounts",
+  summary: "List email accounts",
+  description: "List connected email provider accounts for the firm",
+  tags: ["Integrations"],
+  request: { query: EmailAccountQuerySchema },
+  responses: {
+    200: {
+      description: "List",
+      content: { "application/json": { schema: EmailAccountListSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/email/accounts",
+  summary: "Connect email account",
+  description: "Create an email provider connection (MVP token capture)",
+  tags: ["Integrations"],
+  request: { body: { content: { "application/json": { schema: CreateEmailAccountSchema } } } },
+  responses: {
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: EmailAccountCreateResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/calendar/accounts",
+  summary: "List calendar accounts",
+  description: "List connected calendar provider accounts for the firm",
+  tags: ["Integrations"],
+  request: { query: CalendarAccountQuerySchema },
+  responses: {
+    200: {
+      description: "List",
+      content: { "application/json": { schema: CalendarAccountListSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/calendar/accounts",
+  summary: "Connect calendar account",
+  description: "Create a calendar provider connection (MVP token capture)",
+  tags: ["Integrations"],
+  request: { body: { content: { "application/json": { schema: CreateCalendarAccountSchema } } } },
+  responses: {
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: CalendarAccountCreateResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/payments/accounts",
+  summary: "List payment provider accounts",
+  description: "List connected payment provider accounts for the firm",
+  tags: ["Integrations"],
+  responses: {
+    200: {
+      description: "List",
+      content: { "application/json": { schema: PaymentProviderAccountListSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/payments/accounts",
+  summary: "Connect payment provider",
+  description: "Create a payment provider account (webhook setup)",
+  tags: ["Integrations"],
+  request: {
+    body: { content: { "application/json": { schema: CreatePaymentProviderAccountSchema } } },
+  },
+  responses: {
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: PaymentProviderAccountCreateResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/accounting/connections",
+  summary: "List accounting connections",
+  description: "List connected accounting provider connections for the firm",
+  tags: ["Integrations"],
+  responses: {
+    200: {
+      description: "List",
+      content: { "application/json": { schema: AccountingConnectionListSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/accounting/connections",
+  summary: "Connect accounting provider",
+  description: "Create an accounting provider connection (MVP token capture)",
+  tags: ["Integrations"],
+  request: {
+    body: { content: { "application/json": { schema: CreateAccountingConnectionSchema } } },
+  },
+  responses: {
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: AccountingConnectionCreateResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// E-signature
+registry.registerPath({
+  method: "get",
+  path: "/api/signature-requests",
+  summary: "List signature requests",
+  description: "List signature requests for the firm",
+  tags: ["Integrations"],
+  request: { query: SignatureRequestQuerySchema },
+  responses: {
+    200: {
+      description: "List",
+      content: { "application/json": { schema: SignatureRequestListSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/signature-requests",
+  summary: "Create signature request (approval required)",
+  description: "Create a signature request and an approval item to send it",
+  tags: ["Integrations", "Approvals"],
+  request: { body: { content: { "application/json": { schema: CreateSignatureRequestSchema } } } },
+  responses: {
+    201: {
+      description: "Created",
+      content: { "application/json": { schema: CreateSignatureRequestResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/signature-requests/{id}",
+  summary: "Get signature request",
+  description: "Retrieve a signature request by ID",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register("SignatureRequestIdParam", SignatureRequestSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Signature request",
+      content: { "application/json": { schema: SignatureRequestSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Semantic search
+registry.registerPath({
+  method: "post",
+  path: "/api/search/semantic",
+  summary: "Semantic search",
+  description: "Semantic search over document chunks (pgvector)",
+  tags: ["Search"],
+  request: { body: { content: { "application/json": { schema: SemanticSearchRequestSchema } } } },
+  responses: {
+    200: {
+      description: "Results",
+      content: { "application/json": { schema: SemanticSearchResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/matters/{id}/search",
+  summary: "Semantic search within matter",
+  description: "Semantic search over a matter's document chunks (pgvector)",
+  tags: ["Search"],
+  request: {
+    params: registry.register("MatterSearchIdParam", MatterSchema.pick({ id: true })),
+    query: MatterSemanticSearchQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Results",
+      content: { "application/json": { schema: SemanticSearchResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
 // Generate OpenAPI document
 const generator = new OpenApiGeneratorV3(registry.definitions);
 
@@ -1252,6 +2585,16 @@ List endpoints support pagination via \`page\` and \`limit\` query parameters.
     { name: "Matters", description: "Matter/case management endpoints" },
     { name: "Documents", description: "Document management endpoints" },
     { name: "Billing", description: "Time tracking and invoicing endpoints" },
+    { name: "Approvals", description: "Human approval queue endpoints" },
+    { name: "Calendar", description: "Calendar endpoints" },
+    { name: "Emails", description: "Email endpoints" },
+    { name: "Tasks", description: "Task management endpoints" },
+    { name: "Notifications", description: "Notification endpoints" },
+    { name: "Templates", description: "Template endpoints" },
+    { name: "Intake", description: "Leads and quotes endpoints" },
+    { name: "Conflicts", description: "Conflict checking endpoints" },
+    { name: "Integrations", description: "External provider connections & webhooks" },
+    { name: "Search", description: "Semantic search endpoints" },
   ],
 });
 

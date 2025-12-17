@@ -4,7 +4,7 @@
  * @see lib/db/schema/documents.ts for database schema
  */
 
-import { z, UuidSchema, DateTimeSchema } from "./common";
+import { z, UuidSchema, DateSchema, DateTimeSchema } from "./common";
 
 export const DocumentTypeSchema = z
   .enum([
@@ -62,7 +62,7 @@ export const CreateDocumentSchema = z
     filename: z.string().optional(),
     mimeType: z.string().optional(),
     fileSize: z.number().int().optional(),
-    documentDate: DateTimeSchema.optional(),
+    documentDate: z.union([DateSchema, DateTimeSchema]).optional(),
     recipient: z.string().optional(),
     sender: z.string().optional(),
     extractedText: z.string().optional(),

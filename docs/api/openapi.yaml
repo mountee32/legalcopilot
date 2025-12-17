@@ -27,6 +27,26 @@ tags:
     description: Document management endpoints
   - name: Billing
     description: Time tracking and invoicing endpoints
+  - name: Approvals
+    description: Human approval queue endpoints
+  - name: Calendar
+    description: Calendar endpoints
+  - name: Emails
+    description: Email endpoints
+  - name: Tasks
+    description: Task management endpoints
+  - name: Notifications
+    description: Notification endpoints
+  - name: Templates
+    description: Template endpoints
+  - name: Intake
+    description: Leads and quotes endpoints
+  - name: Conflicts
+    description: Conflict checking endpoints
+  - name: Integrations
+    description: External provider connections & webhooks
+  - name: Search
+    description: Semantic search endpoints
 components:
   schemas:
     ErrorResponse:
@@ -1013,10 +1033,15 @@ components:
         fileSize:
           type: integer
         documentDate:
-          type: string
-          format: date-time
-          description: ISO 8601 date-time string
-          example: 2024-12-17T10:30:00Z
+          anyOf:
+            - type: string
+              format: date
+              description: ISO 8601 date string
+              example: 2024-12-17
+            - type: string
+              format: date-time
+              description: ISO 8601 date-time string
+              example: 2024-12-17T10:30:00Z
         recipient:
           type: string
         sender:
@@ -1148,6 +1173,105 @@ components:
       required:
         - success
         - chunkCount
+    DocumentJobAcceptedResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+          enum:
+            - true
+        jobId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - accepted
+        - jobId
+    ExtractDocumentRequest:
+      type: object
+      properties:
+        async:
+          type: boolean
+        force:
+          type: boolean
+        autoChunk:
+          type: boolean
+        maxChars:
+          type: integer
+          minimum: 200
+          maximum: 10000
+    ExtractDocumentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        extractedText:
+          type: string
+        length:
+          type: integer
+        chunkCount:
+          type: integer
+          nullable: true
+      required:
+        - success
+        - extractedText
+        - length
+        - chunkCount
+    SummarizeDocumentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        summary:
+          type: string
+        keyPoints:
+          type: array
+          items:
+            type: string
+          default: []
+      required:
+        - success
+        - summary
+    DocumentEntities:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: string
+          default: []
+        parties:
+          type: array
+          items:
+            type: string
+          default: []
+        amounts:
+          type: array
+          items:
+            type: string
+          default: []
+        addresses:
+          type: array
+          items:
+            type: string
+          default: []
+    DocumentEntitiesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        entities:
+          $ref: "#/components/schemas/DocumentEntities"
+      required:
+        - success
+        - entities
     FirmSettings:
       type: object
       properties:
@@ -1305,6 +1429,14 @@ components:
         - reports:export
         - ai:use
         - ai:configure
+        - integrations:read
+        - integrations:write
+        - templates:read
+        - templates:write
+        - intake:read
+        - intake:write
+        - conflicts:read
+        - conflicts:write
     Role:
       type: object
       properties:
@@ -2273,6 +2405,2256 @@ components:
       required:
         - success
         - email
+    TimeEntryStatus:
+      type: string
+      enum:
+        - draft
+        - submitted
+        - approved
+        - billed
+        - written_off
+    TimeEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        feeEarnerId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        workDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        hourlyRate:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        amount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        status:
+          $ref: "#/components/schemas/TimeEntryStatus"
+        invoiceId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        activityCode:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - feeEarnerId
+        - workDate
+        - description
+        - durationMinutes
+        - hourlyRate
+        - amount
+        - status
+        - invoiceId
+        - activityCode
+        - createdAt
+        - updatedAt
+    TimeEntryListResponse:
+      type: object
+      properties:
+        timeEntries:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeEntry"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - timeEntries
+        - pagination
+    TimeEntryQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            matterId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            feeEarnerId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            status:
+              $ref: "#/components/schemas/TimeEntryStatus"
+            from:
+              type: string
+              format: date
+              description: ISO 8601 date string
+              example: 2024-12-17
+            to:
+              type: string
+              format: date
+              description: ISO 8601 date string
+              example: 2024-12-17
+    CreateTimeEntryRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        feeEarnerId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        workDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        durationMinutes:
+          type: integer
+          minimum: 6
+          maximum: 1440
+        hourlyRate:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        activityCode:
+          type: string
+      required:
+        - matterId
+        - workDate
+        - description
+        - durationMinutes
+        - hourlyRate
+    UpdateTimeEntryRequest:
+      type: object
+      properties:
+        workDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        durationMinutes:
+          type: integer
+          minimum: 6
+          maximum: 1440
+        hourlyRate:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        activityCode:
+          type: string
+          nullable: true
+    BulkSubmitTimeEntriesRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          minItems: 1
+          maxItems: 200
+      required:
+        - ids
+    BulkSubmitTimeEntriesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        approvalRequestIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - success
+        - approvalRequestIds
+    InvoiceStatus:
+      type: string
+      enum:
+        - draft
+        - sent
+        - viewed
+        - partially_paid
+        - paid
+        - overdue
+        - written_off
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        invoiceNumber:
+          type: string
+        clientId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          $ref: "#/components/schemas/InvoiceStatus"
+        invoiceDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        dueDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        subtotal:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        vatAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        total:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        paidAmount:
+          type: string
+          nullable: true
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        balanceDue:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        terms:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        sentAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        viewedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        paidAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - invoiceNumber
+        - clientId
+        - matterId
+        - status
+        - invoiceDate
+        - dueDate
+        - subtotal
+        - vatAmount
+        - total
+        - paidAmount
+        - balanceDue
+        - terms
+        - notes
+        - sentAt
+        - viewedAt
+        - paidAt
+        - createdAt
+        - updatedAt
+    InvoiceLineItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        invoiceId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        description:
+          type: string
+        amount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        sourceType:
+          type: string
+          nullable: true
+        sourceId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - invoiceId
+        - description
+        - amount
+        - sourceType
+        - sourceId
+        - metadata
+        - createdAt
+    InvoiceWithItemsResponse:
+      type: object
+      properties:
+        invoice:
+          $ref: "#/components/schemas/Invoice"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceLineItem"
+      required:
+        - invoice
+        - items
+    InvoiceListResponse:
+      type: object
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Invoice"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - invoices
+        - pagination
+    InvoiceQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            clientId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            matterId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            status:
+              $ref: "#/components/schemas/InvoiceStatus"
+    GenerateInvoiceRequest:
+      type: object
+      properties:
+        clientId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        timeEntryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          minItems: 1
+          maxItems: 500
+        additionalItems:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+                minLength: 1
+                maxLength: 5000
+              amount:
+                type: string
+                pattern: ^\d+\.\d{2}$
+                description: Monetary amount with 2 decimal places
+                example: "1250.00"
+            required:
+              - description
+              - amount
+        notes:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        dueDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+      required:
+        - clientId
+        - timeEntryIds
+    UpdateInvoiceRequest:
+      type: object
+      properties:
+        dueDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        terms:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+    PaymentMethod:
+      type: string
+      enum:
+        - bank_transfer
+        - card
+        - cheque
+        - cash
+        - client_account
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        invoiceId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        amount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        method:
+          $ref: "#/components/schemas/PaymentMethod"
+        paymentDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        reference:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        recordedBy:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - invoiceId
+        - amount
+        - method
+        - paymentDate
+        - reference
+        - notes
+        - recordedBy
+        - createdAt
+    PaymentListResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - payments
+        - pagination
+    PaymentQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            invoiceId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            method:
+              $ref: "#/components/schemas/PaymentMethod"
+            from:
+              type: string
+              format: date
+              description: ISO 8601 date string
+              example: 2024-12-17
+            to:
+              type: string
+              format: date
+              description: ISO 8601 date string
+              example: 2024-12-17
+    CreatePaymentRequest:
+      type: object
+      properties:
+        invoiceId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        amount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        method:
+          $ref: "#/components/schemas/PaymentMethod"
+        paymentDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        reference:
+          type: string
+        notes:
+          type: string
+      required:
+        - invoiceId
+        - amount
+        - method
+        - paymentDate
+    CalendarEventType:
+      type: string
+      enum:
+        - hearing
+        - deadline
+        - meeting
+        - reminder
+        - limitation_date
+        - filing_deadline
+        - other
+    CalendarEventStatus:
+      type: string
+      enum:
+        - scheduled
+        - completed
+        - cancelled
+        - rescheduled
+    CalendarEventPriority:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+        - critical
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        eventType:
+          $ref: "#/components/schemas/CalendarEventType"
+        status:
+          $ref: "#/components/schemas/CalendarEventStatus"
+        priority:
+          $ref: "#/components/schemas/CalendarEventPriority"
+        startAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        endAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        allDay:
+          type: boolean
+        location:
+          type: string
+          nullable: true
+        attendees:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        reminderMinutes:
+          type: array
+          nullable: true
+          items:
+            type: integer
+        recurrence:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        createdById:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        externalId:
+          type: string
+          nullable: true
+        externalSource:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - title
+        - description
+        - eventType
+        - status
+        - priority
+        - startAt
+        - endAt
+        - allDay
+        - location
+        - attendees
+        - reminderMinutes
+        - recurrence
+        - createdById
+        - externalId
+        - externalSource
+        - createdAt
+        - updatedAt
+    CalendarListResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarEvent"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - events
+        - pagination
+    CalendarQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+              description: ISO 8601 date-time string
+              example: 2024-12-17T10:30:00Z
+            to:
+              type: string
+              format: date-time
+              description: ISO 8601 date-time string
+              example: 2024-12-17T10:30:00Z
+            matterId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            eventType:
+              $ref: "#/components/schemas/CalendarEventType"
+            status:
+              $ref: "#/components/schemas/CalendarEventStatus"
+          required:
+            - from
+            - to
+    CreateCalendarEventRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        eventType:
+          $ref: "#/components/schemas/CalendarEventType"
+        startAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        endAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        allDay:
+          type: boolean
+        location:
+          type: string
+        attendees:
+          type: array
+          items:
+            nullable: true
+        reminderMinutes:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 525600
+        recurrence:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - title
+        - eventType
+        - startAt
+    UpdateCalendarEventRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        eventType:
+          $ref: "#/components/schemas/CalendarEventType"
+        status:
+          $ref: "#/components/schemas/CalendarEventStatus"
+        priority:
+          $ref: "#/components/schemas/CalendarEventPriority"
+        startAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        endAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        allDay:
+          type: boolean
+        location:
+          type: string
+          nullable: true
+        attendees:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        reminderMinutes:
+          type: array
+          nullable: true
+          items:
+            type: integer
+        recurrence:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+    UpcomingCalendarQuery:
+      type: object
+      properties:
+        days:
+          type: integer
+          minimum: 1
+          maximum: 365
+          default: 14
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+    UpcomingEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarEvent"
+      required:
+        - events
+    CalendarAISuggestRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 20000
+      required:
+        - text
+    TemplateType:
+      type: string
+      enum:
+        - document
+        - email
+    Template:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        firmId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/TemplateType"
+        category:
+          type: string
+          nullable: true
+        content:
+          type: string
+        mergeFields:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        isActive:
+          type: boolean
+        parentId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        version:
+          type: integer
+        createdById:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - firmId
+        - name
+        - type
+        - category
+        - content
+        - mergeFields
+        - isActive
+        - parentId
+        - version
+        - createdById
+        - createdAt
+        - updatedAt
+    TemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/Template"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - templates
+        - pagination
+    TemplateQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            type:
+              $ref: "#/components/schemas/TemplateType"
+            includeSystem:
+              type: boolean
+              nullable: true
+              default: true
+            activeOnly:
+              type: boolean
+              nullable: true
+              default: true
+    CreateTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        type:
+          $ref: "#/components/schemas/TemplateType"
+        category:
+          type: string
+        content:
+          type: string
+          minLength: 1
+        mergeFields:
+          type: object
+          additionalProperties:
+            nullable: true
+        isActive:
+          type: boolean
+      required:
+        - name
+        - type
+        - content
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        category:
+          type: string
+          nullable: true
+        content:
+          type: string
+          minLength: 1
+        mergeFields:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        isActive:
+          type: boolean
+    PreviewTemplateRequest:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - data
+    TemplateRendered:
+      type: object
+      properties:
+        content:
+          type: string
+        missing:
+          type: array
+          items:
+            type: string
+          default: []
+      required:
+        - content
+    PreviewTemplateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        rendered:
+          $ref: "#/components/schemas/TemplateRendered"
+      required:
+        - success
+        - rendered
+    GenerateTemplateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        rendered:
+          $ref: "#/components/schemas/TemplateRendered"
+      required:
+        - success
+        - rendered
+    ProposeTemplateRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - template.create
+            - template.update
+        templateId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        draft:
+          allOf:
+            - $ref: "#/components/schemas/CreateTemplateRequest"
+            - properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                type:
+                  $ref: "#/components/schemas/TemplateType"
+                category:
+                  type: string
+                content:
+                  type: string
+                mergeFields:
+                  type: object
+                  additionalProperties:
+                    nullable: true
+                isActive:
+                  type: boolean
+      required:
+        - action
+        - draft
+    LeadStatus:
+      type: string
+      enum:
+        - new
+        - contacted
+        - qualified
+        - won
+        - lost
+        - archived
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        companyName:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        phone:
+          type: string
+          nullable: true
+          description: Phone number in E.164 or UK format
+          example: +44 20 7946 0958
+        source:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/LeadStatus"
+        score:
+          type: integer
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        convertedToClientId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdById:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - firstName
+        - lastName
+        - companyName
+        - email
+        - phone
+        - source
+        - status
+        - score
+        - notes
+        - convertedToClientId
+        - createdById
+        - createdAt
+        - updatedAt
+    LeadListResponse:
+      type: object
+      properties:
+        leads:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lead"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - leads
+        - pagination
+    LeadQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            status:
+              $ref: "#/components/schemas/LeadStatus"
+            search:
+              type: string
+    CreateLeadRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        phone:
+          type: string
+          description: Phone number in E.164 or UK format
+          example: +44 20 7946 0958
+        source:
+          type: string
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        notes:
+          type: string
+    UpdateLeadRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: john.smith@example.com
+        phone:
+          type: string
+          description: Phone number in E.164 or UK format
+          example: +44 20 7946 0958
+        source:
+          type: string
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        notes:
+          type: string
+        status:
+          $ref: "#/components/schemas/LeadStatus"
+    ConvertLeadRequest:
+      type: object
+      properties:
+        clientType:
+          type: string
+          enum:
+            - individual
+            - company
+          default: individual
+        matterTitle:
+          type: string
+          minLength: 1
+          maxLength: 200
+        practiceArea:
+          type: string
+          enum:
+            - conveyancing
+            - litigation
+            - family
+            - probate
+            - employment
+            - immigration
+            - personal_injury
+            - commercial
+            - criminal
+            - ip
+            - insolvency
+            - other
+          default: other
+      required:
+        - matterTitle
+    ConvertLeadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        clientId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - success
+        - clientId
+        - matterId
+    QuoteStatus:
+      type: string
+      enum:
+        - draft
+        - sent
+        - accepted
+        - rejected
+        - expired
+        - converted
+    Quote:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        leadId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        status:
+          $ref: "#/components/schemas/QuoteStatus"
+        items:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        subtotal:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        vatAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        total:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        validUntil:
+          type: string
+          nullable: true
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        notes:
+          type: string
+          nullable: true
+        convertedToMatterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdById:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - leadId
+        - status
+        - items
+        - subtotal
+        - vatAmount
+        - total
+        - validUntil
+        - notes
+        - convertedToMatterId
+        - createdById
+        - createdAt
+        - updatedAt
+    QuoteListResponse:
+      type: object
+      properties:
+        quotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Quote"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - quotes
+        - pagination
+    QuoteQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            leadId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            status:
+              $ref: "#/components/schemas/QuoteStatus"
+    CreateQuoteRequest:
+      type: object
+      properties:
+        leadId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        items:
+          type: array
+          items:
+            nullable: true
+        subtotal:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        vatAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        total:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        validUntil:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        notes:
+          type: string
+      required:
+        - leadId
+        - total
+    UpdateQuoteRequest:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/QuoteStatus"
+        items:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        subtotal:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        vatAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        total:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        validUntil:
+          type: string
+          nullable: true
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        notes:
+          type: string
+          nullable: true
+    ConflictCheckStatus:
+      type: string
+      enum:
+        - pending
+        - clear
+        - conflict
+        - waived
+    ConflictCheck:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        searchTerms:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        results:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        status:
+          $ref: "#/components/schemas/ConflictCheckStatus"
+        decidedBy:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        decidedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        decisionReason:
+          type: string
+          nullable: true
+        waiverReason:
+          type: string
+          nullable: true
+        createdById:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - matterId
+        - searchTerms
+        - results
+        - status
+        - decidedBy
+        - decidedAt
+        - decisionReason
+        - waiverReason
+        - createdById
+        - createdAt
+        - updatedAt
+    ConflictSearchRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        search:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+        - matterId
+        - search
+    ConflictSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        conflictCheck:
+          $ref: "#/components/schemas/ConflictCheck"
+        matches:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              nullable: true
+          default: []
+      required:
+        - success
+        - conflictCheck
+    ConflictDecisionRequest:
+      type: object
+      properties:
+        decisionReason:
+          type: string
+        waiverReason:
+          type: string
+    EmailProvider:
+      type: string
+      enum:
+        - google
+        - microsoft
+    IntegrationConnectionStatus:
+      type: string
+      enum:
+        - connected
+        - revoked
+        - error
+    EmailAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        provider:
+          $ref: "#/components/schemas/EmailProvider"
+        emailAddress:
+          type: string
+        externalAccountId:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/IntegrationConnectionStatus"
+        lastSyncAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - provider
+        - emailAddress
+        - externalAccountId
+        - status
+        - lastSyncAt
+        - createdAt
+        - updatedAt
+    EmailAccountListResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailAccount"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - accounts
+        - pagination
+    EmailAccountQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Page number (1-indexed)
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: Items per page (max 100)
+          example: 20
+    CreateEmailAccountRequest:
+      type: object
+      properties:
+        provider:
+          $ref: "#/components/schemas/EmailProvider"
+        emailAddress:
+          type: string
+        externalAccountId:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        tokens:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - provider
+        - emailAddress
+    EmailAccountWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/EmailAccount"
+        - type: object
+          properties:
+            webhookSecret:
+              type: string
+          required:
+            - webhookSecret
+    EmailAccountCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/EmailAccountWithSecret"
+        - type: object
+          properties:
+            webhookPath:
+              type: string
+          required:
+            - webhookPath
+    CalendarProvider:
+      type: string
+      enum:
+        - google
+        - microsoft
+    SyncDirection:
+      type: string
+      enum:
+        - push
+        - pull
+        - both
+    CalendarAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        provider:
+          $ref: "#/components/schemas/CalendarProvider"
+        externalAccountId:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/IntegrationConnectionStatus"
+        syncDirection:
+          $ref: "#/components/schemas/SyncDirection"
+        lastSyncAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - provider
+        - externalAccountId
+        - status
+        - syncDirection
+        - lastSyncAt
+        - createdAt
+        - updatedAt
+    CalendarAccountListResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarAccount"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - accounts
+        - pagination
+    CalendarAccountQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Page number (1-indexed)
+          example: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: Items per page (max 100)
+          example: 20
+    CreateCalendarAccountRequest:
+      type: object
+      properties:
+        provider:
+          $ref: "#/components/schemas/CalendarProvider"
+        externalAccountId:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        tokens:
+          type: object
+          additionalProperties:
+            nullable: true
+        syncDirection:
+          $ref: "#/components/schemas/SyncDirection"
+      required:
+        - provider
+    CalendarAccountWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/CalendarAccount"
+        - type: object
+          properties:
+            webhookSecret:
+              type: string
+          required:
+            - webhookSecret
+    CalendarAccountCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/CalendarAccountWithSecret"
+        - type: object
+          properties:
+            webhookPath:
+              type: string
+          required:
+            - webhookPath
+    PaymentProvider:
+      type: string
+      enum:
+        - stripe
+        - gocardless
+    PaymentProviderAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        provider:
+          $ref: "#/components/schemas/PaymentProvider"
+        externalAccountId:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/IntegrationConnectionStatus"
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - provider
+        - externalAccountId
+        - status
+        - createdAt
+        - updatedAt
+    PaymentProviderAccountListResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentProviderAccount"
+      required:
+        - accounts
+    CreatePaymentProviderAccountRequest:
+      type: object
+      properties:
+        provider:
+          $ref: "#/components/schemas/PaymentProvider"
+        externalAccountId:
+          type: string
+        webhookSecret:
+          type: string
+        config:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - provider
+    PaymentProviderAccountWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/PaymentProviderAccount"
+        - type: object
+          properties:
+            webhookSecret:
+              type: string
+          required:
+            - webhookSecret
+    PaymentProviderAccountCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/PaymentProviderAccountWithSecret"
+        - type: object
+          properties:
+            webhookPath:
+              type: string
+          required:
+            - webhookPath
+    AccountingProvider:
+      type: string
+      enum:
+        - xero
+        - quickbooks
+    AccountingConnection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        provider:
+          $ref: "#/components/schemas/AccountingProvider"
+        externalTenantId:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/IntegrationConnectionStatus"
+        lastSyncAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - provider
+        - externalTenantId
+        - status
+        - lastSyncAt
+        - createdAt
+        - updatedAt
+    AccountingConnectionListResponse:
+      type: object
+      properties:
+        connections:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountingConnection"
+      required:
+        - connections
+    CreateAccountingConnectionRequest:
+      type: object
+      properties:
+        provider:
+          $ref: "#/components/schemas/AccountingProvider"
+        externalTenantId:
+          type: string
+        tokens:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - provider
+    AccountingConnectionWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/AccountingConnection"
+        - type: object
+          properties:
+            webhookSecret:
+              type: string
+          required:
+            - webhookSecret
+    AccountingConnectionCreateResponse:
+      allOf:
+        - $ref: "#/components/schemas/AccountingConnectionWithSecret"
+        - type: object
+          properties:
+            webhookPath:
+              type: string
+          required:
+            - webhookPath
+    EsignatureProvider:
+      type: string
+      enum:
+        - docusign
+        - adobe_sign
+    SignatureRequestStatus:
+      type: string
+      enum:
+        - draft
+        - pending_approval
+        - sent
+        - delivered
+        - completed
+        - declined
+        - voided
+        - failed
+    SignatureRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        documentId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        provider:
+          $ref: "#/components/schemas/EsignatureProvider"
+        externalId:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/SignatureRequestStatus"
+        signers:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties:
+              nullable: true
+        sentAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        completedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        signedDocumentId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - documentId
+        - provider
+        - externalId
+        - status
+        - signers
+        - sentAt
+        - completedAt
+        - signedDocumentId
+        - createdAt
+        - updatedAt
+    SignatureRequestListResponse:
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/SignatureRequest"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - requests
+        - pagination
+    SignatureRequestQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            documentId:
+              type: string
+              format: uuid
+              description: Unique identifier in UUID v4 format
+              example: 123e4567-e89b-12d3-a456-426614174000
+            status:
+              $ref: "#/components/schemas/SignatureRequestStatus"
+    CreateSignatureRequestRequest:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        provider:
+          $ref: "#/components/schemas/EsignatureProvider"
+        signers:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              nullable: true
+      required:
+        - documentId
+        - provider
+        - signers
+    CreateSignatureRequestResponse:
+      type: object
+      properties:
+        signatureRequest:
+          $ref: "#/components/schemas/SignatureRequest"
+        approvalRequestId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - signatureRequest
+        - approvalRequestId
+    SemanticSearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - query
+    SemanticSearchResult:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        documentChunkId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        score:
+          type: number
+        text:
+          type: string
+      required:
+        - documentId
+        - documentChunkId
+        - score
+        - text
+    SemanticSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SemanticSearchResult"
+      required:
+        - results
+    MatterSemanticSearchQuery:
+      type: object
+      properties:
+        q:
+          type: string
+          minLength: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+      required:
+        - q
     ApprovalIdParam:
       type: object
       properties:
@@ -2324,6 +4706,36 @@ components:
       required:
         - id
     DocumentChunkIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    DocumentExtractIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    DocumentSummarizeIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    DocumentEntitiesIdParam:
       type: object
       properties:
         id:
@@ -2464,6 +4876,286 @@ components:
       required:
         - id
     EmailAIProcessIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimeEntryIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimeEntryUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimeEntryDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TimeEntrySubmitIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    InvoiceIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    InvoiceUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    InvoiceSendIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    InvoiceVoidIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    CalendarEventIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    CalendarEventUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    CalendarEventDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    SuggestCalendarMatterIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TemplateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TemplateUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TemplatePreviewIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    TemplateGenerateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    LeadIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    LeadUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    LeadConvertIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    QuoteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    QuoteUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ConflictMatterIdParam:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - matterId
+    ConflictClearIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ConflictWaiveIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    SignatureRequestIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    MatterSearchIdParam:
       type: object
       properties:
         id:
@@ -2988,6 +5680,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ChunkDocumentResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/documents/{id}/extract:
+    post:
+      summary: Extract document text
+      description: Extract text from the stored upload and persist on the document
+      tags:
+        - Documents
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtractDocumentRequest"
+      responses:
+        "200":
+          description: Extraction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExtractDocumentResponse"
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJobAcceptedResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/documents/{id}/summarize:
+    post:
+      summary: Summarize document
+      description: Generate and persist an AI summary for a document
+      tags:
+        - Documents
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Summarization result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SummarizeDocumentResponse"
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJobAcceptedResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/documents/{id}/entities:
+    post:
+      summary: Extract document entities
+      description: Extract and persist structured entities on the document metadata
+      tags:
+        - Documents
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Entities result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentEntitiesResponse"
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentJobAcceptedResponse"
         "400":
           description: Validation error
           content:
@@ -3977,6 +6776,2007 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/time-entries:
+    get:
+      summary: List time entries
+      description: Retrieve firm time entries with filters
+      tags:
+        - Time Entries
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: matterId
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: feeEarnerId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/TimeEntryStatus"
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: string
+            format: date
+            description: ISO 8601 date string
+            example: 2024-12-17
+          required: false
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date
+            description: ISO 8601 date string
+            example: 2024-12-17
+          required: false
+          name: to
+          in: query
+      responses:
+        "200":
+          description: Time entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeEntryListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create time entry
+      description: Create a draft time entry
+      tags:
+        - Time Entries
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTimeEntryRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeEntry"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/time-entries/{id}:
+    get:
+      summary: Get time entry
+      description: Retrieve a single time entry
+      tags:
+        - Time Entries
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Time entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeEntry"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update time entry
+      description: Update a draft time entry
+      tags:
+        - Time Entries
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTimeEntryRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeEntry"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete time entry
+      description: Delete a draft time entry
+      tags:
+        - Time Entries
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/time-entries/{id}/submit:
+    post:
+      summary: Submit time entry
+      description: Submit a draft time entry for approval (creates an approval request)
+      tags:
+        - Time Entries
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/time-entries/bulk/submit:
+    post:
+      summary: Bulk submit time entries
+      description: Bulk submit draft time entries for approval
+      tags:
+        - Time Entries
+        - Approvals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkSubmitTimeEntriesRequest"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkSubmitTimeEntriesResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/invoices:
+    get:
+      summary: List invoices
+      description: Retrieve firm invoices with filters
+      tags:
+        - Invoices
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: clientId
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: matterId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/InvoiceStatus"
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Invoices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/invoices/generate:
+    post:
+      summary: Generate invoice
+      description: Generate an invoice from approved time entries
+      tags:
+        - Invoices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateInvoiceRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/invoices/{id}:
+    get:
+      summary: Get invoice
+      description: Retrieve invoice details including line items
+      tags:
+        - Invoices
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceWithItemsResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update invoice
+      description: Update draft invoice fields
+      tags:
+        - Invoices
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInvoiceRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/invoices/{id}/send:
+    post:
+      summary: Send invoice (approval required)
+      description: Create an approval request to send an invoice
+      tags:
+        - Invoices
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/invoices/{id}/void:
+    post:
+      summary: Void invoice
+      description: Void a draft invoice (marks written off)
+      tags:
+        - Invoices
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/payments:
+    get:
+      summary: List payments
+      description: Retrieve firm payments with filters
+      tags:
+        - Payments
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: invoiceId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/PaymentMethod"
+          required: false
+          name: method
+          in: query
+        - schema:
+            type: string
+            format: date
+            description: ISO 8601 date string
+            example: 2024-12-17
+          required: false
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date
+            description: ISO 8601 date string
+            example: 2024-12-17
+          required: false
+          name: to
+          in: query
+      responses:
+        "200":
+          description: Payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Record payment
+      description: Record a payment against an invoice
+      tags:
+        - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/payments/{id}:
+    get:
+      summary: Get payment
+      description: Retrieve a payment record
+      tags:
+        - Payments
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete payment
+      description: Delete a payment and recalculate invoice totals
+      tags:
+        - Payments
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/calendar:
+    get:
+      summary: List calendar events
+      description: List calendar events in a date range
+      tags:
+        - Calendar
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time string
+            example: 2024-12-17T10:30:00Z
+          required: true
+          name: from
+          in: query
+        - schema:
+            type: string
+            format: date-time
+            description: ISO 8601 date-time string
+            example: 2024-12-17T10:30:00Z
+          required: true
+          name: to
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: matterId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/CalendarEventType"
+          required: false
+          name: eventType
+          in: query
+        - schema:
+            $ref: "#/components/schemas/CalendarEventStatus"
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create calendar event
+      description: Create a calendar event (human-created)
+      tags:
+        - Calendar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCalendarEventRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/calendar/{id}:
+    get:
+      summary: Get calendar event
+      description: Retrieve a calendar event
+      tags:
+        - Calendar
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update calendar event
+      description: Update a calendar event
+      tags:
+        - Calendar
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCalendarEventRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Delete calendar event
+      description: Delete a calendar event
+      tags:
+        - Calendar
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/calendar/upcoming:
+    get:
+      summary: Upcoming calendar events
+      description: Convenience endpoint for upcoming events
+      tags:
+        - Calendar
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 14
+          required: false
+          name: days
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: matterId
+          in: query
+      responses:
+        "200":
+          description: Upcoming events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpcomingEventsResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}/ai/suggest-calendar:
+    post:
+      summary: Suggest calendar events (approval required)
+      description: Generate AI-proposed calendar events for a matter; returns an
+        approval request
+      tags:
+        - Matters
+        - Calendar
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarAISuggestRequest"
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/templates:
+    get:
+      summary: List templates
+      description: List templates (firm + optionally system)
+      tags:
+        - Templates
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            $ref: "#/components/schemas/TemplateType"
+          required: false
+          name: type
+          in: query
+        - schema:
+            type: boolean
+            nullable: true
+            default: true
+          required: false
+          name: includeSystem
+          in: query
+        - schema:
+            type: boolean
+            nullable: true
+            default: true
+          required: false
+          name: activeOnly
+          in: query
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemplateListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create template
+      description: Create a firm template
+      tags:
+        - Templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTemplateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/templates/{id}:
+    get:
+      summary: Get template
+      description: Retrieve a template by id
+      tags:
+        - Templates
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update template
+      description: Update a firm template (creates a new version)
+      tags:
+        - Templates
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTemplateRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/templates/{id}/preview:
+    post:
+      summary: Preview template
+      description: Render a template with provided data
+      tags:
+        - Templates
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewTemplateRequest"
+      responses:
+        "200":
+          description: Rendered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreviewTemplateResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/templates/{id}/generate:
+    post:
+      summary: Generate from template
+      description: Render a template (MVP returns rendered content)
+      tags:
+        - Templates
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreviewTemplateRequest"
+      responses:
+        "200":
+          description: Rendered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateTemplateResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/templates/propose:
+    post:
+      summary: Propose template (approval required)
+      description: Create an approval request for an AI-proposed template create/update
+      tags:
+        - Templates
+        - Approvals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProposeTemplateRequest"
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/leads:
+    get:
+      summary: List leads
+      description: List firm leads
+      tags:
+        - Intake
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            $ref: "#/components/schemas/LeadStatus"
+          required: false
+          name: status
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: search
+          in: query
+      responses:
+        "200":
+          description: Leads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create lead
+      description: Create a lead/enquiry
+      tags:
+        - Intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/leads/{id}:
+    get:
+      summary: Get lead
+      description: Retrieve a lead by id
+      tags:
+        - Intake
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update lead
+      description: Update a lead
+      tags:
+        - Intake
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLeadRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/leads/{id}/convert:
+    post:
+      summary: Convert lead
+      description: Convert lead into a client and a matter
+      tags:
+        - Intake
+        - Matters
+        - Clients
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConvertLeadRequest"
+      responses:
+        "200":
+          description: Converted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertLeadResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/quotes:
+    get:
+      summary: List quotes
+      description: List firm quotes
+      tags:
+        - Intake
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: leadId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/QuoteStatus"
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: Quotes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create quote
+      description: Create a quote for a lead
+      tags:
+        - Intake
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuoteRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quote"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/quotes/{id}:
+    get:
+      summary: Get quote
+      description: Retrieve a quote
+      tags:
+        - Intake
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quote"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update quote
+      description: Update a quote
+      tags:
+        - Intake
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateQuoteRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quote"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/conflicts/search:
+    post:
+      summary: Run conflict search
+      description: Run a conflict search and persist results
+      tags:
+        - Conflicts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConflictSearchRequest"
+      responses:
+        "200":
+          description: Results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictSearchResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/conflicts/{matterId}:
+    get:
+      summary: Get conflict check
+      description: Retrieve conflict check for a matter
+      tags:
+        - Conflicts
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: matterId
+          in: path
+      responses:
+        "200":
+          description: Conflict check
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConflictCheck"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/conflicts/{id}/clear:
+    post:
+      summary: Clear conflict check (approval required)
+      description: Create an approval request to clear a conflict check
+      tags:
+        - Conflicts
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConflictDecisionRequest"
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/conflicts/{id}/waive:
+    post:
+      summary: Waive conflict check (approval required)
+      description: Create an approval request to waive a conflict check
+      tags:
+        - Conflicts
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConflictDecisionRequest"
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/email/accounts:
+    get:
+      summary: List email accounts
+      description: List connected email provider accounts for the firm
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailAccountListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Connect email account
+      description: Create an email provider connection (MVP token capture)
+      tags:
+        - Integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmailAccountRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailAccountCreateResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/calendar/accounts:
+    get:
+      summary: List calendar accounts
+      description: List connected calendar provider accounts for the firm
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarAccountListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Connect calendar account
+      description: Create a calendar provider connection (MVP token capture)
+      tags:
+        - Integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCalendarAccountRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarAccountCreateResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/payments/accounts:
+    get:
+      summary: List payment provider accounts
+      description: List connected payment provider accounts for the firm
+      tags:
+        - Integrations
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentProviderAccountListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Connect payment provider
+      description: Create a payment provider account (webhook setup)
+      tags:
+        - Integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentProviderAccountRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentProviderAccountCreateResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/accounting/connections:
+    get:
+      summary: List accounting connections
+      description: List connected accounting provider connections for the firm
+      tags:
+        - Integrations
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountingConnectionListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Connect accounting provider
+      description: Create an accounting provider connection (MVP token capture)
+      tags:
+        - Integrations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountingConnectionRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountingConnectionCreateResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/signature-requests:
+    get:
+      summary: List signature requests
+      description: List signature requests for the firm
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: false
+          name: documentId
+          in: query
+        - schema:
+            $ref: "#/components/schemas/SignatureRequestStatus"
+          required: false
+          name: status
+          in: query
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignatureRequestListResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      summary: Create signature request (approval required)
+      description: Create a signature request and an approval item to send it
+      tags:
+        - Integrations
+        - Approvals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSignatureRequestRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSignatureRequestResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/signature-requests/{id}:
+    get:
+      summary: Get signature request
+      description: Retrieve a signature request by ID
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Signature request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignatureRequest"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/search/semantic:
+    post:
+      summary: Semantic search
+      description: Semantic search over document chunks (pgvector)
+      tags:
+        - Search
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SemanticSearchRequest"
+      responses:
+        "200":
+          description: Results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SemanticSearchResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}/search:
+    get:
+      summary: Semantic search within matter
+      description: Semantic search over a matter's document chunks (pgvector)
+      tags:
+        - Search
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+        - schema:
+            type: string
+            minLength: 1
+          required: true
+          name: q
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SemanticSearchResponse"
+        "400":
+          description: Validation error
           content:
             application/json:
               schema:

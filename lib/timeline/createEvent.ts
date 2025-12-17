@@ -1,5 +1,6 @@
 import { timelineEvents, type NewTimelineEvent } from "@/lib/db/schema";
 import { db } from "@/lib/db";
+import { publishMatterEvent } from "@/lib/realtime/publish";
 
 export async function createTimelineEvent(
   tx: typeof db,
@@ -16,6 +17,13 @@ export async function createTimelineEvent(
       metadata: event.metadata ?? null,
     })
     .returning();
+
+  publishMatterEvent(event.firmId, event.matterId, "timeline:event", {
+    timelineEventId: row.id,
+    type: row.type,
+    occurredAt:
+      row.occurredAt instanceof Date ? row.occurredAt.toISOString() : String(row.occurredAt),
+  }).catch(() => {});
 
   return row;
 }

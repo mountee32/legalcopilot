@@ -17,9 +17,12 @@ import {
   integer,
   date,
   jsonb,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { matters } from "./matters";
 import { clients } from "./clients";
+import { firms } from "./firms";
 import { users } from "./users";
 
 /**
@@ -63,6 +66,10 @@ export const paymentMethodEnum = pgEnum("payment_method", [
 export const timeEntries = pgTable("time_entries", {
   id: uuid("id").primaryKey().defaultRandom(),
 
+  firmId: uuid("firm_id")
+    .notNull()
+    .references(() => firms.id, { onDelete: "cascade" }),
+
   /** Matter this time relates to */
   matterId: uuid("matter_id")
     .notNull()
@@ -103,92 +110,158 @@ export const timeEntries = pgTable("time_entries", {
 /**
  * Invoices sent to clients.
  */
-export const invoices = pgTable("invoices", {
-  id: uuid("id").primaryKey().defaultRandom(),
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
 
-  /** Invoice number e.g. "INV-2024-0001" */
-  invoiceNumber: text("invoice_number").notNull().unique(),
+    firmId: uuid("firm_id")
+      .notNull()
+      .references(() => firms.id, { onDelete: "cascade" }),
 
-  /** Client being billed */
-  clientId: uuid("client_id")
-    .notNull()
-    .references(() => clients.id),
+    /** Invoice number e.g. "INV-2024-0001" */
+    invoiceNumber: text("invoice_number").notNull(),
 
-  /** Matter(s) this invoice relates to (may span multiple) */
-  matterId: uuid("matter_id").references(() => matters.id),
+    /** Client being billed */
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id),
 
-  status: invoiceStatusEnum("status").notNull().default("draft"),
+    /** Matter(s) this invoice relates to (may span multiple) */
+    matterId: uuid("matter_id").references(() => matters.id),
 
-  /** Invoice date */
-  invoiceDate: date("invoice_date").notNull(),
+    status: invoiceStatusEnum("status").notNull().default("draft"),
 
-  /** Payment due date */
-  dueDate: date("due_date").notNull(),
+    /** Invoice date */
+    invoiceDate: date("invoice_date").notNull(),
 
-  /** Subtotal before VAT */
-  subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
+    /** Payment due date */
+    dueDate: date("due_date").notNull(),
 
-  /** VAT amount (UK standard 20%) */
-  vatAmount: numeric("vat_amount", { precision: 10, scale: 2 }).notNull(),
+    /** Subtotal before VAT */
+    subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
 
-  /** Total including VAT */
-  total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+    /** VAT amount (UK standard 20%) */
+    vatAmount: numeric("vat_amount", { precision: 10, scale: 2 }).notNull(),
 
-  /** Amount paid so far */
-  paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }).default("0"),
+    /** Total including VAT */
+    total: numeric("total", { precision: 10, scale: 2 }).notNull(),
 
-  /** Outstanding balance */
-  balanceDue: numeric("balance_due", { precision: 10, scale: 2 }).notNull(),
+    /** Amount paid so far */
+    paidAmount: numeric("paid_amount", { precision: 10, scale: 2 }).default("0"),
 
-  /** Payment terms text */
-  terms: text("terms"),
+    /** Outstanding balance */
+    balanceDue: numeric("balance_due", { precision: 10, scale: 2 }).notNull(),
 
-  /** Additional notes on invoice */
-  notes: text("notes"),
+    /** Payment terms text */
+    terms: text("terms"),
 
-  /** When invoice was sent */
-  sentAt: timestamp("sent_at"),
+    /** Additional notes on invoice */
+    notes: text("notes"),
 
-  /** When first viewed by client */
-  viewedAt: timestamp("viewed_at"),
+    /** When invoice was sent */
+    sentAt: timestamp("sent_at"),
 
-  /** When fully paid */
-  paidAt: timestamp("paid_at"),
+    /** When first viewed by client */
+    viewedAt: timestamp("viewed_at"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+    /** When fully paid */
+    paidAt: timestamp("paid_at"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    uniqueInvoiceNumberPerFirm: uniqueIndex("invoices_firm_number_unique").on(
+      t.firmId,
+      t.invoiceNumber
+    ),
+    firmCreatedAtIdx: index("invoices_firm_created_at_idx").on(t.firmId, t.createdAt),
+  })
+);
+
+export const invoiceSequences = pgTable("invoice_sequences", {
+  firmId: uuid("firm_id")
+    .primaryKey()
+    .references(() => firms.id, { onDelete: "cascade" }),
+
+  nextNumber: integer("next_number").notNull().default(1),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const invoiceLineItems = pgTable(
+  "invoice_line_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    firmId: uuid("firm_id")
+      .notNull()
+      .references(() => firms.id, { onDelete: "cascade" }),
+
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+
+    description: text("description").notNull(),
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+
+    sourceType: text("source_type"), // "time_entry" | "manual"
+    sourceId: uuid("source_id"), // timeEntryId when sourceType=time_entry
+
+    metadata: jsonb("metadata"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    firmInvoiceIdx: index("invoice_line_items_firm_invoice_idx").on(t.firmId, t.invoiceId),
+  })
+);
 
 /**
  * Payment records.
  */
-export const payments = pgTable("payments", {
-  id: uuid("id").primaryKey().defaultRandom(),
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
 
-  /** Invoice this payment is for */
-  invoiceId: uuid("invoice_id")
-    .notNull()
-    .references(() => invoices.id),
+    firmId: uuid("firm_id")
+      .notNull()
+      .references(() => firms.id, { onDelete: "cascade" }),
 
-  /** Payment amount */
-  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+    /** Invoice this payment is for */
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id),
 
-  method: paymentMethodEnum("method").notNull(),
+    /** Payment amount */
+    amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
 
-  /** Date payment was received */
-  paymentDate: date("payment_date").notNull(),
+    method: paymentMethodEnum("method").notNull(),
 
-  /** Bank reference or transaction ID */
-  reference: text("reference"),
+    /** Date payment was received */
+    paymentDate: date("payment_date").notNull(),
 
-  /** Additional notes */
-  notes: text("notes"),
+    /** Bank reference or transaction ID */
+    reference: text("reference"),
 
-  /** User who recorded the payment */
-  recordedBy: uuid("recorded_by").references(() => users.id),
+    /** Additional notes */
+    notes: text("notes"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+    /** User who recorded the payment */
+    recordedBy: uuid("recorded_by").references(() => users.id),
+
+    /** Optional idempotency key for gateway/webhook ingestion */
+    externalProvider: text("external_provider"),
+    externalId: text("external_id"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    firmInvoiceIdx: index("payments_firm_invoice_idx").on(t.firmId, t.invoiceId),
+    externalIdx: index("payments_external_idx").on(t.externalProvider, t.externalId),
+  })
+);
 
 // Type exports
 export type TimeEntry = typeof timeEntries.$inferSelect;
@@ -197,6 +270,8 @@ export type Invoice = typeof invoices.$inferSelect;
 export type NewInvoice = typeof invoices.$inferInsert;
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;
 
 // TODO: Add when implementing:
 // - disbursements (expenses to be recharged)

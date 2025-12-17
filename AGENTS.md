@@ -119,7 +119,14 @@ Legal Copilot is an AI-first practice management platform for UK law firms. The 
 │   ├── design.md         # /design agent
 │   ├── dev.md            # /dev agent
 │   └── qa.md             # /qa agent
-└── __tests__/            # Test files
+└── tests/                # All test files
+    ├── unit/             # Vitest unit tests (mocked)
+    ├── integration/      # Vitest integration tests (real DB)
+    ├── e2e/              # Playwright tests
+    │   ├── api/          # API scenario tests
+    │   └── browser/      # Browser UI tests
+    ├── fixtures/         # Test data factories & seed
+    └── helpers/          # Shared test utilities
 ```
 
 ---
@@ -137,8 +144,14 @@ npm run dev
 docker compose up -d
 
 # Run tests
-npm test                  # Unit tests (non-watch)
-npm run test:e2e          # E2E tests
+npm test                  # All unit + integration tests
+npm run test:unit         # Unit tests only
+npm run test:integration  # Integration tests only (real DB)
+npm run test:e2e          # All Playwright tests
+npm run test:e2e:api      # API scenario tests only
+npm run test:e2e:browser  # Browser tests only
+npm run test:seed         # Seed realistic test data
+npm run test:all          # Run everything
 
 # Database
 npm run db:push           # Push schema to database
@@ -169,8 +182,111 @@ npm run format            # Run Prettier
 2. **API Design**: RESTful APIs following patterns in `docs/backend-design.md`
 3. **Database**: Use Drizzle ORM, follow schemas in `lib/db/schema/` (re-exported via `lib/db/schema/index.ts`)
 4. **Components**: Use shadcn/ui patterns, Tailwind for styling
-5. **Testing**: Unit tests for utilities, E2E for critical flows
+5. **Testing**: Unit tests for utilities, integration tests for API flows, E2E for critical scenarios
 6. **AI Integration**: All AI actions must be logged and auditable
+
+---
+
+## Testing
+
+All tests live under the `tests/` directory with a layered structure:
+
+### Test Structure
+
+| Directory            | Tool       | Purpose                              | Database |
+| -------------------- | ---------- | ------------------------------------ | -------- |
+| `tests/unit/`        | Vitest     | Fast, isolated unit tests with mocks | Mocked   |
+| `tests/integration/` | Vitest     | API tests against real database      | Real     |
+| `tests/e2e/api/`     | Playwright | Multi-step API scenario tests        | Real     |
+| `tests/e2e/browser/` | Playwright | Full browser UI tests                | Real     |
+
+### Writing Tests
+
+**Unit tests** (`tests/unit/`): Mock external dependencies, test single functions/components.
+
+```typescript
+// tests/unit/lib/example.test.ts
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/lib/db"); // Mock database
+
+describe("myFunction", () => {
+  it("should do something", () => {
+    expect(myFunction()).toBe(expected);
+  });
+});
+```
+
+**Integration tests** (`tests/integration/`): Use real database with test fixtures.
+
+```typescript
+// tests/integration/clients.test.ts
+import { describe, it, expect } from "vitest";
+import { setupIntegrationSuite } from "@tests/integration/setup";
+import { createClient } from "@tests/fixtures/factories";
+
+describe("Client API", () => {
+  const ctx = setupIntegrationSuite(); // Creates test firm, cleans up after
+
+  it("should create a client", async () => {
+    const client = await createClient({ firmId: ctx.firmId });
+    expect(client.id).toBeDefined();
+  });
+});
+```
+
+**API E2E tests** (`tests/e2e/api/`): Test complete API workflows.
+
+```typescript
+// tests/e2e/api/billing-workflow.spec.ts
+import { test, expect } from "@playwright/test";
+
+test("complete billing flow", async ({ request }) => {
+  // Create client → Add matter → Log time → Generate invoice
+  const client = await request.post("/api/clients", { data: {...} });
+  expect(client.ok()).toBeTruthy();
+  // ...continue workflow
+});
+```
+
+### Test Utilities
+
+| Location                      | Purpose                                             |
+| ----------------------------- | --------------------------------------------------- |
+| `tests/helpers/db.ts`         | Database setup, cleanup, reset                      |
+| `tests/helpers/auth.ts`       | Test authentication, get tokens                     |
+| `tests/helpers/assertions.ts` | Custom assertions (expectSuccess, expectUUID, etc.) |
+| `tests/fixtures/factories/`   | Create test entities (firm, client, matter)         |
+| `tests/fixtures/seed.ts`      | Seed realistic dataset for manual testing           |
+
+### Test Data Factories
+
+Use factories to create test data consistently:
+
+```typescript
+import { createFirm, createClient, createMatter } from "@tests/fixtures/factories";
+
+const firm = await createFirm({ plan: "enterprise" });
+const client = await createClient({ firmId: firm.id, type: "company" });
+const matter = await createMatter({ firmId: firm.id, clientId: client.id });
+```
+
+### Running Tests
+
+```bash
+npm test                  # All Vitest tests (unit + integration)
+npm run test:unit         # Unit tests only (fast, mocked)
+npm run test:integration  # Integration tests only (requires DB)
+npm run test:e2e          # All Playwright tests
+npm run test:e2e:api      # API scenario tests only
+npm run test:e2e:browser  # Browser tests only
+npm run test:seed         # Seed realistic test data
+npm run test:all          # Run everything
+```
+
+### Test Database Strategy
+
+Tests use **tenant isolation**: each test suite creates its own test firm and cleans up after. This allows parallel test execution without conflicts.
 
 ---
 
@@ -211,6 +327,8 @@ When building features, consult these locations directly:
 | Database schema   | `lib/db/schema/*.ts` — read files directly for current state |
 | API validation    | `lib/api/schemas/*.ts` — Zod schemas with OpenAPI            |
 | Existing patterns | `app/api/demo/` — reference implementation                   |
+| Test utilities    | `tests/fixtures/factories/` — test data factories            |
+| Test examples     | `tests/unit/app/api/demo/` — reference test patterns         |
 
 ### Schema Structure
 

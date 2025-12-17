@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateText } from "ai";
 import { documentChunks, matters } from "@/lib/db/schema";
@@ -7,6 +7,7 @@ import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { AskMatterSchema } from "@/lib/api/schemas";
 import { openrouter, models } from "@/lib/ai/openrouter";
+import { embedTexts } from "@/lib/ai/embeddings";
 import { withAuth } from "@/middleware/withAuth";
 import { ValidationError, withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
 
@@ -20,6 +21,10 @@ const AskResponseSchema = z.object({
   answer: z.string(),
   citations: z.array(CitationSchema).default([]),
 });
+
+function vectorLiteral(values: number[]): string {
+  return `[${values.map((v) => (Number.isFinite(v) ? v : 0)).join(",")}]`;
+}
 
 export const POST = withErrorHandler(
   withAuth(async (request, { params, user }) => {
@@ -35,6 +40,14 @@ export const POST = withErrorHandler(
 
     const firmId = await getOrCreateFirmIdForUser(user.user.id);
 
+    let queryVector: string | null = null;
+    try {
+      const [embedding] = await embedTexts([question]);
+      queryVector = vectorLiteral(embedding);
+    } catch {
+      queryVector = null;
+    }
+
     const chunks = await withFirmDb(firmId, async (tx) => {
       const [matter] = await tx
         .select({ id: matters.id })
@@ -44,7 +57,30 @@ export const POST = withErrorHandler(
 
       if (!matter) throw new NotFoundError("Matter not found");
 
-      return tx
+      if (queryVector) {
+        const where = and(
+          eq(documentChunks.firmId, firmId),
+          eq(documentChunks.matterId, matterId),
+          isNotNull(documentChunks.embedding)
+        );
+
+        const distance = sql<number>`(${documentChunks.embedding} <=> ${queryVector}::vector)`;
+
+        const rows = await tx
+          .select({
+            documentId: documentChunks.documentId,
+            documentChunkId: documentChunks.id,
+            text: documentChunks.text,
+          })
+          .from(documentChunks)
+          .where(where)
+          .orderBy(distance)
+          .limit(8);
+
+        if (rows.length > 0) return rows;
+      }
+
+      return await tx
         .select({
           documentId: documentChunks.documentId,
           documentChunkId: documentChunks.id,

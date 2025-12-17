@@ -7,17 +7,18 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./vitest.setup.ts"],
-    include: ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx"],
+    setupFiles: ["./tests/helpers/vitest-setup.ts"],
+    include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      exclude: ["node_modules/", "dist/", ".next/", "**/*.config.ts", "**/*.d.ts"],
+      exclude: ["node_modules/", "dist/", ".next/", "**/*.config.ts", "**/*.d.ts", "tests/e2e/**"],
     },
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./"),
+      "@tests": path.resolve(__dirname, "./tests"),
     },
   },
 });

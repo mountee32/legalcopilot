@@ -26,7 +26,15 @@ export * from "./timeline";
 export * from "./notifications";
 export * from "./tasks";
 export * from "./emails";
+export * from "./time-entries";
+export * from "./invoices";
+export * from "./payments";
+export * from "./calendar";
+export * from "./templates";
+export * from "./intake";
+export * from "./conflicts";
+export * from "./integrations";
+export * from "./search";
 
 // TODO: Add as implemented:
-// export * from "./billing";
 // export * from "./users";

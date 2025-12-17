@@ -10,7 +10,12 @@ async function ensureDefaultRolesForFirmTx(
   firmId: string
 ): Promise<{ adminRoleId: string; feeEarnerRoleId: string }> {
   const existing = await tx
-    .select({ id: roles.id, name: roles.name })
+    .select({
+      id: roles.id,
+      name: roles.name,
+      permissions: roles.permissions,
+      isSystem: roles.isSystem,
+    })
     .from(roles)
     .where(and(eq(roles.firmId, firmId), inArray(roles.name, ["admin", "fee_earner"])));
 
@@ -46,6 +51,42 @@ async function ensureDefaultRolesForFirmTx(
   const feeEarnerRoleId = byName.get("fee_earner");
   if (!adminRoleId || !feeEarnerRoleId) {
     throw new Error("Failed to ensure default roles");
+  }
+
+  const existingByName = new Map(existing.map((r) => [r.name as RoleName, r]));
+  const desiredByName: Record<RoleName, Permission[]> = {
+    admin: DEFAULT_ROLE_PERMISSIONS.admin,
+    fee_earner: DEFAULT_ROLE_PERMISSIONS.fee_earner,
+  };
+
+  for (const name of ["admin", "fee_earner"] as const) {
+    const row = existingByName.get(name);
+    if (!row?.isSystem) continue;
+
+    const current = row.permissions as unknown;
+    const desired = desiredByName[name];
+
+    const currentSet = new Set(
+      (Array.isArray(current) ? current : []).filter((p) => typeof p === "string")
+    );
+    const desiredSet = new Set(desired);
+
+    let differs = currentSet.size !== desiredSet.size;
+    if (!differs) {
+      for (const p of desiredSet) {
+        if (!currentSet.has(p)) {
+          differs = true;
+          break;
+        }
+      }
+    }
+
+    if (differs) {
+      await tx
+        .update(roles)
+        .set({ permissions: desired, updatedAt: new Date() })
+        .where(and(eq(roles.id, row.id), eq(roles.firmId, firmId)));
+    }
   }
 
   return { adminRoleId, feeEarnerRoleId };

@@ -3,6 +3,7 @@ import type { db } from "@/lib/db";
 import { documents, documentChunks } from "@/lib/db/schema";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
 import { chunkText } from "@/lib/documents/chunking";
+import { embedTexts } from "@/lib/ai/embeddings";
 
 type RechunkOptions = {
   firmId: string;
@@ -19,6 +20,13 @@ export async function rechunkDocumentTx(
   const chunks = chunkText(extractedText, maxChars);
   if (chunks.length === 0) return 0;
 
+  let embeddings: number[][] | null = null;
+  try {
+    embeddings = await embedTexts(chunks.map((c) => c.text));
+  } catch {
+    embeddings = null;
+  }
+
   await tx
     .delete(documentChunks)
     .where(and(eq(documentChunks.documentId, documentId), eq(documentChunks.firmId, firmId)));
@@ -32,6 +40,7 @@ export async function rechunkDocumentTx(
       text: chunk.text,
       charStart: chunk.charStart,
       charEnd: chunk.charEnd,
+      embedding: embeddings ? embeddings[index] : null,
     }))
   );
 

@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./tests/e2e",
 
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -36,30 +36,40 @@ export default defineConfig({
     video: "retain-on-failure",
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for different test types */
   projects: [
+    // API tests (no browser needed)
+    {
+      name: "api",
+      testMatch: "api/**/*.spec.ts",
+    },
+
+    // Browser tests across major browsers
     {
       name: "chromium",
+      testMatch: "browser/**/*.spec.ts",
       use: { ...devices["Desktop Chrome"] },
     },
-
     {
       name: "firefox",
+      testMatch: "browser/**/*.spec.ts",
       use: { ...devices["Desktop Firefox"] },
     },
-
     {
       name: "webkit",
+      testMatch: "browser/**/*.spec.ts",
       use: { ...devices["Desktop Safari"] },
     },
 
     /* Test against mobile viewports. */
     {
       name: "Mobile Chrome",
+      testMatch: "browser/**/*.spec.ts",
       use: { ...devices["Pixel 5"] },
     },
     {
       name: "Mobile Safari",
+      testMatch: "browser/**/*.spec.ts",
       use: { ...devices["iPhone 12"] },
     },
   ],

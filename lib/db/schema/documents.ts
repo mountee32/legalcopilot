@@ -16,6 +16,7 @@ import {
   integer,
   jsonb,
   uniqueIndex,
+  vector,
 } from "drizzle-orm/pg-core";
 import { firms } from "./firms";
 import { matters } from "./matters";
@@ -156,7 +157,7 @@ export const documentChunks = pgTable(
     charStart: integer("char_start"),
     charEnd: integer("char_end"),
 
-    embedding: jsonb("embedding"),
+    embedding: vector("embedding", { dimensions: 1536 }),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },

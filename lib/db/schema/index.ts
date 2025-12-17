@@ -29,6 +29,11 @@ export * from "./billing";
 export * from "./timeline";
 export * from "./tasks";
 export * from "./emails";
+export * from "./calendar";
+export * from "./templates";
+export * from "./intake";
+export * from "./conflicts";
+export * from "./integrations";
 
 // Compliance & Audit
 export * from "./approvals";

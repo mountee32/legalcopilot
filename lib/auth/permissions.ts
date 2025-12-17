@@ -30,6 +30,14 @@ export const PERMISSIONS = [
   "reports:export",
   "ai:use",
   "ai:configure",
+  "integrations:read",
+  "integrations:write",
+  "templates:read",
+  "templates:write",
+  "intake:read",
+  "intake:write",
+  "conflicts:read",
+  "conflicts:write",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -53,5 +61,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<"admin" | "fee_earner", Permission
     "billing:read",
     "approvals:view",
     "ai:use",
+    "integrations:read",
+    "templates:read",
+    "intake:read",
+    "intake:write",
+    "conflicts:read",
   ],
 };
