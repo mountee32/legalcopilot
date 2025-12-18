@@ -497,7 +497,13 @@ export async function seedDocuments(ctx: SeederContext) {
           })
           .onConflictDoUpdate({
             target: uploads.id,
-            set: { filename: storagePath },
+            set: {
+              filename: storagePath,
+              path: storagePath,
+              originalName: pdfData.filename,
+              size: String(pdfData.content.length),
+              url: `http://${process.env.MINIO_ENDPOINT || "localhost"}:${process.env.MINIO_PORT || "9000"}/uploads/${storagePath}`,
+            },
           })
           .returning();
 

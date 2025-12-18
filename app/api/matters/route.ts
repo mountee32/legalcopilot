@@ -89,6 +89,7 @@ export const POST = withErrorHandler(
             feeEarnerId: data.feeEarnerId ?? null,
             supervisorId: data.supervisorId ?? null,
             practiceArea: data.practiceArea,
+            subType: data.subType ?? null,
             billingType: data.billingType,
             hourlyRate: data.hourlyRate ?? null,
             fixedFee: data.fixedFee ?? null,

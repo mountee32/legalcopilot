@@ -63,15 +63,13 @@ export const documents = pgTable(
       .notNull()
       .references(() => firms.id, { onDelete: "cascade" }),
 
-    /** Matter this document belongs to */
-    matterId: uuid("matter_id")
-      .notNull()
-      .references(() => matters.id),
+    /** Matter this document belongs to (nullable for uploads pending assignment) */
+    matterId: uuid("matter_id").references(() => matters.id),
 
     /** Document title/description */
     title: text("title").notNull(),
 
-    type: documentTypeEnum("type").notNull(),
+    type: documentTypeEnum("type").default("other"),
     status: documentStatusEnum("status").notNull().default("draft"),
 
     /** Reference to file in uploads table */
@@ -100,6 +98,24 @@ export const documents = pgTable(
 
     /** AI-generated summary */
     aiSummary: text("ai_summary"),
+
+    /** AI confidence score 0-100 */
+    aiConfidence: integer("ai_confidence"),
+
+    /** AI-extracted parties from document [{name, role}] */
+    extractedParties: jsonb("extracted_parties"),
+
+    /** AI-extracted key dates from document [{label, date}] */
+    extractedDates: jsonb("extracted_dates"),
+
+    /** When AI analysis was completed */
+    analyzedAt: timestamp("analyzed_at"),
+
+    /** Token count from AI analysis (for cost tracking) */
+    aiTokensUsed: integer("ai_tokens_used"),
+
+    /** AI model used for analysis */
+    aiModel: text("ai_model"),
 
     /** Extracted text content (for search) */
     extractedText: text("extracted_text"),

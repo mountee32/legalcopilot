@@ -98,6 +98,10 @@ export const matters = pgTable(
 
     status: matterStatusEnum("status").notNull().default("lead"),
     practiceArea: practiceAreaEnum("practice_area").notNull(),
+
+    /** Sub-type within practice area e.g. "freehold_purchase" for conveyancing */
+    subType: text("sub_type"),
+
     billingType: billingTypeEnum("billing_type").notNull().default("hourly"),
 
     /** Agreed hourly rate (if hourly billing) */

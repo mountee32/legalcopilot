@@ -28,6 +28,7 @@ export * from "./documents";
 export * from "./billing";
 export * from "./timeline";
 export * from "./tasks";
+export * from "./task-templates";
 export * from "./emails";
 export * from "./calendar";
 export * from "./templates";

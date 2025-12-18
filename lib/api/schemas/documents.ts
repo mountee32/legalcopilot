@@ -190,5 +190,71 @@ export const DocumentDownloadResponseSchema = z
   })
   .openapi("DocumentDownloadResponse");
 
+// ============================================================================
+// Document Analysis Schemas (AI-powered document processing)
+// ============================================================================
+
+/** Request schema for document analysis endpoint */
+export const AnalyzeDocumentRequestSchema = z
+  .object({
+    force: z.boolean().optional(),
+  })
+  .openapi("AnalyzeDocumentRequest");
+
+/** Party extracted from document by AI */
+export const ExtractedPartySchema = z
+  .object({
+    name: z.string(),
+    role: z.string(),
+  })
+  .openapi("ExtractedParty");
+
+/** Key date extracted from document by AI */
+export const ExtractedDateSchema = z
+  .object({
+    label: z.string(),
+    date: z.string(), // YYYY-MM-DD format
+  })
+  .openapi("ExtractedDate");
+
+/** Confidence level for AI analysis (RAG status) */
+export const ConfidenceLevelSchema = z.enum(["green", "amber", "red"]).openapi("ConfidenceLevel");
+
+/** AI analysis result for a document */
+export const DocumentAnalysisSchema = z
+  .object({
+    suggestedTitle: z.string(),
+    documentType: DocumentTypeSchema,
+    documentDate: z.string().nullable(),
+    parties: z.array(ExtractedPartySchema),
+    keyDates: z.array(ExtractedDateSchema),
+    summary: z.string(),
+    confidence: z.number().int().min(0).max(100),
+    confidenceLevel: ConfidenceLevelSchema,
+  })
+  .openapi("DocumentAnalysis");
+
+/** Response schema for document analysis endpoint */
+export const AnalyzeDocumentResponseSchema = z
+  .object({
+    success: z.literal(true),
+    analysis: DocumentAnalysisSchema,
+    usage: z.object({
+      tokensUsed: z.number().int(),
+      model: z.string(),
+    }),
+  })
+  .openapi("AnalyzeDocumentResponse");
+
+// ============================================================================
+// Type Exports
+// ============================================================================
+
 export type Document = z.infer<typeof DocumentSchema>;
 export type CreateDocument = z.infer<typeof CreateDocumentSchema>;
+export type AnalyzeDocumentRequest = z.infer<typeof AnalyzeDocumentRequestSchema>;
+export type ExtractedParty = z.infer<typeof ExtractedPartySchema>;
+export type ExtractedDate = z.infer<typeof ExtractedDateSchema>;
+export type ConfidenceLevel = z.infer<typeof ConfidenceLevelSchema>;
+export type DocumentAnalysis = z.infer<typeof DocumentAnalysisSchema>;
+export type AnalyzeDocumentResponse = z.infer<typeof AnalyzeDocumentResponseSchema>;

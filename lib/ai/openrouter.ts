@@ -16,6 +16,8 @@ export const models = {
   "claude-3-opus": "anthropic/claude-3-opus",
   "llama-3-70b": "meta-llama/llama-3-70b-instruct",
   "mixtral-8x7b": "mistralai/mixtral-8x7b-instruct",
+  // Multimodal model for document analysis (can read PDFs directly)
+  "gemini-flash": "google/gemini-3-flash-preview",
 };
 
 // Helper function for text generation

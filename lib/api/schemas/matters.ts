@@ -68,6 +68,10 @@ export const MatterSchema = z
 
     status: MatterStatusSchema,
     practiceArea: PracticeAreaSchema,
+    subType: z.string().nullable().openapi({
+      description: "Sub-type within practice area e.g. freehold_purchase",
+      example: "freehold_purchase",
+    }),
     billingType: BillingTypeSchema,
 
     hourlyRate: MoneySchema.nullable(),
@@ -116,6 +120,10 @@ export const CreateMatterSchema = z
     supervisorId: UuidSchema.optional(),
 
     practiceArea: PracticeAreaSchema,
+    subType: z.string().max(100).optional().openapi({
+      description: "Sub-type within practice area",
+      example: "freehold_purchase",
+    }),
     billingType: BillingTypeSchema.default("hourly"),
 
     hourlyRate: z.string().optional(),
@@ -139,6 +147,7 @@ export const UpdateMatterSchema = z
     supervisorId: UuidSchema.nullable().optional(),
 
     status: MatterStatusSchema.optional(),
+    subType: z.string().max(100).nullable().optional(),
     billingType: BillingTypeSchema.optional(),
 
     hourlyRate: z.string().nullable().optional(),

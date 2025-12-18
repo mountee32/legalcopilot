@@ -55,6 +55,9 @@ export const tasks = pgTable(
     sourceEntityType: text("source_entity_type"),
     sourceEntityId: uuid("source_entity_id"),
 
+    /** Template item this task was created from (if any) */
+    templateItemId: uuid("template_item_id"),
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

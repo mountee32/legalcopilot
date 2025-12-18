@@ -25,6 +25,7 @@ export * from "./roles";
 export * from "./timeline";
 export * from "./notifications";
 export * from "./tasks";
+export * from "./task-templates";
 export * from "./emails";
 export * from "./time-entries";
 export * from "./invoices";
