@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
+import { TimeEntryDialog } from "@/components/TimeEntryDialog";
 
 interface TimeEntry {
   id: string;
@@ -88,6 +89,7 @@ function getStatusColor(status: string): string {
 
 export default function BillingPage() {
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
+  const [recordTimeOpen, setRecordTimeOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -289,6 +291,7 @@ export default function BillingPage() {
                   <h3 className="font-serif text-lg text-amber-50">Recorded Time Entries</h3>
                   <Button
                     size="sm"
+                    onClick={() => setRecordTimeOpen(true)}
                     className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30"
                   >
                     <Clock className="h-4 w-4 mr-2" />
@@ -482,6 +485,15 @@ export default function BillingPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Time Entry Dialog */}
+        <TimeEntryDialog
+          isOpen={recordTimeOpen}
+          onOpenChange={setRecordTimeOpen}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["time-entries"] });
+          }}
+        />
       </div>
     </div>
   );

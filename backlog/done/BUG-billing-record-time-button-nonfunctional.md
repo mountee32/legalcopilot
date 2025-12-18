@@ -145,3 +145,120 @@ ERROR: No form fields found after clicking Record Time!
 
 - **Success**: 201 Created with time entry object
 - **Error**: Appropriate error response from error handler
+
+---
+
+## Solution Design
+
+### Approach
+
+Create a reusable `TimeEntryDialog` component that:
+
+1. Is controlled by state (`isOpen`) in the billing page
+2. Fetches available matters on mount (for dropdown)
+3. Provides a form with validation matching API requirements
+4. Submits to `/api/time-entries` with proper error handling
+5. Invalidates React Query cache on success
+6. Shows toast notifications for success/error
+
+### Component: `TimeEntryDialog.tsx`
+
+**Location**: `components/TimeEntryDialog.tsx`
+
+**Props**:
+
+- `isOpen: boolean` - Controls modal visibility
+- `onOpenChange: (open: boolean) => void` - Callback to close dialog
+- `onSuccess?: () => void` - Callback after successful submission
+
+**Features**:
+
+- Modal dialog (shadcn/ui Dialog component)
+- Form fields:
+  - Matter selection (Combobox/Select, required)
+  - Work date (date picker, required)
+  - Description (textarea, 1-5000 chars, required)
+  - Duration in minutes (number input, 6-1440, must be multiple of 6)
+  - Hourly rate (currency input, required)
+  - Billable toggle (checkbox, defaults to true)
+- Form validation using `CreateTimeEntrySchema`
+- Loading state during submission
+- Error display and toast notifications
+- Auto-close on success
+
+### Integration: `app/(app)/billing/page.tsx`
+
+**Changes**:
+
+1. Add state: `const [recordTimeOpen, setRecordTimeOpen] = useState(false)`
+2. Render `<TimeEntryDialog isOpen={recordTimeOpen} onOpenChange={setRecordTimeOpen} />`
+3. Add onClick handler to "Record Time" button: `onClick={() => setRecordTimeOpen(true)}`
+4. Pass `onSuccess` callback to invalidate time-entries query
+
+**Similar Fix**: Apply same pattern to "Generate Invoice" button (scope: separate bug)
+
+### Form Implementation Details
+
+**Duration Input**:
+
+- Accept minutes or hours (users may think in hours)
+- Convert to minutes for API (must be multiple of 6)
+- Show real-time calculation: "0.1h = 6 minutes"
+- Validation: must be between 6-1440 minutes
+
+**Hourly Rate**:
+
+- Use Money input component (if available) or standard number input
+- Format as GBP currency
+- Validate against MoneySchema (e.g., max 2 decimal places)
+
+**API Integration**:
+
+- Use standard fetch with credentials
+- Handle 201 vs error responses
+- Invalidate: `queryClient.invalidateQueries({ queryKey: ["time-entries"] })`
+- Show success toast with entry details
+
+---
+
+## Test Strategy
+
+### Unit Tests
+
+**Location**: `tests/unit/components/TimeEntryDialog.test.ts`
+
+- Dialog opens/closes on state change
+- Form renders with all fields
+- Duration validation (6-minute increments)
+- Hourly rate validation
+- Form submission calls API with correct data
+- Error handling and toast display
+- Loading state during submission
+
+### Integration Tests
+
+**Location**: `tests/integration/billing/time-entry-form.test.ts`
+
+- Create time entry via form submission
+- Verify entry appears in time-entries list after success
+- Test matter lookup (dropdown population)
+- Test validation errors (invalid duration, missing description)
+- Test duplicate submission prevention (button disabled during request)
+
+### E2E Browser Tests
+
+**Location**: `tests/e2e/browser/billing-record-time.spec.ts`
+
+1. Navigate to `/billing` page
+2. Click "Record Time" button → dialog opens
+3. Select matter from dropdown
+4. Enter work date (today)
+5. Enter description
+6. Enter duration (e.g., 120 minutes)
+7. Enter hourly rate (e.g., 250.00)
+8. Submit form
+9. Verify success toast appears
+10. Verify modal closes
+11. Verify new entry appears in time entries list
+
+**Critical Test**: Verify button click actually opens dialog (reproduces original bug scenario)

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { UploadDocumentDialog } from "@/components/documents/UploadDocumentDialog";
 import { format } from "date-fns";
 import type { Document } from "@/lib/api/schemas/documents";
 
@@ -98,6 +99,7 @@ export default function DocumentsPage() {
   const searchParams = useSearchParams();
   const matterId = searchParams.get("matterId") || undefined;
   const [search, setSearch] = useState("");
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["documents", matterId],
@@ -123,7 +125,7 @@ export default function DocumentsPage() {
                 {matterId ? "Case documents with AI insights" : "All documents"}
               </p>
             </div>
-            <Button onClick={() => router.push("/documents/upload")}>
+            <Button onClick={() => setUploadDialogOpen(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Upload
             </Button>
@@ -169,7 +171,7 @@ export default function DocumentsPage() {
               }
               action={
                 !search ? (
-                  <Button onClick={() => router.push("/documents/upload")}>
+                  <Button onClick={() => setUploadDialogOpen(true)}>
                     <Upload className="h-4 w-4 mr-2" />
                     Upload Document
                   </Button>
@@ -185,6 +187,8 @@ export default function DocumentsPage() {
           </div>
         )}
       </div>
+
+      <UploadDocumentDialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen} />
     </div>
   );
 }

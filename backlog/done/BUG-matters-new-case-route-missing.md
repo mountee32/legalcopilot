@@ -104,3 +104,82 @@ Create `/home/andy/dev/legalcopilot/app/(app)/matters/new/page.tsx` with:
 - The API endpoint for creating matters already exists and works
 - The matter list page expects this functionality to work
 - The empty state on the matters page also has a "Create Case" button that likely has the same issue
+
+---
+
+## Solution Design
+
+### Files to Create
+
+1. **`/home/andy/dev/legalcopilot/app/(app)/matters/new/page.tsx`** - New case creation page
+   - Client component ("use client")
+   - Form using React Hook Form + Zod validation
+   - Field components from shadcn/ui (Card, Button, Input, Select, Textarea)
+
+### Form Fields
+
+From `CreateMatterSchema`:
+
+- **Title** (required, max 200 chars)
+- **Client ID** (required, dropdown from `/api/clients`)
+- **Practice Area** (required, enum: conveyancing, litigation, family, probate, employment, immigration, personal_injury, commercial, criminal, ip, insolvency, other)
+- **Billing Type** (required, default: hourly; enum: hourly, fixed_fee, conditional, legal_aid, pro_bono)
+- **Description** (optional, textarea)
+- **Hourly Rate** (optional, money format)
+- **Fixed Fee** (optional, money format)
+- **Estimated Value** (optional, money format)
+- **Key Deadline** (optional, datetime picker)
+- **Notes** (optional, textarea)
+- **Fee Earner ID** (optional, dropdown from `/api/users?role=fee_earner`)
+- **Supervisor ID** (optional, dropdown from `/api/users?role=supervisor`)
+
+### API Integration
+
+- **GET `/api/clients`** - Fetch clients for dropdown (requires pagination support)
+- **POST `/api/matters`** - Create matter with validation
+- **Success flow**: POST succeeds → redirect to `/matters/{id}`
+- **Error flow**: Validation error → show toast/error message → keep form populated
+- **Loading state**: Disable form during submission, show loading spinner
+
+### Data Flow
+
+1. User navigates to `/matters/new`
+2. Page renders empty form with client dropdown loaded
+3. User fills form and clicks "Create"
+4. Form validates with Zod schema
+5. Client-side validation passes → POST to `/api/matters`
+6. API validates again with `CreateMatterSchema`
+7. Matter created in database with status "lead"
+8. Success: Redirect to `/matters/{id}` (detail page)
+9. Error: Display error message, keep form data
+
+---
+
+## Test Strategy
+
+### Unit Tests
+
+- Form validation with Zod schema (various field combinations)
+- Error handling for missing required fields
+- Money field formatting (if applicable)
+
+### Integration Tests
+
+- POST to `/api/matters` with valid data (creates matter in DB)
+- POST to `/api/matters` with invalid clientId (returns 404)
+- POST to `/api/matters` with missing required fields (returns validation error)
+- Matter created with correct defaults (status="lead", billingType="hourly")
+
+### E2E Tests
+
+1. Navigate to `/matters` → click "New Case" button → loads `/matters/new`
+2. Fill form with valid data → click create → redirects to detail page
+3. Fill form with missing required field → see validation error
+4. Fill form with invalid client → see error message
+5. Click create from empty state on matters list → same flow
+
+### Test Fixtures
+
+- Use `createClient` factory to create test clients
+- Create test firms with setupIntegrationSuite()
+- Test with various practice areas and billing types

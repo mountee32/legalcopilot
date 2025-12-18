@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
+import { EventFormDialog } from "@/components/calendar/EventFormDialog";
 
 interface CalendarEvent {
   id: string;
@@ -86,6 +87,7 @@ function getEventIcon(eventType: string) {
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const monthStart = startOfMonth(currentMonth);
@@ -197,6 +199,7 @@ export default function CalendarPage() {
               </Button>
               <Button
                 size="sm"
+                onClick={() => setIsEventDialogOpen(true)}
                 className="ml-2 bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -306,7 +309,10 @@ export default function CalendarPage() {
                 <p className="text-sm text-slate-500 mb-6">
                   Create events or connect your calendar to see them here
                 </p>
-                <Button className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30">
+                <Button
+                  onClick={() => setIsEventDialogOpen(true)}
+                  className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Event
                 </Button>
@@ -437,6 +443,8 @@ export default function CalendarPage() {
           </Card>
         )}
       </div>
+
+      <EventFormDialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen} />
     </div>
   );
 }

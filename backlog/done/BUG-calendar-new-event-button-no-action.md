@@ -143,3 +143,100 @@ Medium priority because:
 - Users can still work around this by using other methods if they exist
 - However, creating events is a core feature that users will expect to work
 - The button is prominently displayed, so users will definitely try to click it
+
+---
+
+## Solution Design
+
+### Approach: Modal Dialog for Event Creation
+
+**Decision**: Implement a reusable `EventFormDialog` component that opens in a modal when either button is clicked. This provides:
+
+- Consistent UX across calendar views (month + agenda)
+- Non-disruptive event creation without page navigation
+- Real-time form validation
+- Easy integration with existing components
+
+### Architecture
+
+#### Component Structure
+
+```
+components/
+├── calendar/
+│   ├── EventFormDialog.tsx (new)
+│   └── event-form-dialog.test.tsx (new)
+└── ui/
+    └── dialog.tsx (existing)
+```
+
+#### Form Fields & Validation
+
+Use `CreateCalendarEventSchema` from `lib/api/schemas/calendar.ts`:
+
+- **title** - Text input, required (min 1, max 200 chars)
+- **eventType** - Select (hearing, deadline, meeting, reminder, limitation_date, filing_deadline, other)
+- **startAt** - DateTime picker, required
+- **endAt** - DateTime picker, optional (auto-calculated if allDay)
+- **allDay** - Boolean toggle (shows/hides time pickers)
+- **description** - Text area, optional
+- **location** - Text input, optional
+- **matterId** - Async select (fetch matters from `/api/matters`), optional
+- **reminderMinutes** - Multi-select for reminder times, optional
+- **priority** - Select (low, medium, high, critical), defaulted to "medium"
+
+#### API Integration
+
+- POST to `/api/calendar` with `CreateCalendarEventSchema`
+- On success: close dialog, refetch calendar events, show success toast
+- On error: display inline validation errors, show error toast
+- Handle 400 (validation) and 401 (auth) responses gracefully
+
+### Implementation Steps
+
+1. Create `components/calendar/EventFormDialog.tsx` with form state & submission
+2. Add `onClick` handlers to both "New Event" buttons
+3. Style dialog to match calendar aesthetic (amber theme, serif typography)
+4. Add useCallback hooks to optimize re-renders
+5. Implement matter association with async select
+
+### Files to Create
+
+- `components/calendar/EventFormDialog.tsx` (main form component)
+
+### Files to Modify
+
+- `app/(app)/calendar/page.tsx` (add state, onClick handlers, dialog mount)
+
+---
+
+## Test Strategy
+
+### Unit Tests
+
+- Form field validation (required fields, min/max length)
+- Date/time field constraints (endAt > startAt)
+- Form submission with valid/invalid data
+- Loading state during submission
+- Error state rendering
+
+### Integration Tests
+
+- Create calendar event via form submission
+- Verify event appears in calendar after creation
+- Test matter association lookup
+- Test form reset after successful submission
+
+### E2E Tests
+
+- User clicks "New Event" button → dialog opens
+- User fills form → submits → event appears in calendar
+- User clicks "New Event" in agenda view → same flow works
+- User cancels dialog → no event created
+- User enters invalid data → form shows errors → corrects → submits successfully
+
+### Test Fixtures
+
+- Mock matters data for select dropdown
+- Pre-created test matter for association tests
+- Sample form data for submission tests
