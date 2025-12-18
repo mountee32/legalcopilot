@@ -11,7 +11,7 @@ import {
   Calendar,
   Clock,
   BarChart3,
-  Funnel,
+  Filter,
   UsersRound,
   Settings,
   HelpCircle,
@@ -38,7 +38,7 @@ const secondaryNavItems = [
 ];
 
 const tertiaryNavItems = [
-  { href: "/leads", icon: Funnel, label: "Leads" },
+  { href: "/leads", icon: Filter, label: "Leads" },
   { href: "/team", icon: UsersRound, label: "Team" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];

@@ -1,6 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
+// Mock withClientPortalAuth middleware to bypass authentication
+vi.mock("@/middleware/withClientPortalAuth", () => ({
+  withClientPortalAuth: (handler: any) => (request: any, ctx: any) => {
+    const mockPortalSession = {
+      sessionId: "session-123",
+      clientId: "client-123",
+      firmId: "firm-123",
+      client: {
+        id: "client-123",
+        email: "client@example.com",
+        firstName: "John",
+        lastName: "Doe",
+      },
+    };
+    return handler(request, { ...ctx, portalSession: mockPortalSession });
+  },
+}));
+
 // Mock the database module
 const mockDb = {
   select: vi.fn().mockReturnThis(),

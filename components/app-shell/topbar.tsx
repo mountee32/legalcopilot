@@ -1,10 +1,11 @@
 "use client";
 
 import { useSession } from "@/lib/auth/client";
-import { Bell, Search, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationButton } from "./notification-button";
+import { useCommandPalette } from "@/lib/hooks/use-command-palette";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -12,6 +13,7 @@ interface TopbarProps {
 
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { data: session } = useSession();
+  const { open } = useCommandPalette();
   const user = session?.user;
 
   const initials =
@@ -40,17 +42,22 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
       {/* Search */}
       <div className="flex-1 md:max-w-md">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Search..." className="pl-8" />
-        </div>
+        <Button
+          variant="outline"
+          className="w-full justify-start text-left font-normal text-muted-foreground"
+          onClick={open}
+        >
+          <Search className="mr-2 h-4 w-4" />
+          <span>Search...</span>
+          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </Button>
       </div>
 
       {/* Right side actions */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-        </Button>
+        <NotificationButton />
 
         {/* Mobile-only avatar (desktop shows in sidebar) */}
         <div className="md:hidden">

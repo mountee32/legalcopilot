@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { FastLoginButtons } from "./fast-login-buttons";
+
+// Check if fast login is enabled (client-side check)
+const FAST_LOGIN_ENABLED = process.env.NEXT_PUBLIC_ENABLE_FAST_LOGIN === "true";
 
 export function LoginForm() {
   const router = useRouter();
@@ -101,6 +105,9 @@ export function LoginForm() {
               Sign up
             </Link>
           </div>
+
+          {/* Fast Login - Development Only */}
+          {FAST_LOGIN_ENABLED && <FastLoginButtons />}
         </form>
       </CardContent>
     </Card>

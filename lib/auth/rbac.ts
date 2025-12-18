@@ -152,7 +152,17 @@ export async function getUserPermissions(userId: string, firmId: string): Promis
 }
 
 export function hasPermission(userPermissions: readonly string[], required: Permission): boolean {
-  return userPermissions.includes(required);
+  // Check for global wildcard
+  if (userPermissions.includes("*")) return true;
+
+  // Check for exact match
+  if (userPermissions.includes(required)) return true;
+
+  // Check for resource wildcard (e.g., "approvals:*" matches "approvals:view")
+  const [resource] = required.split(":");
+  if (resource && userPermissions.includes(`${resource}:*`)) return true;
+
+  return false;
 }
 
 export async function ensureDefaultRolesAndUserRole(userId: string, firmId: string): Promise<void> {
