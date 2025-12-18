@@ -13,7 +13,7 @@ async function verify() {
   const firmRows = await db.select().from(firms).where(eq(firms.id, DEMO_FIRM_ID));
   console.log(`Firms: ${firmRows.length}`);
   if (firmRows.length > 0) {
-    console.log(`  - ${firmRows[0].name} (${firmRows[0].status}, ${firmRows[0].plan})`);
+    console.log(`  - ${firmRows[0].name}`);
   }
 
   // Check users

@@ -16,6 +16,22 @@ import { users, accounts, roles, firms } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
+// Demo IDs - matches tests/fixtures/demo-data/index.ts
+// Using these IDs ensures fast-login users see demo data seeded by `npm run demo:seed`
+const DEMO_FIRM_ID = "de000000-0000-4000-a000-000000000001";
+const DEMO_USER_IDS = {
+  partner: "de000000-0000-4000-a001-000000000001",
+  associate: "de000000-0000-4000-a001-000000000002",
+  associate2: "de000000-0000-4000-a001-000000000003",
+  associate3: "de000000-0000-4000-a001-000000000004",
+  paralegal1: "de000000-0000-4000-a001-000000000005",
+  paralegal2: "de000000-0000-4000-a001-000000000006",
+  seniorPartner: "de000000-0000-4000-a001-000000000007",
+  receptionist: "de000000-0000-4000-a001-000000000008",
+  firmAdmin: "de000000-0000-4000-a001-000000000009",
+  superAdmin: "de000000-0000-4000-a001-000000000010",
+};
+
 // Better-Auth compatible password hashing (uses scrypt)
 async function hashPasswordBetterAuth(password: string): Promise<string> {
   const { scrypt, randomBytes } = await import("crypto");
@@ -33,51 +49,117 @@ async function hashPasswordBetterAuth(password: string): Promise<string> {
   return `${salt}:${key.toString("hex")}`;
 }
 
-// Test users configuration
+// Demo users configuration - maps to demo data users from npm run demo:seed
+// Each role logs in as the corresponding demo character
 const TEST_USERS = [
-  { email: "admin@test.local", name: "Admin User", roleName: "firm_admin" },
-  { email: "partner@test.local", name: "Pat Partner", roleName: "partner" },
-  { email: "sr-associate@test.local", name: "Sam Senior", roleName: "senior_associate" },
-  { email: "associate@test.local", name: "Alex Associate", roleName: "associate" },
-  { email: "paralegal@test.local", name: "Perry Paralegal", roleName: "paralegal" },
-  { email: "secretary@test.local", name: "Sue Secretary", roleName: "secretary" },
-  { email: "client@test.local", name: "Chris Client", roleName: "client" },
-  { email: "superadmin@test.local", name: "Super Admin", roleName: "super_admin" },
+  {
+    email: "admin@harrisonclark.demo",
+    name: "Admin User",
+    roleName: "firm_admin",
+    userId: DEMO_USER_IDS.firmAdmin,
+  },
+  {
+    email: "sarah.harrison@harrisonclark.demo",
+    name: "Sarah Harrison",
+    roleName: "partner",
+    userId: DEMO_USER_IDS.partner,
+  },
+  {
+    email: "victoria.clarke@harrisonclark.demo",
+    name: "Victoria Clarke",
+    roleName: "senior_associate",
+    userId: DEMO_USER_IDS.seniorPartner,
+  },
+  {
+    email: "james.clarke@harrisonclark.demo",
+    name: "James Clarke",
+    roleName: "associate",
+    userId: DEMO_USER_IDS.associate,
+  },
+  {
+    email: "tom.richards@harrisonclark.demo",
+    name: "Tom Richards",
+    roleName: "paralegal",
+    userId: DEMO_USER_IDS.paralegal1,
+  },
+  {
+    email: "lucy.taylor@harrisonclark.demo",
+    name: "Lucy Taylor",
+    roleName: "secretary",
+    userId: DEMO_USER_IDS.receptionist,
+  },
+  {
+    email: "client@harrisonclark.demo",
+    name: "Demo Client",
+    roleName: "client",
+    userId: null, // Client portal users don't need firm data access
+  },
+  {
+    email: "superadmin@harrisonclark.demo",
+    name: "Super Admin",
+    roleName: "super_admin",
+    userId: DEMO_USER_IDS.superAdmin,
+  },
 ] as const;
 
 type RoleName = (typeof TEST_USERS)[number]["roleName"];
 
 // Default permissions by role
+// Note: API uses "cases" not "matters" for the matters/cases resource
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   firm_admin: ["*"],
   partner: [
-    "matters:*",
+    "cases:*",
     "clients:*",
     "documents:*",
     "billing:*",
     "approvals:*",
+    "emails:*",
     "team:read",
     "reports:*",
+    "tasks:*",
+    "calendar:*",
   ],
   senior_associate: [
-    "matters:*",
+    "cases:*",
     "clients:*",
     "documents:*",
     "billing:create",
     "billing:read",
     "billing:update",
-    "approvals:create",
+    "approvals:*",
+    "emails:*",
+    "tasks:*",
+    "calendar:*",
   ],
   associate: [
-    "matters:read",
-    "matters:update",
+    "cases:read",
+    "cases:update",
     "clients:read",
     "documents:*",
     "billing:create",
     "billing:read",
+    "emails:read",
+    "tasks:*",
+    "calendar:*",
   ],
-  paralegal: ["matters:read", "clients:read", "documents:read", "documents:create"],
-  secretary: ["matters:read", "clients:read", "documents:read", "calendar:*"],
+  paralegal: [
+    "cases:read",
+    "clients:read",
+    "documents:read",
+    "documents:create",
+    "emails:read",
+    "tasks:read",
+    "calendar:read",
+  ],
+  secretary: [
+    "cases:read",
+    "clients:read",
+    "documents:read",
+    "emails:read",
+    "calendar:*",
+    "tasks:read",
+  ],
   client: ["portal:*"],
   super_admin: ["*", "system:*"],
 };
@@ -106,23 +188,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Unknown role: ${role}` }, { status: 400 });
     }
 
-    // Ensure test firm exists
-    let testFirm = await db
+    // Use the demo firm (seeded by npm run demo:seed)
+    // This ensures fast-login users can see demo data
+    let demoFirm = await db
       .select()
       .from(firms)
-      .where(eq(firms.name, "Test Firm (Dev)"))
+      .where(eq(firms.id, DEMO_FIRM_ID))
       .limit(1)
       .then((r) => r[0]);
 
-    if (!testFirm) {
-      [testFirm] = await db
+    if (!demoFirm) {
+      // Demo firm not seeded - create a placeholder
+      // Run `npm run demo:seed` to get full demo data
+      [demoFirm] = await db
         .insert(firms)
         .values({
-          name: "Test Firm (Dev)",
-          sraNumber: "DEV000000",
+          id: DEMO_FIRM_ID,
+          name: "Harrison & Clarke Solicitors",
+          sraNumber: "DEMO123456",
           status: "active",
           plan: "enterprise",
-          email: "dev@test.local",
+          email: "info@harrisonandclarke.demo",
         })
         .returning();
     }
@@ -131,7 +217,7 @@ export async function POST(request: Request) {
     let dbRole = await db
       .select()
       .from(roles)
-      .where(and(eq(roles.firmId, testFirm.id), eq(roles.name, testUserConfig.roleName)))
+      .where(and(eq(roles.firmId, demoFirm.id), eq(roles.name, testUserConfig.roleName)))
       .limit(1)
       .then((r) => r[0]);
 
@@ -139,35 +225,68 @@ export async function POST(request: Request) {
       [dbRole] = await db
         .insert(roles)
         .values({
-          firmId: testFirm.id,
+          firmId: demoFirm.id,
           name: testUserConfig.roleName,
           description: `Test role for ${testUserConfig.roleName}`,
           permissions: ROLE_PERMISSIONS[testUserConfig.roleName] || [],
           isSystem: true,
         })
         .returning();
+    } else {
+      // Update role permissions if they've changed
+      const expectedPermissions = ROLE_PERMISSIONS[testUserConfig.roleName] || [];
+      const currentPermissions = dbRole.permissions || [];
+      if (
+        JSON.stringify(currentPermissions.sort()) !== JSON.stringify(expectedPermissions.sort())
+      ) {
+        [dbRole] = await db
+          .update(roles)
+          .set({ permissions: expectedPermissions, updatedAt: new Date() })
+          .where(eq(roles.id, dbRole.id))
+          .returning();
+      }
     }
 
     // Find or create the test user
-    let user = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, testUserConfig.email))
-      .limit(1)
-      .then((r) => r[0]);
+    // For demo data users (those with userId), try to find by ID first (preserves demo data linkage)
+    // For other users (client, firm_admin, super_admin), find by email
+    let user = testUserConfig.userId
+      ? await db
+          .select()
+          .from(users)
+          .where(eq(users.id, testUserConfig.userId))
+          .limit(1)
+          .then((r) => r[0])
+      : await db
+          .select()
+          .from(users)
+          .where(eq(users.email, testUserConfig.email))
+          .limit(1)
+          .then((r) => r[0]);
 
     if (!user) {
-      // Create user
-      [user] = await db
-        .insert(users)
-        .values({
-          email: testUserConfig.email,
-          name: testUserConfig.name,
-          firmId: testFirm.id,
-          roleId: dbRole.id,
-          emailVerified: true,
-        })
-        .returning();
+      // Create user with predetermined ID if provided (ensures demo data works)
+      const userValues: {
+        id?: string;
+        email: string;
+        name: string;
+        firmId: string;
+        roleId: string;
+        emailVerified: boolean;
+      } = {
+        email: testUserConfig.email,
+        name: testUserConfig.name,
+        firmId: demoFirm.id,
+        roleId: dbRole.id,
+        emailVerified: true,
+      };
+
+      // Use predetermined ID for demo data users
+      if (testUserConfig.userId) {
+        userValues.id = testUserConfig.userId;
+      }
+
+      [user] = await db.insert(users).values(userValues).returning();
 
       // Create credential account with password "testpass123"
       // Use Better-Auth's password format (salt:key), not bcrypt
@@ -180,14 +299,14 @@ export async function POST(request: Request) {
       });
     } else {
       // Ensure user has correct firm and role
-      if (user.firmId !== testFirm.id || user.roleId !== dbRole.id) {
+      if (user.firmId !== demoFirm.id || user.roleId !== dbRole.id) {
         await db
           .update(users)
-          .set({ firmId: testFirm.id, roleId: dbRole.id, updatedAt: new Date() })
+          .set({ firmId: demoFirm.id, roleId: dbRole.id, updatedAt: new Date() })
           .where(eq(users.id, user.id));
       }
 
-      // Ensure the account has the correct password format (Better-Auth uses salt:key, not bcrypt)
+      // Ensure credential account exists with correct password
       const existingAccount = await db
         .select()
         .from(accounts)
@@ -195,25 +314,41 @@ export async function POST(request: Request) {
         .limit(1)
         .then((r) => r[0]);
 
-      if (existingAccount) {
+      if (!existingAccount) {
+        // Create credential account for demo user (they were created by demo:seed without one)
+        const hashedPassword = await hashPasswordBetterAuth("testpass123");
+        await db.insert(accounts).values({
+          userId: user.id,
+          providerId: "credential",
+          accountId: testUserConfig.email,
+          password: hashedPassword,
+        });
+      } else if (!existingAccount.password?.includes(":")) {
         // Check if password is in Better-Auth format (contains colon)
-        if (!existingAccount.password?.includes(":")) {
-          const hashedPassword = await hashPasswordBetterAuth("testpass123");
-          await db
-            .update(accounts)
-            .set({ password: hashedPassword, updatedAt: new Date() })
-            .where(eq(accounts.id, existingAccount.id));
-        }
+        const hashedPassword = await hashPasswordBetterAuth("testpass123");
+        await db
+          .update(accounts)
+          .set({ password: hashedPassword, updatedAt: new Date() })
+          .where(eq(accounts.id, existingAccount.id));
       }
     }
 
     // Use Better-Auth's sign-in endpoint via internal fetch
     // This ensures proper session creation with correct cookie format
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Use the Host header to get the actual host the client is accessing
+    // (request.url is normalized to localhost by Next.js internally)
+    const hostHeader = request.headers.get("host") || "localhost:3000";
+    const protocol = request.headers.get("x-forwarded-proto") || "http";
+    const baseUrl = `${protocol}://${hostHeader}`;
     const signInResponse = await fetch(`${baseUrl}/api/auth/sign-in/email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // Forward headers so Better-Auth sees the original client context
+        Host: hostHeader,
+        Origin: baseUrl,
+        "X-Forwarded-Host": hostHeader,
+        "X-Forwarded-Proto": protocol,
       },
       body: JSON.stringify({
         email: testUserConfig.email,
@@ -229,7 +364,16 @@ export async function POST(request: Request) {
 
     // Get the response data and cookies from Better-Auth
     const data = await signInResponse.json();
-    const setCookie = signInResponse.headers.get("set-cookie");
+    // Use getSetCookie() to get ALL Set-Cookie headers (there may be multiple)
+    const setCookies = signInResponse.headers.getSetCookie();
+
+    // Debug logging
+    console.log("[fast-login] baseUrl:", baseUrl);
+    console.log("[fast-login] sign-in response status:", signInResponse.status);
+    console.log("[fast-login] cookies received:", setCookies.length);
+    setCookies.forEach((c, i) =>
+      console.log(`[fast-login] cookie ${i}:`, c.substring(0, 100) + "...")
+    );
 
     // Create our response with the session cookie forwarded
     const response = NextResponse.json({
@@ -242,9 +386,9 @@ export async function POST(request: Request) {
       },
     });
 
-    // Forward the session cookie from Better-Auth
-    if (setCookie) {
-      response.headers.set("set-cookie", setCookie);
+    // Forward ALL session cookies from Better-Auth
+    for (const cookie of setCookies) {
+      response.headers.append("set-cookie", cookie);
     }
 
     return response;

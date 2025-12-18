@@ -160,6 +160,89 @@ npm run db:studio         # Open Drizzle Studio
 # Linting & Formatting
 npm run lint              # Run ESLint
 npm run format            # Run Prettier
+
+# Demo data
+npm run demo:seed         # Seed demo data (additive)
+npm run demo:reset        # Clear and re-seed demo data
+npm run demo:clear        # Remove all demo data
+```
+
+---
+
+## Demo Data
+
+The project includes comprehensive demo data for development and testing. All demo entities are prefixed with `DEMO_` for easy identification.
+
+### Commands
+
+```bash
+# Seed demo data (safe to run multiple times - uses upsert)
+npm run demo:seed
+
+# Clear existing demo data and re-seed fresh
+npm run demo:reset
+
+# Remove all demo data without re-seeding
+npm run demo:clear
+```
+
+### Demo Firm & Login
+
+| Field   | Value                                |
+| ------- | ------------------------------------ |
+| Firm    | Harrison & Clarke Solicitors         |
+| Firm ID | de000000-0000-4000-a000-000000000001 |
+
+**Fast Login (Development Mode)**: Use the quick-login buttons on the login page to instantly log in as demo characters. Each role maps to a specific demo user:
+
+| Role         | Demo Character  | Email                              |
+| ------------ | --------------- | ---------------------------------- |
+| Partner      | Sarah Harrison  | sarah.harrison@harrisonclark.demo  |
+| Sr Associate | Victoria Clarke | victoria.clarke@harrisonclark.demo |
+| Associate    | James Clarke    | james.clarke@harrisonclark.demo    |
+| Paralegal    | Tom Richards    | tom.richards@harrisonclark.demo    |
+| Secretary    | Lucy Taylor     | lucy.taylor@harrisonclark.demo     |
+
+Fast-login users see the same data as the demo characters (their matters, time entries, tasks, etc.). Requires `NEXT_PUBLIC_ENABLE_FAST_LOGIN=true` in environment.
+
+### Included Data
+
+| Entity            | Count | Description                                                                 |
+| ----------------- | ----- | --------------------------------------------------------------------------- |
+| Users             | 8     | Partners, associates, paralegals across departments                         |
+| Clients           | 15    | Mix of individuals, companies, trusts                                       |
+| Matters           | 25    | Various practice areas (conveyancing, litigation, family, etc.)             |
+| Time Entries      | 50    | Billable and non-billable entries across matters                            |
+| Tasks             | 40    | Various statuses and priorities (13 for MAT-DEMO-001)                       |
+| Invoices          | 10    | Draft, sent, paid, partially paid                                           |
+| Payments          | 5     | BACS and card payments                                                      |
+| Documents         | 30    | Contracts, correspondence, court forms, evidence (12 with actual PDFs)      |
+| Calendar Events   | 15    | Hearings, deadlines, meetings, consultations                                |
+| Timeline Events   | 66    | Case history events (conflict checks, filings, correspondence, AI analysis) |
+| Notifications     | 20    | Task assignments, payments, deadlines                                       |
+| Emails (AI Inbox) | 18    | Inbound emails with AI analysis (9 for MAT-DEMO-001 showcase)               |
+| Approval Requests | 5     | AI-proposed actions awaiting human approval                                 |
+
+### Data Location
+
+Demo data is modular, split into separate seeder files:
+
+```
+tests/fixtures/demo-data/
+├── index.ts                    # Orchestrator
+├── ids.ts                      # DEMO_IDS constants
+├── types.ts                    # SeederContext interface
+├── clear.ts                    # clearDemoData function
+└── seeders/                    # Individual entity seeders
+    ├── firm.ts, clients.ts, matters.ts, tasks.ts, ...
+```
+
+All IDs use deterministic UUIDs for reproducibility:
+
+```
+de000000-0000-4000-aXXX-YYYYYYYYYYYY
+                   │     └── Sequential number
+                   └── Entity type (000=firm, 001=user, 002=client, etc.)
 ```
 
 ---

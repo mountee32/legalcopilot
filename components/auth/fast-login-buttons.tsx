@@ -12,13 +12,14 @@ interface FastLoginRole {
   description: string;
 }
 
+// Maps to demo data characters - see tests/fixtures/demo-data/index.ts
 const ROLES: FastLoginRole[] = [
   { role: "firm_admin", label: "Firm Admin", icon: "👔", description: "Full access" },
-  { role: "partner", label: "Partner", icon: "⚖️", description: "Senior fee earner" },
-  { role: "senior_associate", label: "Sr Associate", icon: "👨‍💼", description: "Team lead" },
-  { role: "associate", label: "Associate", icon: "👩‍💼", description: "Fee earner" },
-  { role: "paralegal", label: "Paralegal", icon: "📋", description: "Support role" },
-  { role: "secretary", label: "Secretary", icon: "📝", description: "Admin support" },
+  { role: "partner", label: "Sarah Harrison", icon: "⚖️", description: "Partner" },
+  { role: "senior_associate", label: "Victoria Clarke", icon: "👨‍💼", description: "Sr Partner" },
+  { role: "associate", label: "James Clarke", icon: "👩‍💼", description: "Associate" },
+  { role: "paralegal", label: "Tom Richards", icon: "📋", description: "Paralegal" },
+  { role: "secretary", label: "Lucy Taylor", icon: "📝", description: "Secretary" },
   { role: "client", label: "Client", icon: "👤", description: "Portal access" },
   { role: "super_admin", label: "Super Admin", icon: "🔧", description: "Platform admin" },
 ];

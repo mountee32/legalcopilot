@@ -5,7 +5,7 @@ import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { withAuth } from "@/middleware/withAuth";
 import { withPermission } from "@/middleware/withPermission";
-import { NotFoundError, BadRequestError, withErrorHandler } from "@/middleware/withErrorHandler";
+import { NotFoundError, ValidationError, withErrorHandler } from "@/middleware/withErrorHandler";
 import { getPresignedUrl } from "@/lib/storage/minio";
 import { DocumentDownloadResponseSchema } from "@/lib/api/schemas";
 import { z } from "zod";
@@ -19,7 +19,7 @@ export const GET = withErrorHandler(
   withAuth(
     withPermission("documents:read")(async (request, { params, user }) => {
       const id = params ? (await params).id : undefined;
-      if (!id) throw new BadRequestError("Document ID is required");
+      if (!id) throw new ValidationError("Document ID is required");
 
       const { searchParams } = new URL(request.url);
       const query = QuerySchema.parse(Object.fromEntries(searchParams.entries()));
