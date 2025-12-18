@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
  */
 export type RouteHandler = (
   request: NextRequest,
-  context?: { params?: Record<string, string> }
+  context?: { params?: Record<string, string> | Promise<Record<string, string>> }
 ) => Promise<Response> | Response;
 
 /**
@@ -20,7 +20,10 @@ export type SessionData = Awaited<ReturnType<typeof auth.api.getSession>>;
  */
 export type AuthenticatedRouteHandler = (
   request: NextRequest,
-  context: { params?: Record<string, string>; user: NonNullable<SessionData> }
+  context: {
+    params?: Record<string, string> | Promise<Record<string, string>>;
+    user: NonNullable<SessionData>;
+  }
 ) => Promise<Response> | Response;
 
 /**
@@ -43,7 +46,10 @@ export type AuthenticatedRouteHandler = (
  * ```
  */
 export function withAuth(handler: AuthenticatedRouteHandler): RouteHandler {
-  return async (request: NextRequest, context?: { params?: Record<string, string> }) => {
+  return async (
+    request: NextRequest,
+    context?: { params?: Record<string, string> | Promise<Record<string, string>> }
+  ) => {
     try {
       // Get session from Better Auth
       const session = await auth.api.getSession({
@@ -103,10 +109,16 @@ export function withAuth(handler: AuthenticatedRouteHandler): RouteHandler {
 export function withOptionalAuth(
   handler: (
     request: NextRequest,
-    context: { params?: Record<string, string>; user?: SessionData }
+    context: {
+      params?: Record<string, string> | Promise<Record<string, string>>;
+      user?: SessionData;
+    }
   ) => Promise<Response> | Response
 ): RouteHandler {
-  return async (request: NextRequest, context?: { params?: Record<string, string> }) => {
+  return async (
+    request: NextRequest,
+    context?: { params?: Record<string, string> | Promise<Record<string, string>> }
+  ) => {
     try {
       // Try to get session
       const session = await auth.api.getSession({

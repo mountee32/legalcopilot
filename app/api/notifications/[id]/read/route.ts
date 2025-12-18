@@ -8,7 +8,7 @@ import { NotFoundError, withErrorHandler } from "@/middleware/withErrorHandler";
 
 export const POST = withErrorHandler(
   withAuth(async (_request, { params, user }) => {
-    const id = params?.id;
+    const id = params ? (await params).id : undefined;
     if (!id) throw new NotFoundError("Notification not found");
 
     const firmId = await getOrCreateFirmIdForUser(user.user.id);

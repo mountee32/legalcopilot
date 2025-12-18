@@ -11,6 +11,7 @@ import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-open
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "yaml";
+import { z } from "zod";
 
 // Import all API schemas
 import {
@@ -140,20 +141,24 @@ import {
   ConflictDecisionRequestSchema,
   // Integrations
   EmailAccountSchema,
+  EmailAccountWithSecretSchema,
   EmailAccountListSchema,
   EmailAccountQuerySchema,
   CreateEmailAccountSchema,
   EmailAccountCreateResponseSchema,
   CalendarAccountSchema,
+  CalendarAccountWithSecretSchema,
   CalendarAccountListSchema,
   CalendarAccountQuerySchema,
   CreateCalendarAccountSchema,
   CalendarAccountCreateResponseSchema,
   PaymentProviderAccountSchema,
+  PaymentProviderAccountWithSecretSchema,
   PaymentProviderAccountListSchema,
   CreatePaymentProviderAccountSchema,
   PaymentProviderAccountCreateResponseSchema,
   AccountingConnectionSchema,
+  AccountingConnectionWithSecretSchema,
   AccountingConnectionListSchema,
   CreateAccountingConnectionSchema,
   AccountingConnectionCreateResponseSchema,
@@ -561,6 +566,79 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: "patch",
+  path: "/api/clients/{id}",
+  summary: "Update client",
+  description: "Update a client's details",
+  tags: ["Clients"],
+  request: {
+    params: registry.register("ClientUpdateIdParam", ClientSchema.pick({ id: true })),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateClientSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Client updated",
+      content: {
+        "application/json": {
+          schema: ClientSchema,
+        },
+      },
+    },
+    400: {
+      description: "Validation error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "Client not found",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/clients/{id}",
+  summary: "Archive client",
+  description: "Archive a client (soft delete)",
+  tags: ["Clients"],
+  request: {
+    params: registry.register("ClientDeleteIdParam", ClientSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Client archived",
+      content: {
+        "application/json": {
+          schema: SuccessResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "Client not found",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
 // Matters
 registry.registerPath({
   method: "get",
@@ -617,6 +695,108 @@ registry.registerPath({
     },
     400: {
       description: "Validation error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/matters/{id}",
+  summary: "Get matter",
+  description: "Retrieve a single matter by ID",
+  tags: ["Matters"],
+  request: {
+    params: registry.register("MatterIdParam", MatterSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Matter details",
+      content: {
+        "application/json": {
+          schema: MatterSchema,
+        },
+      },
+    },
+    404: {
+      description: "Matter not found",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/matters/{id}",
+  summary: "Update matter",
+  description: "Update a matter's details",
+  tags: ["Matters"],
+  request: {
+    params: registry.register("MatterUpdateIdParam", MatterSchema.pick({ id: true })),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateMatterSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Matter updated",
+      content: {
+        "application/json": {
+          schema: MatterSchema,
+        },
+      },
+    },
+    400: {
+      description: "Validation error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "Matter not found",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/matters/{id}",
+  summary: "Archive matter",
+  description: "Archive a matter (soft delete)",
+  tags: ["Matters"],
+  request: {
+    params: registry.register("MatterDeleteIdParam", MatterSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Matter archived",
+      content: {
+        "application/json": {
+          schema: SuccessResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "Matter not found",
       content: {
         "application/json": {
           schema: ErrorResponseSchema,
@@ -780,6 +960,33 @@ registry.registerPath({
     },
     400: {
       description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/documents/{id}/download",
+  summary: "Download document file",
+  description: "Download the original document file from storage",
+  tags: ["Documents"],
+  request: {
+    params: registry.register("DocumentDownloadIdParam", DocumentSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "File download",
+      content: {
+        "application/octet-stream": {
+          schema: z.object({
+            file: z.any().openapi({ type: "string", format: "binary" }),
+          }),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
       content: { "application/json": { schema: ErrorResponseSchema } },
     },
   },
@@ -1381,6 +1588,69 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: "get",
+  path: "/api/emails/{id}/attachments",
+  summary: "Get email attachments",
+  description: "List all attachments for an email",
+  tags: ["Emails"],
+  request: {
+    params: registry.register("EmailAttachmentsIdParam", EmailMessageSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "List of attachments",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "EmailAttachmentsResponse",
+            z.object({
+              attachments: z.array(
+                z.object({
+                  id: z.string().uuid(),
+                  filename: z.string(),
+                  mimeType: z.string(),
+                  size: z.number(),
+                  url: z.string().url(),
+                })
+              ),
+            })
+          ),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/emails/{id}/send",
+  summary: "Send email (approval required)",
+  description: "Create approval request to send email",
+  tags: ["Emails", "Approvals"],
+  request: {
+    params: registry.register("EmailSendIdParam", EmailMessageSchema.pick({ id: true })),
+  },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
 // Time entries
 registry.registerPath({
   method: "get",
@@ -1638,6 +1908,42 @@ registry.registerPath({
   request: { params: registry.register("InvoiceVoidIdParam", InvoiceSchema.pick({ id: true })) },
   responses: {
     200: { description: "Updated", content: { "application/json": { schema: InvoiceSchema } } },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/invoices/{id}/pay-link",
+  summary: "Generate payment link",
+  description: "Generate a secure payment link for an invoice",
+  tags: ["Invoices"],
+  request: {
+    params: registry.register("InvoicePayLinkIdParam", InvoiceSchema.pick({ id: true })),
+  },
+  responses: {
+    201: {
+      description: "Payment link generated",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "PaymentLinkResponse",
+            z.object({
+              paymentUrl: z.string().url(),
+              token: z.string(),
+              expiresAt: z.date(),
+            })
+          ),
+        },
+      },
+    },
     400: {
       description: "Validation error",
       content: { "application/json": { schema: ErrorResponseSchema } },
@@ -2215,8 +2521,8 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/api/conflicts/{matterId}",
-  summary: "Get conflict check",
+  path: "/api/conflicts/by-matter/{matterId}",
+  summary: "Get conflict check by matter",
   description: "Retrieve conflict check for a matter",
   tags: ["Conflicts"],
   request: {
@@ -2444,6 +2750,645 @@ registry.registerPath({
   },
 });
 
+// Integration account detail routes
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/email/accounts/{id}",
+  summary: "Get email account details",
+  description: "Retrieve email account with webhook configuration",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register("EmailAccountIdParam", EmailAccountSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Email account details",
+      content: { "application/json": { schema: EmailAccountWithSecretSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/integrations/email/accounts/{id}",
+  summary: "Disconnect email account",
+  description: "Revoke email account connection",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register("EmailAccountDeleteIdParam", EmailAccountSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Account disconnected",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/email/accounts/{id}/health",
+  summary: "Check email account health",
+  description: "Get email account connection status and health",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register("EmailAccountHealthIdParam", EmailAccountSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Health status",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "EmailAccountHealthResponse",
+            z.object({
+              status: z.string(),
+              lastSyncAt: z.string().nullable(),
+              webhookActive: z.boolean(),
+            })
+          ),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/email/accounts/{id}/reconnect",
+  summary: "Reconnect email account",
+  description: "Update email account tokens and reconnect",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "EmailAccountReconnectIdParam",
+      EmailAccountSchema.pick({ id: true })
+    ),
+    body: {
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "ReconnectAccountRequest",
+            z.object({
+              tokens: z.record(z.unknown()),
+            })
+          ),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Account reconnected",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "ReconnectAccountResponse",
+            z.object({
+              id: z.string().uuid(),
+              status: z.string(),
+              updatedAt: z.date(),
+            })
+          ),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/calendar/accounts/{id}",
+  summary: "Get calendar account details",
+  description: "Retrieve calendar account with webhook configuration",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register("CalendarAccountIdParam", CalendarAccountSchema.pick({ id: true })),
+  },
+  responses: {
+    200: {
+      description: "Calendar account details",
+      content: { "application/json": { schema: CalendarAccountWithSecretSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/integrations/calendar/accounts/{id}",
+  summary: "Disconnect calendar account",
+  description: "Revoke calendar account connection",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "CalendarAccountDeleteIdParam",
+      CalendarAccountSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Account disconnected",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/calendar/accounts/{id}/health",
+  summary: "Check calendar account health",
+  description: "Get calendar account connection status and health",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "CalendarAccountHealthIdParam",
+      CalendarAccountSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Health status",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "CalendarAccountHealthResponse",
+            z.object({
+              status: z.string(),
+              lastSyncAt: z.string().nullable(),
+              webhookActive: z.boolean(),
+            })
+          ),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/calendar/accounts/{id}/reconnect",
+  summary: "Reconnect calendar account",
+  description: "Update calendar account tokens and reconnect",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "CalendarAccountReconnectIdParam",
+      CalendarAccountSchema.pick({ id: true })
+    ),
+    body: {
+      content: { "application/json": { schema: z.object({ tokens: z.record(z.unknown()) }) } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Account reconnected",
+      content: {
+        "application/json": {
+          schema: z.object({ id: z.string().uuid(), status: z.string(), updatedAt: z.date() }),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/payments/accounts/{id}",
+  summary: "Get payment account details",
+  description: "Retrieve payment provider account with webhook configuration",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "PaymentProviderAccountIdParam",
+      PaymentProviderAccountSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Payment account details",
+      content: { "application/json": { schema: PaymentProviderAccountWithSecretSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/integrations/payments/accounts/{id}",
+  summary: "Disconnect payment account",
+  description: "Revoke payment provider account connection",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "PaymentProviderAccountDeleteIdParam",
+      PaymentProviderAccountSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Account disconnected",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/payments/accounts/{id}/health",
+  summary: "Check payment account health",
+  description: "Get payment account connection status and health",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "PaymentProviderAccountHealthIdParam",
+      PaymentProviderAccountSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Health status",
+      content: {
+        "application/json": {
+          schema: z.object({
+            status: z.string(),
+            lastSyncAt: z.string().nullable(),
+            webhookActive: z.boolean(),
+          }),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/payments/accounts/{id}/reconnect",
+  summary: "Reconnect payment account",
+  description: "Update payment account tokens and reconnect",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "PaymentProviderAccountReconnectIdParam",
+      PaymentProviderAccountSchema.pick({ id: true })
+    ),
+    body: {
+      content: { "application/json": { schema: z.object({ tokens: z.record(z.unknown()) }) } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Account reconnected",
+      content: {
+        "application/json": {
+          schema: z.object({ id: z.string().uuid(), status: z.string(), updatedAt: z.date() }),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/accounting/connections/{id}",
+  summary: "Get accounting connection details",
+  description: "Retrieve accounting provider connection with webhook configuration",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "AccountingConnectionIdParam",
+      AccountingConnectionSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Accounting connection details",
+      content: { "application/json": { schema: AccountingConnectionWithSecretSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "delete",
+  path: "/api/integrations/accounting/connections/{id}",
+  summary: "Disconnect accounting connection",
+  description: "Revoke accounting provider connection",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "AccountingConnectionDeleteIdParam",
+      AccountingConnectionSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Connection disconnected",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/integrations/accounting/connections/{id}/health",
+  summary: "Check accounting connection health",
+  description: "Get accounting connection status and health",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "AccountingConnectionHealthIdParam",
+      AccountingConnectionSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Health status",
+      content: {
+        "application/json": {
+          schema: z.object({
+            status: z.string(),
+            lastSyncAt: z.string().nullable(),
+            webhookActive: z.boolean(),
+          }),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/integrations/accounting/connections/{id}/reconnect",
+  summary: "Reconnect accounting connection",
+  description: "Update accounting connection tokens and reconnect",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "AccountingConnectionReconnectIdParam",
+      AccountingConnectionSchema.pick({ id: true })
+    ),
+    body: {
+      content: { "application/json": { schema: z.object({ tokens: z.record(z.unknown()) }) } },
+    },
+  },
+  responses: {
+    200: {
+      description: "Connection reconnected",
+      content: {
+        "application/json": {
+          schema: z.object({ id: z.string().uuid(), status: z.string(), updatedAt: z.date() }),
+        },
+      },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Webhook endpoints
+registry.registerPath({
+  method: "post",
+  path: "/api/webhooks/email/{firmId}/{accountId}",
+  summary: "Email provider webhook",
+  description: "Webhook endpoint for email provider events",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "EmailWebhookParams",
+      z.object({
+        firmId: z.string().uuid(),
+        accountId: z.string().uuid(),
+      })
+    ),
+    headers: registry.register(
+      "WebhookHeaders",
+      z.object({
+        "x-webhook-secret": z.string(),
+        "x-event-id": z.string().optional(),
+      })
+    ),
+    body: { content: { "application/json": { schema: z.record(z.unknown()) } } },
+  },
+  responses: {
+    200: {
+      description: "Event accepted",
+      content: {
+        "application/json": {
+          schema: z.object({ accepted: z.boolean(), provider: z.string() }),
+        },
+      },
+    },
+    400: {
+      description: "Invalid webhook",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/webhooks/calendar/{firmId}/{accountId}",
+  summary: "Calendar provider webhook",
+  description: "Webhook endpoint for calendar provider events",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "CalendarWebhookParams",
+      z.object({
+        firmId: z.string().uuid(),
+        accountId: z.string().uuid(),
+      })
+    ),
+    headers: z.object({
+      "x-webhook-secret": z.string(),
+      "x-event-id": z.string().optional(),
+    }),
+    body: { content: { "application/json": { schema: z.record(z.unknown()) } } },
+  },
+  responses: {
+    200: {
+      description: "Event accepted",
+      content: {
+        "application/json": {
+          schema: z.object({ accepted: z.boolean(), provider: z.string() }),
+        },
+      },
+    },
+    400: {
+      description: "Invalid webhook",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/webhooks/payments/{firmId}/{accountId}",
+  summary: "Payment provider webhook",
+  description: "Webhook endpoint for payment provider events",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "PaymentWebhookParams",
+      z.object({
+        firmId: z.string().uuid(),
+        accountId: z.string().uuid(),
+      })
+    ),
+    headers: z.object({
+      "x-webhook-secret": z.string(),
+      "x-event-id": z.string().optional(),
+    }),
+    body: { content: { "application/json": { schema: z.record(z.unknown()) } } },
+  },
+  responses: {
+    200: {
+      description: "Event accepted",
+      content: {
+        "application/json": {
+          schema: z.object({ accepted: z.boolean(), provider: z.string() }),
+        },
+      },
+    },
+    400: {
+      description: "Invalid webhook",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/webhooks/accounting/{firmId}/{connectionId}",
+  summary: "Accounting provider webhook",
+  description: "Webhook endpoint for accounting provider events",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "AccountingWebhookParams",
+      z.object({
+        firmId: z.string().uuid(),
+        connectionId: z.string().uuid(),
+      })
+    ),
+    headers: z.object({
+      "x-webhook-secret": z.string(),
+      "x-event-id": z.string().optional(),
+    }),
+    body: { content: { "application/json": { schema: z.record(z.unknown()) } } },
+  },
+  responses: {
+    200: {
+      description: "Event accepted",
+      content: {
+        "application/json": {
+          schema: z.object({ accepted: z.boolean(), provider: z.string() }),
+        },
+      },
+    },
+    400: {
+      description: "Invalid webhook",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/webhooks/esignature/{firmId}/{requestId}",
+  summary: "E-signature provider webhook",
+  description: "Webhook endpoint for e-signature provider events",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "EsignatureWebhookParams",
+      z.object({
+        firmId: z.string().uuid(),
+        requestId: z.string().uuid(),
+      })
+    ),
+    headers: z.object({
+      "x-webhook-secret": z.string(),
+      "x-event-id": z.string().optional(),
+    }),
+    body: { content: { "application/json": { schema: z.record(z.unknown()) } } },
+  },
+  responses: {
+    200: {
+      description: "Event accepted",
+      content: {
+        "application/json": {
+          schema: z.object({ accepted: z.boolean(), provider: z.string() }),
+        },
+      },
+    },
+    400: {
+      description: "Invalid webhook",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
 // E-signature
 registry.registerPath({
   method: "get",
@@ -2504,6 +3449,102 @@ registry.registerPath({
   },
 });
 
+registry.registerPath({
+  method: "post",
+  path: "/api/signature-requests/{id}/send",
+  summary: "Send signature request (approval required)",
+  description: "Create approval request to send signature request to signers",
+  tags: ["Integrations", "Approvals"],
+  request: {
+    params: registry.register(
+      "SignatureRequestSendIdParam",
+      SignatureRequestSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    201: {
+      description: "Approval request created",
+      content: { "application/json": { schema: ApprovalRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/signature-requests/{id}/remind",
+  summary: "Send reminder for signature request",
+  description: "Send reminder to signers who haven't signed yet",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "SignatureRequestRemindIdParam",
+      SignatureRequestSchema.pick({ id: true })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Reminder sent",
+      content: { "application/json": { schema: SuccessResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/signature-requests/{id}/void",
+  summary: "Void signature request",
+  description: "Cancel signature request and mark as void",
+  tags: ["Integrations"],
+  request: {
+    params: registry.register(
+      "SignatureRequestVoidIdParam",
+      SignatureRequestSchema.pick({ id: true })
+    ),
+    body: {
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "VoidSignatureRequestRequest",
+            z.object({
+              reason: z.string().min(1).max(500),
+            })
+          ),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Signature request voided",
+      content: { "application/json": { schema: SignatureRequestSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
 // Semantic search
 registry.registerPath({
   method: "post",
@@ -2545,6 +3586,205 @@ registry.registerPath({
     },
     404: {
       description: "Not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Storage
+registry.registerPath({
+  method: "post",
+  path: "/api/storage/upload",
+  summary: "Upload file",
+  description: "Upload a file to MinIO storage",
+  tags: ["Storage"],
+  request: {
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: registry.register(
+            "FileUploadRequest",
+            z.object({
+              file: z.any().openapi({ type: "string", format: "binary" }),
+              firmId: z.string().uuid(),
+              description: z.string().optional(),
+              tags: z.string().optional(),
+            })
+          ),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "File uploaded",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "FileUploadResponse",
+            z.object({
+              success: z.boolean(),
+              upload: z.object({
+                id: z.string().uuid(),
+                url: z.string().url(),
+                filename: z.string(),
+                originalName: z.string(),
+                size: z.number(),
+                mimeType: z.string(),
+                metadata: z.record(z.unknown()).optional(),
+              }),
+            })
+          ),
+        },
+      },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Health check
+registry.registerPath({
+  method: "get",
+  path: "/api/health",
+  summary: "Health check",
+  description: "Check system health (PostgreSQL, Redis, MinIO)",
+  tags: ["System"],
+  responses: {
+    200: {
+      description: "System healthy",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "HealthCheckResponse",
+            z.object({
+              status: z.enum(["healthy", "degraded"]),
+              timestamp: z.string(),
+              services: z.object({
+                postgres: z.boolean(),
+                redis: z.boolean(),
+                minio: z.boolean(),
+                app: z.boolean(),
+              }),
+              details: z.record(z.string()),
+            })
+          ),
+        },
+      },
+    },
+    503: {
+      description: "System degraded",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "HealthCheckDegradedResponse",
+            z.object({
+              status: z.enum(["healthy", "degraded"]),
+              timestamp: z.string(),
+              services: z.object({
+                postgres: z.boolean(),
+                redis: z.boolean(),
+                minio: z.boolean(),
+                app: z.boolean(),
+              }),
+              details: z.record(z.string()),
+            })
+          ),
+        },
+      },
+    },
+  },
+});
+
+// AI chat
+registry.registerPath({
+  method: "post",
+  path: "/api/ai/chat",
+  summary: "AI chat (streaming)",
+  description: "Stream AI responses via OpenRouter",
+  tags: ["AI"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "ChatRequest",
+            z.object({
+              message: z.string().min(1).max(5000),
+              model: z.string().optional(),
+            })
+          ),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Streaming response",
+      content: {
+        "text/event-stream": {
+          schema: z.object({
+            data: z.string(),
+          }),
+        },
+      },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: "Server error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// Jobs
+registry.registerPath({
+  method: "post",
+  path: "/api/jobs/create",
+  summary: "Create background job",
+  description: "Add a job to the BullMQ queue",
+  tags: ["Jobs"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "CreateJobRequest",
+            z.object({
+              type: z.enum(["email", "generic"]),
+              data: z.record(z.unknown()),
+            })
+          ),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Job created",
+      content: {
+        "application/json": {
+          schema: registry.register(
+            "CreateJobResponse",
+            z.object({
+              success: z.boolean(),
+              job: z.object({
+                id: z.string(),
+                name: z.string(),
+                data: z.record(z.unknown()),
+              }),
+            })
+          ),
+        },
+      },
+    },
+    400: {
+      description: "Validation error",
       content: { "application/json": { schema: ErrorResponseSchema } },
     },
   },
@@ -2595,6 +3835,10 @@ List endpoints support pagination via \`page\` and \`limit\` query parameters.
     { name: "Conflicts", description: "Conflict checking endpoints" },
     { name: "Integrations", description: "External provider connections & webhooks" },
     { name: "Search", description: "Semantic search endpoints" },
+    { name: "Storage", description: "File upload and storage endpoints" },
+    { name: "System", description: "System health and monitoring endpoints" },
+    { name: "AI", description: "AI and ML endpoints" },
+    { name: "Jobs", description: "Background job queue endpoints" },
   ],
 });
 

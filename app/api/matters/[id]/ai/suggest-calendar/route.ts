@@ -41,7 +41,7 @@ export const POST = withErrorHandler(
   withAuth(
     withPermission("ai:use")(
       withPermission("calendar:write")(async (request: NextRequest, { params, user }) => {
-        const matterId = params?.id;
+        const matterId = params ? (await params).id : undefined;
         if (!matterId) throw new NotFoundError("Matter not found");
 
         if (!process.env.OPENROUTER_API_KEY) {

@@ -10,7 +10,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("approvals:view")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Approval request not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

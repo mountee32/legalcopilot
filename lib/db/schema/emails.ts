@@ -19,6 +19,7 @@ import {
 import { firms } from "./firms";
 import { matters } from "./matters";
 import { users } from "./users";
+import { approvalRequests } from "./approvals";
 
 export const emailDirectionEnum = pgEnum("email_direction", ["inbound", "outbound"]);
 
@@ -100,6 +101,11 @@ export const emails = pgTable(
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     receivedAt: timestamp("received_at"),
     sentAt: timestamp("sent_at"),
+
+    approvalRequestId: uuid("approval_request_id").references(() => approvalRequests.id, {
+      onDelete: "set null",
+    }),
+    contentHash: text("content_hash"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

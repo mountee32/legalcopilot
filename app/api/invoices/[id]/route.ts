@@ -11,7 +11,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("billing:read")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Invoice not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -42,7 +42,7 @@ export const GET = withErrorHandler(
 export const PATCH = withErrorHandler(
   withAuth(
     withPermission("billing:write")(async (request: NextRequest, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Invoice not found");
 
       const body = await request.json().catch(() => ({}));

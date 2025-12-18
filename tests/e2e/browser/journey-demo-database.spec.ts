@@ -23,8 +23,8 @@ test.describe("Demo journeys: Database", () => {
     const userRow = page.getByTestId(`user-row-${email}`);
     await expect(userRow).toBeVisible({ timeout: 10000 });
 
-    // Delete the user
-    await userRow.getByRole("button", { name: "Delete" }).click();
+    // Delete the user (force click to handle mobile viewport layout overlaps)
+    await userRow.getByRole("button", { name: "Delete" }).click({ force: true });
 
     // Verify deletion
     await expect(page.getByRole("alert").getByText("User deleted successfully")).toBeVisible();

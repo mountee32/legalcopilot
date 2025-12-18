@@ -11,7 +11,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const POST = withErrorHandler(
   withAuth(
     withPermission("time:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Time entry not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

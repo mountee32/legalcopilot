@@ -12,7 +12,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("billing:read")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Payment not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -34,7 +34,7 @@ export const GET = withErrorHandler(
 export const DELETE = withErrorHandler(
   withAuth(
     withPermission("billing:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Payment not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

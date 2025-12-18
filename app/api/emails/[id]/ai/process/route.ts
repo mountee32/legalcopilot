@@ -35,7 +35,7 @@ const ProcessedEmailSchema = z.object({
 export const POST = withErrorHandler(
   withAuth(
     withPermission("ai:use")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Email not found");
 
       if (!process.env.OPENROUTER_API_KEY) {

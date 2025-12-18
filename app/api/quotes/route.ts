@@ -67,18 +67,20 @@ export const POST = withErrorHandler(
 
       const row = await withFirmDb(firmId, async (tx) => {
         const [lead] = await tx
-          .select({ id: leads.id })
+          .select({ id: leads.id, enquiryType: leads.enquiryType })
           .from(leads)
           .where(and(eq(leads.id, data.leadId), eq(leads.firmId, firmId)))
           .limit(1);
         if (!lead) throw new NotFoundError("Lead not found");
+
+        const quoteType = data.type ?? lead.enquiryType ?? "other";
 
         const [quote] = await tx
           .insert(quotes)
           .values({
             firmId,
             leadId: data.leadId,
-            type: data.type,
+            type: quoteType,
             status: "draft",
             items: data.items ?? null,
             fees: data.fees ?? null,

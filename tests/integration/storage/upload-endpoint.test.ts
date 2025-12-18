@@ -12,6 +12,7 @@ import { uploads } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { setupIntegrationSuite, setupFreshFirmPerTest } from "@tests/integration/setup";
 import { createFirm } from "@tests/fixtures/factories/firm";
+import { POST as uploadHandler } from "@/app/api/storage/upload/route";
 import {
   initializeBucket,
   uploadFile,
@@ -39,11 +40,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       formData.append("file", file);
       formData.append("firmId", ctx.firmId);
 
-      // Call the API
-      const response = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await uploadHandler({ formData: async () => formData } as any);
 
       expect(response.ok).toBe(true);
       const data = await response.json();
@@ -78,10 +75,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       formData.append("description", "Test file with metadata");
       formData.append("tags", "test, integration, storage");
 
-      const response = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await uploadHandler({ formData: async () => formData } as any);
 
       expect(response.ok).toBe(true);
       const data = await response.json();
@@ -108,10 +102,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       formData.append("file", file);
       formData.append("firmId", ctx.firmId);
 
-      const response = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await uploadHandler({ formData: async () => formData } as any);
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -130,10 +121,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       formData.append("file", file);
       formData.append("firmId", ctx.firmId);
 
-      const response = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await uploadHandler({ formData: async () => formData } as any);
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -145,10 +133,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       const formData = new FormData();
       formData.append("firmId", ctx.firmId);
 
-      const response = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await uploadHandler({ formData: async () => formData } as any);
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -164,10 +149,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await uploadHandler({ formData: async () => formData } as any);
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -186,10 +168,7 @@ describe("Storage Integration - Upload Endpoint", () => {
       formData.append("file", file);
       formData.append("firmId", ctx.firmId);
 
-      const uploadResponse = await fetch("http://localhost:3000/api/storage/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const uploadResponse = await uploadHandler({ formData: async () => formData } as any);
 
       expect(uploadResponse.ok).toBe(true);
       const uploadData = await uploadResponse.json();

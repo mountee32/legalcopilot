@@ -118,7 +118,7 @@ export const QuoteSchema = z
 export const CreateQuoteSchema = z
   .object({
     leadId: UuidSchema,
-    type: PracticeAreaSchema,
+    type: PracticeAreaSchema.optional(),
     items: z.array(z.unknown()).optional(),
     fees: z.array(QuoteFeeSchema).optional(),
     disbursements: z.array(QuoteDisbursementSchema).optional(),

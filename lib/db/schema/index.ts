@@ -38,6 +38,16 @@ export * from "./integrations";
 // Compliance & Audit
 export * from "./approvals";
 export * from "./audit";
+export * from "./compliance";
 
 // Notifications
 export * from "./notifications";
+
+// Client Portal
+export * from "./portal";
+
+// Team & Resources
+export * from "./team";
+
+// Booking & Scheduling
+export * from "./booking";

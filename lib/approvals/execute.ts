@@ -3,6 +3,7 @@ import {
   approvalRequests,
   calendarEvents,
   conflictChecks,
+  emails,
   invoices,
   matters,
   signatureRequests,
@@ -83,6 +84,12 @@ type ConflictDecisionPayload = {
 
 type SignatureRequestSendPayload = {
   signatureRequestId?: string;
+};
+
+type EmailSendPayload = {
+  emailId?: string;
+  subject?: string;
+  contentHash?: string;
 };
 
 export async function executeApprovalIfSupported(
@@ -585,6 +592,67 @@ export async function executeApprovalIfSupported(
           eq(signatureRequests.firmId, approval.firmId)
         )
       );
+
+    await tx
+      .update(approvalRequests)
+      .set({ executedAt: new Date(), executionStatus: "executed", updatedAt: new Date() })
+      .where(
+        and(eq(approvalRequests.id, approval.id), eq(approvalRequests.firmId, approval.firmId))
+      );
+
+    return { executionStatus: "executed" };
+  }
+
+  if (approval.action === "email.send") {
+    const payload = approval.proposedPayload as EmailSendPayload;
+    const emailId = payload?.emailId ?? approval.entityId ?? null;
+    if (!emailId) return { executionStatus: "failed", executionError: "Missing emailId" };
+
+    const [email] = await tx
+      .select({
+        id: emails.id,
+        matterId: emails.matterId,
+        status: emails.status,
+        direction: emails.direction,
+        contentHash: emails.contentHash,
+      })
+      .from(emails)
+      .where(and(eq(emails.id, emailId), eq(emails.firmId, approval.firmId)))
+      .limit(1);
+
+    if (!email) return { executionStatus: "failed", executionError: "Email not found for firm" };
+    if (email.direction !== "outbound")
+      return { executionStatus: "failed", executionError: "Only outbound emails can be sent" };
+    if (email.status !== "pending")
+      return { executionStatus: "failed", executionError: "Only pending emails can be sent" };
+
+    const proposedHash = payload?.contentHash;
+    if (proposedHash && email.contentHash && proposedHash !== email.contentHash) {
+      return {
+        executionStatus: "failed",
+        executionError: "Email content has changed since approval was requested",
+      };
+    }
+
+    await tx
+      .update(emails)
+      .set({ status: "sent", sentAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(emails.id, emailId), eq(emails.firmId, approval.firmId)));
+
+    if (email.matterId) {
+      await createTimelineEvent(tx, {
+        firmId: approval.firmId,
+        matterId: email.matterId,
+        type: "email_sent",
+        title: "Email sent",
+        actorType: "system",
+        actorId: null,
+        entityType: "email",
+        entityId: emailId,
+        occurredAt: new Date(),
+        metadata: { approvalRequestId: approval.id },
+      });
+    }
 
     await tx
       .update(approvalRequests)

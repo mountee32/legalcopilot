@@ -50,10 +50,9 @@ export interface TestInvoice {
  */
 function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 10000)
-    .toString()
-    .padStart(4, "0");
-  return `INV-${year}-${random}`;
+  // Avoid collisions in large test suites by including a UUID-derived suffix
+  const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  return `INV-${year}-${suffix}`;
 }
 
 /**

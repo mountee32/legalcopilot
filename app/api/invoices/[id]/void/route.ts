@@ -11,7 +11,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const POST = withErrorHandler(
   withAuth(
     withPermission("billing:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Invoice not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

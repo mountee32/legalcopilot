@@ -76,4 +76,26 @@ describe("Billing routes", () => {
     );
     expect(response.status).toBe(201);
   });
+
+  it("POST /invoices/:id/pay-link returns 201 with payment link", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+    vi.mocked(withFirmDb).mockResolvedValueOnce({
+      id: "i1",
+      token: "test-token",
+      expiresAt: new Date("2025-12-21T00:00:00Z"),
+    } as any);
+
+    const { POST } = await import("@/app/api/invoices/[id]/pay-link/route");
+    const request = new NextRequest("http://localhost/api/invoices/i1/pay-link", {
+      method: "POST",
+    });
+    const response = await POST(
+      request as any,
+      { params: { id: "123e4567-e89b-12d3-a456-426614174000" } } as any
+    );
+    expect(response.status).toBe(201);
+    const json = await response.json();
+    expect(json.paymentUrl).toBeDefined();
+    expect(json.token).toBe("test-token");
+  });
 });

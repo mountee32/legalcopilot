@@ -35,6 +35,9 @@ export * from "./intake";
 export * from "./conflicts";
 export * from "./integrations";
 export * from "./search";
+export * from "./team";
+export * from "./reports";
+export * from "./practice-modules";
 
 // TODO: Add as implemented:
 // export * from "./users";

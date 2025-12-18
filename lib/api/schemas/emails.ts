@@ -143,3 +143,34 @@ export const EmailAIProcessResponseSchema = z
     email: EmailMessageSchema,
   })
   .openapi("EmailAIProcessResponse");
+
+export const SendEmailRequestSchema = z
+  .object({
+    contentHash: z.string().optional(),
+  })
+  .openapi("SendEmailRequest");
+
+export const SendEmailResponseSchema = z
+  .object({
+    approvalRequest: z.object({
+      id: UuidSchema,
+      status: z.string(),
+      action: z.string(),
+      summary: z.string(),
+      createdAt: DateTimeSchema,
+    }),
+  })
+  .openapi("SendEmailResponse");
+
+export const AttachDocumentsRequestSchema = z
+  .object({
+    documentIds: z.array(UuidSchema).min(1).max(10),
+  })
+  .openapi("AttachDocumentsRequest");
+
+export const AttachDocumentsResponseSchema = z
+  .object({
+    success: z.literal(true),
+    email: EmailMessageSchema,
+  })
+  .openapi("AttachDocumentsResponse");

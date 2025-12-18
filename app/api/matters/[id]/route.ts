@@ -12,7 +12,7 @@ import { withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("cases:read")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Matter not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -35,7 +35,7 @@ export const GET = withErrorHandler(
 export const PATCH = withErrorHandler(
   withAuth(
     withPermission("cases:write")(async (request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Matter not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -95,7 +95,7 @@ export const PATCH = withErrorHandler(
 export const DELETE = withErrorHandler(
   withAuth(
     withPermission("cases:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Matter not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

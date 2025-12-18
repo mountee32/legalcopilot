@@ -241,6 +241,51 @@ describe("myFunction", () => {
 });
 ```
 
+### Critical Mock Patterns
+
+**IMPORTANT**: The `withFirmDb` function takes a callback. Standard mock patterns fail silently!
+
+❌ **WRONG** (doesn't work - tests will timeout or return undefined):
+
+```typescript
+vi.mocked(withFirmDb).mockResolvedValueOnce(result);
+vi.mocked(withFirmDb).mockRejectedValueOnce(new Error("..."));
+```
+
+✅ **CORRECT** (use mockImplementation):
+
+```typescript
+import { vi } from "vitest";
+import * as tenantModule from "@/lib/db/tenant";
+import { NotFoundError, ValidationError } from "@/middleware/withErrorHandler";
+
+vi.mock("@/lib/db/tenant");
+
+// For success - return data directly:
+vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+  return { id: "resource-1", status: "active", firmId };
+});
+
+// For errors - throw inside the implementation:
+vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+  throw new NotFoundError("Resource not found");
+});
+
+// For validation errors:
+vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+  throw new ValidationError("Invalid status transition");
+});
+```
+
+See `tests/helpers/mocks.ts` for reusable mock utilities:
+
+- `mockUser`, `mockFirmId` - Standard test fixtures
+- `mockWithFirmDbSuccess(data)` - Returns data from withFirmDb
+- `mockWithFirmDbError(error)` - Throws error from withFirmDb
+- `createMockTransaction(selectResult, updateResult)` - Chainable Drizzle mock
+- `createMockRequest(method, url, body)` - Create test Request objects
+- `createMockContext(params, user)` - Create route handler context
+
 **Integration tests** (`tests/integration/`): Use real database with test fixtures.
 
 ```typescript

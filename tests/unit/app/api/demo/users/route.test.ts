@@ -6,6 +6,7 @@ vi.mock("@/lib/db", () => ({
   db: {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
     limit: vi.fn(),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
@@ -25,6 +26,7 @@ vi.mock("@/lib/db/schema", () => ({
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((field, value) => ({ field, value })),
+  desc: vi.fn((field) => ({ field, direction: "desc" })),
 }));
 
 describe("Users API Route", () => {
@@ -71,6 +73,7 @@ describe("Users API Route", () => {
       );
       expect(db.select).toHaveBeenCalled();
       expect(db.from).toHaveBeenCalled();
+      expect(db.orderBy).toHaveBeenCalled();
       expect(db.limit).toHaveBeenCalledWith(10);
     });
 

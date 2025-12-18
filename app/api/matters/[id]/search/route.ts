@@ -21,7 +21,7 @@ function vectorLiteral(values: number[]): string {
 export const GET = withErrorHandler(
   withAuth(
     withPermission("documents:read")(async (request: NextRequest, { params, user }) => {
-      const matterId = params?.id;
+      const matterId = params ? (await params).id : undefined;
       if (!matterId) throw new NotFoundError("Matter not found");
 
       if (!process.env.OPENROUTER_API_KEY) {

@@ -6,8 +6,9 @@ import { UuidSchema } from "@/lib/api/schemas";
 import { ValidationError, withErrorHandler } from "@/middleware/withErrorHandler";
 
 export const POST = withErrorHandler(async (request: NextRequest, { params }) => {
-  const firmId = UuidSchema.parse(params.firmId);
-  const requestId = UuidSchema.parse(params.requestId);
+  const resolvedParams = await params;
+  const firmId = UuidSchema.parse(resolvedParams.firmId);
+  const requestId = UuidSchema.parse(resolvedParams.requestId);
 
   const configuredSecret = process.env.ESIGNATURE_WEBHOOK_SECRET;
   const secret = request.headers.get("x-webhook-secret") ?? "";

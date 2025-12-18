@@ -10,7 +10,7 @@ import { ValidationError, withErrorHandler, NotFoundError } from "@/middleware/w
 
 export const GET = withErrorHandler(
   withAuth(async (_request, { params, user }) => {
-    const id = params?.id;
+    const id = params ? (await params).id : undefined;
     if (!id) throw new NotFoundError("Document not found");
 
     const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -37,7 +37,7 @@ export const GET = withErrorHandler(
 
 export const POST = withErrorHandler(
   withAuth(async (request, { params, user }) => {
-    const id = params?.id;
+    const id = params ? (await params).id : undefined;
     if (!id) throw new NotFoundError("Document not found");
 
     const firmId = await getOrCreateFirmIdForUser(user.user.id);

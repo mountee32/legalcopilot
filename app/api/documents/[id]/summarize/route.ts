@@ -13,7 +13,7 @@ export const POST = withErrorHandler(
   withAuth(
     withPermission("documents:write")(
       withPermission("ai:use")(async (request, { params, user }) => {
-        const id = params?.id;
+        const id = params ? (await params).id : undefined;
         if (!id) throw new NotFoundError("Document not found");
 
         if (!process.env.OPENROUTER_API_KEY) {

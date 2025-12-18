@@ -11,7 +11,7 @@ import { withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("clients:read")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Client not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -34,7 +34,7 @@ export const GET = withErrorHandler(
 export const PATCH = withErrorHandler(
   withAuth(
     withPermission("clients:write")(async (request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Client not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -78,7 +78,7 @@ export const PATCH = withErrorHandler(
 export const DELETE = withErrorHandler(
   withAuth(
     withPermission("clients:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Client not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

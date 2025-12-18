@@ -22,7 +22,7 @@ function toPublicAccount(row: any) {
 export const GET = withErrorHandler(
   withAuth(
     withPermission("integrations:read")(async (_request: NextRequest, { params, user }) => {
-      const id = UuidSchema.parse(params.id);
+      const id = UuidSchema.parse(params ? (await params).id : undefined);
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
 
       const row = await withFirmDb(firmId, async (tx) => {
@@ -49,7 +49,7 @@ export const GET = withErrorHandler(
 export const DELETE = withErrorHandler(
   withAuth(
     withPermission("integrations:write")(async (_request: NextRequest, { params, user }) => {
-      const id = UuidSchema.parse(params.id);
+      const id = UuidSchema.parse(params ? (await params).id : undefined);
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
 
       const row = await withFirmDb(firmId, async (tx) => {

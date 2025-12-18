@@ -15,7 +15,7 @@ import { createTimelineEvent } from "@/lib/timeline/createEvent";
 export const POST = withErrorHandler(
   withAuth(
     withPermission("documents:write")(async (request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Document not found");
 
       const body = await request.json().catch(() => ({}));

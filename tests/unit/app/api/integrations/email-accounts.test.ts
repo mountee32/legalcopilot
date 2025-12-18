@@ -77,4 +77,71 @@ describe("Email integration accounts", () => {
     expect(json.webhookSecret).toBeTruthy();
     expect(typeof json.webhookPath).toBe("string");
   });
+
+  it("GET /integrations/email/accounts/:id/health returns status without tokens", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+    const accountId = "123e4567-e89b-12d3-a456-426614174000";
+    vi.mocked(withFirmDb).mockResolvedValueOnce({
+      id: accountId,
+      provider: "google",
+      emailAddress: "user@example.com",
+      tokens: { access_token: "secret-token" },
+      webhookSecret: "secret-webhook",
+      status: "connected",
+      lastSyncAt: new Date("2025-01-01"),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const { GET } = await import("@/app/api/integrations/email/accounts/[id]/health/route");
+    const request = new NextRequest(
+      `http://localhost/api/integrations/email/accounts/${accountId}/health`
+    );
+    const response = await GET(
+      request as any,
+      {
+        params: Promise.resolve({ id: accountId }),
+      } as any
+    );
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.status).toBe("connected");
+    expect(json.lastSyncAt).toBeTruthy();
+    expect(json.webhookActive).toBe(true);
+    expect(json.tokens).toBeUndefined();
+    expect(json.webhookSecret).toBeUndefined();
+  });
+
+  it("POST /integrations/email/accounts/:id/reconnect updates tokens and status", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+    const accountId = "123e4567-e89b-12d3-a456-426614174000";
+    const updatedAt = new Date();
+    vi.mocked(withFirmDb).mockResolvedValueOnce({
+      id: accountId,
+      status: "connected",
+      updatedAt,
+    } as any);
+
+    const { POST } = await import("@/app/api/integrations/email/accounts/[id]/reconnect/route");
+    const request = new NextRequest(
+      `http://localhost/api/integrations/email/accounts/${accountId}/reconnect`,
+      {
+        method: "POST",
+        body: JSON.stringify({ tokens: { access_token: "new-token" } }),
+      }
+    );
+    const response = await POST(
+      request as any,
+      {
+        params: Promise.resolve({ id: accountId }),
+      } as any
+    );
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.id).toBe(accountId);
+    expect(json.status).toBe("connected");
+    expect(json.updatedAt).toBeTruthy();
+  });
 });

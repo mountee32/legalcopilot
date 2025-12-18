@@ -18,6 +18,7 @@ export interface QuoteFactoryOptions {
   id?: string;
   firmId: string;
   leadId: string;
+  type?: string;
   status?: QuoteStatus;
   items?: QuoteItem[];
   subtotal?: string;
@@ -33,6 +34,7 @@ export interface TestQuote {
   id: string;
   firmId: string;
   leadId: string;
+  type: string;
   status: string;
   items: any;
   subtotal: string;
@@ -56,6 +58,7 @@ export async function createQuote(options: QuoteFactoryOptions): Promise<TestQuo
     id,
     firmId: options.firmId,
     leadId: options.leadId,
+    type: (options.type ?? "other") as any,
     status: (options.status || "draft") as "draft",
     items: options.items ?? null,
     subtotal: options.subtotal || "1000.00",
@@ -79,6 +82,7 @@ export async function createQuote(options: QuoteFactoryOptions): Promise<TestQuo
     id: quote.id,
     firmId: quote.firmId,
     leadId: quote.leadId,
+    type: quote.type,
     status: quote.status,
     items: quote.items,
     subtotal: quote.subtotal,

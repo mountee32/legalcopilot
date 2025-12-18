@@ -11,7 +11,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const PATCH = withErrorHandler(
   withAuth(
     withPermission("users:write")(async (request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Role not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -60,7 +60,7 @@ export const PATCH = withErrorHandler(
 export const DELETE = withErrorHandler(
   withAuth(
     withPermission("users:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Role not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

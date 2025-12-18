@@ -10,7 +10,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("conflicts:read")(async (_request, { params, user }) => {
-      const matterId = params?.matterId;
+      const matterId = params ? (await params).matterId : undefined;
       if (!matterId) throw new NotFoundError("Matter not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

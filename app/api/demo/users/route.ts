@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const allUsers = await db.select().from(users).limit(10);
+    // Ensure newly created users appear in the demo UI (E2E relies on this).
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt)).limit(10);
     return NextResponse.json({ users: allUsers });
   } catch (error) {
     console.error("Error fetching users:", error);

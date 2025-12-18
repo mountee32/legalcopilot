@@ -26,6 +26,85 @@ This document defines the user interface designs for Legal Copilot. The UI follo
 
 ---
 
+## Scope, Phasing & Backend Alignment
+
+This document includes both **MVP** UI (supported by the current backend) and **forward-looking** UI for later epics.
+
+### Terminology
+
+- **Case** (UI term) == **Matter** (backend/API term)
+- **AI Inbox** (UI term) == **Emails + Approval Requests** (backend/API terms)
+
+### Delivery Phases (from `docs/ideas.md`)
+
+- **Phase 1 — Core AI case ops**: Epics 1, 2, 4, 5, 6, 10 (+ basic 20)
+- **Phase 2 — Revenue & client experience**: Epics 7, 8, 12, 16, 17, 18
+- **Phase 3 — Compliance & automation**: Epics 9, 13, 14, 15
+- **Phase 4 — Practice area expansion**: Epics 21 (+ practice modules), 23, 24, 25 (+ optional 19, 11)
+
+### UI → API Coverage Map (current backend surface)
+
+Source: `docs/api/openapi.yaml` (plus a small number of implemented routes not yet represented there).
+
+| UI surface (this doc)         | Primary backend endpoints                                                                                                                                                                   | Coverage notes                                                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard                     | `GET /api/approvals`, `GET /api/notifications`, `GET /api/tasks`, `GET /api/calendar/upcoming`, `GET /api/matters`, `GET /api/invoices`                                                     | No dedicated dashboard aggregate endpoint; UI should compose cards from these lists.                                                           |
+| Approval Queue                | `GET /api/approvals`, `POST /api/approvals/{id}/approve`, `POST /api/approvals/{id}/reject`, `POST /api/approvals/bulk/approve`, `POST /api/approvals/bulk/reject`                          | Good alignment with “human approves” principle.                                                                                                |
+| AI Inbox (list/detail)        | `GET /api/emails`, `GET /api/emails/{id}`, `POST /api/emails/{id}/ai/process`, approvals endpoints above                                                                                    | “Compose”/“Send” UX must be implemented either via approvals-backed actions or new email draft/send endpoints.                                 |
+| Cases (Matter list/detail)    | `GET /api/matters`, `POST /api/matters`, `GET /api/matters/{id}/timeline`, `POST /api/matters/{id}/ai/ask`, `GET /api/matters/{id}/search`                                                  | Missing direct matter detail/update endpoints in OpenAPI (`GET/PATCH /api/matters/{id}`) for the “Overview” tab to be fully data-driven.       |
+| Case AI actions               | `POST /api/matters/{id}/ai/generate-tasks`, `POST /api/matters/{id}/ai/suggest-calendar`                                                                                                    | Aligns with “AI prepares, human approves”; approvals may still be required depending on policy.                                                |
+| Clients                       | `GET /api/clients`, `POST /api/clients`, `GET /api/clients/{id}`                                                                                                                            | Client update flows likely need `PATCH /api/clients/{id}` if not already implemented.                                                          |
+| Documents (matter-scoped)     | `GET /api/documents`, `POST /api/documents`, `POST /api/documents/{id}/extract`, `POST /api/documents/{id}/summarize`, `GET /api/documents/{id}/entities`, `GET /api/documents/{id}/chunks` | File upload exists as `POST /api/storage/upload` (not currently in OpenAPI); downloads/viewing require a clear pattern (e.g., presigned URLs). |
+| Tasks                         | `GET /api/tasks`, `POST /api/tasks`, `POST /api/tasks/{id}/complete`, `GET /api/tasks/{id}`                                                                                                 | Good coverage for list + completion; task assignment/reassignment UX depends on schema fields.                                                 |
+| Calendar                      | `GET /api/calendar`, `GET /api/calendar/{id}`, `GET /api/calendar/upcoming`                                                                                                                 | “Join call”/meeting links depend on event fields + integrations.                                                                               |
+| Time entries                  | `GET /api/time-entries`, `POST /api/time-entries`, `GET /api/time-entries/{id}`, `POST /api/time-entries/{id}/submit`, `POST /api/time-entries/bulk/submit`                                 | Aligns with “AI suggests time” + bulk approve/submit pattern.                                                                                  |
+| Invoicing                     | `GET /api/invoices`, `POST /api/invoices/generate`, `GET /api/invoices/{id}`, `POST /api/invoices/{id}/send`, `POST /api/invoices/{id}/void`                                                | Invoice “preview PDF” and “payment link” UX depends on invoice schema + payments integration details.                                          |
+| Payments                      | `GET /api/payments`, `GET /api/payments/{id}`                                                                                                                                               | Collections flows (dunning schedules, DD mandates) are later-epic UI and may require new endpoints.                                            |
+| Leads & quotes                | `GET /api/leads`, `POST /api/leads`, `GET /api/leads/{id}`, `POST /api/leads/{id}/convert`, `GET /api/quotes`, `POST /api/quotes`, `GET /api/quotes/{id}`                                   | “Generate quote” UX maps well; “website/UTM source” features will need additional endpoints/fields.                                            |
+| Conflicts                     | `GET /api/conflicts/search`, `GET /api/conflicts/{matterId}`, `POST /api/conflicts/{id}/clear`, `POST /api/conflicts/{id}/waive`                                                            | Good for conflict-check story; relationship graph UI is future.                                                                                |
+| Search (global)               | `GET /api/search/semantic`                                                                                                                                                                  | Consider also supporting keyword search for exact matches (names, refs) if needed.                                                             |
+| Notifications                 | `GET /api/notifications`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all`, `GET/PATCH /api/notifications/preferences`                                               | Good alignment.                                                                                                                                |
+| Settings (firm, roles, users) | `GET/PATCH /api/firm/settings`, `GET/POST /api/roles`, `GET /api/roles/{id}`, `POST /api/users/{id}/role`                                                                                   | “Team” management UI needs full user CRUD + availability/leave management for Epic 25.                                                         |
+| Settings (integrations)       | `GET /api/integrations/email/accounts`, `GET /api/integrations/calendar/accounts`, `GET /api/integrations/payments/accounts`, `GET /api/integrations/accounting/connections`                | This doc shows “Integrations” but doesn’t yet define the setup/consent UX (required to unlock inbox/calendar/payments).                        |
+| Templates                     | `GET /api/templates`, `POST /api/templates`, `GET /api/templates/{id}`, `POST /api/templates/{id}/preview`, `POST /api/templates/{id}/generate`, `POST /api/templates/propose`              | Templates UI is implied but not designed as a first-class surface (library, variables, permissions, versioning).                               |
+| E-signatures                  | `GET /api/signature-requests`, `GET /api/signature-requests/{id}`                                                                                                                           | Missing UI for packet creation, signers, reminders, and per-matter signature queue.                                                            |
+| Client portal                 | (Not explicitly present in OpenAPI)                                                                                                                                                         | Portal UI is defined, but it needs dedicated auth/session + scoped “client-safe” endpoints and policy enforcement.                             |
+
+### Epic Coverage Matrix (UI vs. `docs/ideas.md`)
+
+This is a **UI surface checklist** (not an implementation guarantee). “Missing UI” items are prioritised assuming Phase 1 → 2 delivery.
+
+| Epic                            | Covered by screens in this doc                              | Missing UI surfaces (priority)                                                                                     |
+| ------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 0 — Client Intake & CRM         | Leads pipeline, lead detail, conflict check callout         | AML/KYC verification, onboarding form collection/chasing, engagement letter workflow, intake approval summary (P1) |
+| 1 — Case Command Centre         | Dashboard, cases list, case overview patterns               | Matter “home” overview with configurable widgets + per-user saved views (P0/P1)                                    |
+| 2 — Curated Case Timeline       | Timeline tab + “AI events”                                  | Timeline filtering/export, event detail drill-down with audit trail (P0/P1)                                        |
+| 3 — Party Intelligence          | “Manage parties” callout                                    | Dedicated Parties tab (CRUD), relationship graph, opponent solicitor detection UI (P1/P2)                          |
+| 4 — Document Intelligence       | Documents tab + AI summary/extract concepts                 | Top-level Documents library, document viewer UX, version comparison UI, missing-docs checklist (P0/P1)             |
+| 5 — Communications Copilot      | AI Inbox + draft/approve patterns                           | Threaded conversations, bulk triage, mailbox connection onboarding, safe-send policy UI (P0)                       |
+| 6 — Proactive Case Brain        | Briefing + “Ask about this case”                            | Persistent “case chat” transcript, citations UI, escalation to tasks/approvals (P0/P1)                             |
+| 7 — Billing                     | Time & Billing + invoices UI                                | Rate cards, fixed-fee stages, WIP/aged debt reports with drilldowns (P1)                                           |
+| 8 — Client Portal               | Client portal dashboard + chat                              | Magic-link login journey, “upload docs to case” flow, portal notification preferences (P1)                         |
+| 9 — Compliance & Risk           | Urgent items/alerts patterns                                | Compliance dashboard, rules editor, supervision views, retention controls, audit report export (P2)                |
+| 10 — Firm Setup                 | Settings (firm + AI config)                                 | Onboarding wizard (brand, roles, integrations, templates), data import/migration flow (P0/P1)                      |
+| 11 — Usage & AI Economics       | Reports “AI savings” hint                                   | AI usage dashboard (costs, model mix, ROI), per-case AI log explorer (P2/P3)                                       |
+| 12 — Task Orchestration         | Tasks + generate tasks                                      | Orchestration rules/automation builder, task dependency graphs, SLA/escalation UI (P1/P2)                          |
+| 13 — Calendar Intelligence      | Calendar + briefing entry points                            | Availability rules, smart scheduling assistant UI, limitation date calculators & warnings (P2)                     |
+| 14 — Document Generation        | Template/generate concepts                                  | Precedents library UX, questionnaire-driven generation, generated doc review + redlining (P2)                      |
+| 15 — Integration Hub            | Settings tab label only                                     | Integration marketplace/install UX, per-integration scopes & audit, webhook health (P2/P3)                         |
+| 16 — Payments & Collections     | Invoice pay CTA implied                                     | Payment method setup, dunning schedules, direct debit mandates, reconciliation UI (P1/P2)                          |
+| 17 — E-Signatures               | “Send for signature” button + signature requests API exists | Signature packet builder, signer routing, reminders, “pending signatures” dashboard (P1)                           |
+| 18 — Online Booking             | Calendar shows bookings                                     | Booking page/widget builder, appointment types, buffers, intake questions, client self-serve reschedule (P1/P2)    |
+| 19 — Website & Landing Pages    | Not covered                                                 | Website/landing builder UI, SEO suggestions, domain management, embed widgets (P3/P4)                              |
+| 20 — Lead Source Tracking       | Reports + leads pipeline                                    | Source taxonomy management, UTM capture UI, referrer profiles + ROI drilldowns (P1/P2)                             |
+| 21 — Conveyancing Module        | Conveyancing examples in cases/docs                         | Search ordering flows, chain tracking, SDLT workflows, Land Registry submission UI (P3/P4)                         |
+| 22 — Reporting & Analytics      | Reports dashboard sketch                                    | Report builder, scheduled delivery, export, cohort comparisons, permissions (P2/P3)                                |
+| 23 — Litigation & Court Bundles | “Bundle” CTA only                                           | Bundle builder (order/pagination/index), exhibits, chronologies, court form workflows (P3/P4)                      |
+| 24 — Wills & Probate Module     | Probate examples                                            | Probate workflow boards, asset/liability tracking, IHT calculations, estate accounts UX (P3/P4)                    |
+| 25 — Team & Resource Mgmt       | “Team” nav item only                                        | User directory, leave requests/approvals, capacity dashboard, workload rebalancing UI (P2/P3)                      |
+
+---
+
 ## Navigation & Layout
 
 ### Main Application Shell

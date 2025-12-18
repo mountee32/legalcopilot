@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { Queue, Worker, QueueEvents } from "bullmq";
 import { randomUUID } from "crypto";
 
@@ -32,11 +32,17 @@ describe("Queue Integration - Processing", () => {
     await queue.close();
   });
 
+  beforeAll(async () => {
+    await queue.waitUntilReady();
+    await events.waitUntilReady();
+    await worker.waitUntilReady();
+  });
+
   it("processes an enqueued job", async () => {
     const job = await queue.add("test", { hello: "world" });
     const result = await job.waitUntilFinished(events);
 
     expect(result).toEqual({ ok: true });
     expect(processed).toContainEqual({ hello: "world" });
-  });
+  }, 20_000);
 });

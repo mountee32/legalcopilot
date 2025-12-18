@@ -6,8 +6,9 @@ import { UuidSchema } from "@/lib/api/schemas";
 import { ValidationError, withErrorHandler } from "@/middleware/withErrorHandler";
 
 export const POST = withErrorHandler(async (request: NextRequest, { params }) => {
-  const firmId = UuidSchema.parse(params.firmId);
-  const accountId = UuidSchema.parse(params.accountId);
+  const resolvedParams = await params;
+  const firmId = UuidSchema.parse(resolvedParams.firmId);
+  const accountId = UuidSchema.parse(resolvedParams.accountId);
 
   const secret = request.headers.get("x-webhook-secret") ?? "";
   const externalEventIdHeader = request.headers.get("x-event-id") ?? undefined;

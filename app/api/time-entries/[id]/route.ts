@@ -12,7 +12,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("time:read")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Time entry not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -35,7 +35,7 @@ export const GET = withErrorHandler(
 export const PATCH = withErrorHandler(
   withAuth(
     withPermission("time:write")(async (request: NextRequest, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Time entry not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
@@ -90,7 +90,7 @@ export const PATCH = withErrorHandler(
 export const DELETE = withErrorHandler(
   withAuth(
     withPermission("time:write")(async (_request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Time entry not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

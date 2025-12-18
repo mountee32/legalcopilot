@@ -16,7 +16,7 @@ const CompleteTaskSchema = z.object({
 export const POST = withErrorHandler(
   withAuth(
     withPermission("cases:write")(async (request: NextRequest, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Task not found");
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);

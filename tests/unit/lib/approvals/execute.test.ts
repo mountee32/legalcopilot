@@ -57,7 +57,7 @@ describe("executeApprovalIfSupported", () => {
       const result = await executeApprovalIfSupported(mockTx, {
         id: "a1",
         firmId: "f1",
-        action: "email.send", // Unsupported
+        action: "matter.create", // Unsupported action
         proposedPayload: {},
         entityType: null,
         entityId: null,

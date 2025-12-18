@@ -12,7 +12,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const POST = withErrorHandler(
   withAuth(
     withPermission("templates:read")(async (request: NextRequest, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Template not found");
 
       const body = await request.json().catch(() => ({}));

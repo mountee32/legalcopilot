@@ -104,3 +104,30 @@ export const UpdateInvoiceSchema = z
     vatRate: MoneySchema.optional(),
   })
   .openapi("UpdateInvoiceRequest");
+
+export const PaymentLinkResponseSchema = z
+  .object({
+    paymentUrl: z.string().url(),
+    token: z.string(),
+    expiresAt: DateTimeSchema,
+  })
+  .openapi("PaymentLinkResponse");
+
+export const PublicInvoiceSchema = z
+  .object({
+    invoiceNumber: z.string(),
+    invoiceDate: DateSchema,
+    dueDate: DateSchema,
+    total: MoneySchema,
+    balanceDue: MoneySchema,
+    status: InvoiceStatusSchema,
+    firmName: z.string(),
+    firmEmail: z.string().email().nullable(),
+    items: z.array(
+      z.object({
+        description: z.string(),
+        amount: MoneySchema,
+      })
+    ),
+  })
+  .openapi("PublicInvoice");

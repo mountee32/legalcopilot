@@ -25,7 +25,7 @@ const ModelResponseSchema = z.object({
 export const POST = withErrorHandler(
   withAuth(
     withPermission("ai:use")(async (request: NextRequest, { params, user }) => {
-      const matterId = params?.id;
+      const matterId = params ? (await params).id : undefined;
       if (!matterId) throw new NotFoundError("Matter not found");
 
       const body = await request.json().catch(() => ({}));

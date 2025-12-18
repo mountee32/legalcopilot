@@ -49,7 +49,7 @@ describe("Invoices Integration - CRUD", () => {
       expect(invoice.firmId).toBe(ctx.firmId);
       expect(invoice.clientId).toBe(client.id);
       expect(invoice.matterId).toBe(matter.id);
-      expect(invoice.invoiceNumber).toMatch(/INV-\d{4}-\d{4}/);
+      expect(invoice.invoiceNumber).toMatch(/INV-\d{4}-[A-Z0-9]{4,8}/);
       expect(invoice.status).toBe("draft");
       expect(invoice.subtotal).toBe("1000.00");
       expect(invoice.vatAmount).toBe("200.00"); // 20% VAT
@@ -466,7 +466,7 @@ describe("Invoices Integration - Invoice Generation", () => {
     });
 
     expect(result.invoiceId).toBeDefined();
-    expect(result.invoiceNumber).toMatch(/INV-\d{4}-\d{4}/);
+    expect(result.invoiceNumber).toMatch(/INV-\d{4}-[A-Z0-9]{4,8}/);
 
     const [invoice] = await db.select().from(invoices).where(eq(invoices.id, result.invoiceId));
 

@@ -17,6 +17,8 @@ describe("Edge cases - Empty and null states", () => {
       reference: "CLI-2025-0001",
       type: "individual",
       status: "active",
+      source: null,
+      sourceId: null,
       title: null,
       firstName: null,
       lastName: null,

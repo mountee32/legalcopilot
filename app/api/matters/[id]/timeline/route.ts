@@ -12,7 +12,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const GET = withErrorHandler(
   withAuth(
     withPermission("cases:read")(async (request: NextRequest, { params, user }) => {
-      const matterId = params?.id;
+      const matterId = params ? (await params).id : undefined;
       if (!matterId) throw new NotFoundError("Matter not found");
 
       const url = new URL(request.url);
@@ -78,7 +78,7 @@ export const GET = withErrorHandler(
 export const POST = withErrorHandler(
   withAuth(
     withPermission("cases:write")(async (request: NextRequest, { params, user }) => {
-      const matterId = params?.id;
+      const matterId = params ? (await params).id : undefined;
       if (!matterId) throw new NotFoundError("Matter not found");
 
       const body = await request.json();

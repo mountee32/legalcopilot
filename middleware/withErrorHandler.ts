@@ -6,7 +6,7 @@ import * as Sentry from "@sentry/nextjs";
  */
 export type RouteHandler = (
   request: NextRequest,
-  context?: { params?: Record<string, string> }
+  context?: { params?: Record<string, string> | Promise<Record<string, string>> }
 ) => Promise<Response> | Response;
 
 /**
@@ -100,7 +100,10 @@ export function withErrorHandler(
     logToConsole = true,
   } = options;
 
-  return async (request: NextRequest, context?: { params?: Record<string, string> }) => {
+  return async (
+    request: NextRequest,
+    context?: { params?: Record<string, string> | Promise<Record<string, string>> }
+  ) => {
     try {
       // Execute the handler
       return await handler(request, context);

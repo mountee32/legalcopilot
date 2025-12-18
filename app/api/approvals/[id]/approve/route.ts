@@ -13,7 +13,7 @@ import { withPermission } from "@/middleware/withPermission";
 export const POST = withErrorHandler(
   withAuth(
     withPermission("approvals:decide")(async (request, { params, user }) => {
-      const id = params?.id;
+      const id = params ? (await params).id : undefined;
       if (!id) throw new NotFoundError("Approval request not found");
 
       const body = await request.json().catch(() => ({}));

@@ -47,6 +47,14 @@ tags:
     description: External provider connections & webhooks
   - name: Search
     description: Semantic search endpoints
+  - name: Storage
+    description: File upload and storage endpoints
+  - name: System
+    description: System health and monitoring endpoints
+  - name: AI
+    description: AI and ML endpoints
+  - name: Jobs
+    description: Background job queue endpoints
 components:
   schemas:
     ErrorResponse:
@@ -135,6 +143,12 @@ components:
           format: uuid
           description: Unique identifier in UUID v4 format
           example: 123e4567-e89b-12d3-a456-426614174000
+        matterId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
         status:
           type: string
           enum: &a1
@@ -201,6 +215,7 @@ components:
         - proposedPayload
         - entityType
         - entityId
+        - matterId
         - status
         - decidedBy
         - decidedAt
@@ -309,13 +324,36 @@ components:
           example: individual
         status:
           type: string
-          enum: &a3
+          enum: &a4
             - prospect
             - active
             - dormant
             - archived
           description: Current status in client lifecycle
           example: active
+        source:
+          type: string
+          nullable: true
+          enum: &a3
+            - website
+            - referral
+            - walk_in
+            - phone
+            - email
+            - lead_conversion
+            - existing_client
+            - partner_firm
+            - marketing
+            - social_media
+            - other
+          description: How the client was acquired (for marketing attribution)
+          example: website
+        sourceId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Link to source record (e.g., lead ID if converted from lead)
+          example: 123e4567-e89b-12d3-a456-426614174000
         title:
           type: string
           nullable: true
@@ -410,6 +448,8 @@ components:
         - reference
         - type
         - status
+        - source
+        - sourceId
         - title
         - firstName
         - lastName
@@ -440,6 +480,16 @@ components:
           default: individual
           description: Type of client entity
           example: individual
+        source:
+          type: string
+          enum: *a3
+          description: How the client was acquired (for marketing attribution)
+          example: website
+        sourceId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
         title:
           type: string
         firstName:
@@ -479,6 +529,16 @@ components:
     UpdateClientRequest:
       type: object
       properties:
+        source:
+          type: string
+          enum: *a3
+          description: How the client was acquired (for marketing attribution)
+          example: website
+        sourceId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
         title:
           type: string
         firstName:
@@ -553,7 +613,7 @@ components:
           default: 20
         status:
           type: string
-          enum: *a3
+          enum: *a4
           description: Current status in client lifecycle
           example: active
         type:
@@ -600,7 +660,7 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
         status:
           type: string
-          enum: &a6
+          enum: &a7
             - lead
             - active
             - on_hold
@@ -610,7 +670,7 @@ components:
           example: active
         practiceArea:
           type: string
-          enum: &a4
+          enum: &a5
             - conveyancing
             - litigation
             - family
@@ -627,7 +687,7 @@ components:
           example: conveyancing
         billingType:
           type: string
-          enum: &a5
+          enum: &a6
             - hourly
             - fixed_fee
             - conditional
@@ -674,6 +734,30 @@ components:
         notes:
           type: string
           nullable: true
+        riskScore:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+          description: AI-calculated risk score (0-100, higher = more risky)
+          example: 35
+        riskFactors:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+          description: AI risk assessment factors for explainability
+          example:
+            - factor: tight_deadline
+              weight: 0.4
+            - factor: high_value
+              weight: 0.3
+        riskAssessedAt:
+          type: string
+          nullable: true
+          format: date-time
+          description: When AI last calculated the risk score
+          example: 2024-12-17T10:30:00Z
         createdAt:
           type: string
           format: date-time
@@ -702,6 +786,9 @@ components:
         - closedAt
         - keyDeadline
         - notes
+        - riskScore
+        - riskFactors
+        - riskAssessedAt
         - createdAt
         - updatedAt
     CreateMatterRequest:
@@ -730,12 +817,12 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
         practiceArea:
           type: string
-          enum: *a4
+          enum: *a5
           description: Legal practice area
           example: conveyancing
         billingType:
           type: string
-          enum: *a5
+          enum: *a6
           default: hourly
           description: Billing arrangement type
           example: hourly
@@ -778,12 +865,12 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
         status:
           type: string
-          enum: *a6
+          enum: *a7
           description: Current status in matter lifecycle
           example: active
         billingType:
           type: string
-          enum: *a5
+          enum: *a6
           description: Billing arrangement type
           example: hourly
         hourlyRate:
@@ -802,6 +889,20 @@ components:
         notes:
           type: string
           nullable: true
+        riskScore:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        riskFactors:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        riskAssessedAt:
+          type: string
+          nullable: true
+          format: date-time
     MatterListResponse:
       type: object
       properties:
@@ -842,12 +943,12 @@ components:
           default: 20
         status:
           type: string
-          enum: *a6
+          enum: *a7
           description: Current status in matter lifecycle
           example: active
         practiceArea:
           type: string
-          enum: *a4
+          enum: *a5
           description: Legal practice area
           example: conveyancing
         clientId:
@@ -1823,7 +1924,7 @@ components:
             type: array
             items:
               type: string
-              enum: &a7
+              enum: &a8
                 - in_app
                 - email
                 - push
@@ -1849,7 +1950,7 @@ components:
             type: array
             items:
               type: string
-              enum: *a7
+              enum: *a8
     TaskPriority:
       type: string
       enum:
@@ -2413,6 +2514,14 @@ components:
         - approved
         - billed
         - written_off
+    TimeEntrySource:
+      type: string
+      enum:
+        - manual
+        - ai_suggested
+        - email_inferred
+        - document_activity
+        - calendar
     TimeEntry:
       type: object
       properties:
@@ -2452,6 +2561,10 @@ components:
           example: "1250.00"
         status:
           $ref: "#/components/schemas/TimeEntryStatus"
+        source:
+          $ref: "#/components/schemas/TimeEntrySource"
+        isBillable:
+          type: boolean
         invoiceId:
           type: string
           nullable: true
@@ -2481,6 +2594,8 @@ components:
         - hourlyRate
         - amount
         - status
+        - source
+        - isBillable
         - invoiceId
         - activityCode
         - createdAt
@@ -2555,6 +2670,10 @@ components:
           pattern: ^\d+\.\d{2}$
           description: Monetary amount with 2 decimal places
           example: "1250.00"
+        source:
+          $ref: "#/components/schemas/TimeEntrySource"
+        isBillable:
+          type: boolean
         activityCode:
           type: string
       required:
@@ -2584,6 +2703,10 @@ components:
           pattern: ^\d+\.\d{2}$
           description: Monetary amount with 2 decimal places
           example: "1250.00"
+        source:
+          $ref: "#/components/schemas/TimeEntrySource"
+        isBillable:
+          type: boolean
         activityCode:
           type: string
           nullable: true
@@ -2671,6 +2794,11 @@ components:
           pattern: ^\d+\.\d{2}$
           description: Monetary amount with 2 decimal places
           example: "1250.00"
+        vatRate:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
         total:
           type: string
           pattern: ^\d+\.\d{2}$
@@ -2731,6 +2859,7 @@ components:
         - dueDate
         - subtotal
         - vatAmount
+        - vatRate
         - total
         - paidAmount
         - balanceDue
@@ -2881,6 +3010,11 @@ components:
           format: date
           description: ISO 8601 date string
           example: 2024-12-17
+        vatRate:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
       required:
         - clientId
         - timeEntryIds
@@ -2898,6 +3032,11 @@ components:
         notes:
           type: string
           nullable: true
+        vatRate:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
     PaymentMethod:
       type: string
       enum:
@@ -3575,6 +3714,15 @@ components:
           nullable: true
           description: Phone number in E.164 or UK format
           example: +44 20 7946 0958
+        enquiryType:
+          type: string
+          nullable: true
+          enum: *a5
+          description: Legal practice area
+          example: conveyancing
+        message:
+          type: string
+          nullable: true
         source:
           type: string
           nullable: true
@@ -3586,6 +3734,12 @@ components:
         notes:
           type: string
           nullable: true
+        assignedTo:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
         convertedToClientId:
           type: string
           nullable: true
@@ -3615,10 +3769,13 @@ components:
         - companyName
         - email
         - phone
+        - enquiryType
+        - message
         - source
         - status
         - score
         - notes
+        - assignedTo
         - convertedToClientId
         - createdById
         - createdAt
@@ -3662,6 +3819,13 @@ components:
           type: string
           description: Phone number in E.164 or UK format
           example: +44 20 7946 0958
+        enquiryType:
+          type: string
+          enum: *a5
+          description: Legal practice area
+          example: conveyancing
+        message:
+          type: string
         source:
           type: string
         score:
@@ -3670,6 +3834,11 @@ components:
           maximum: 100
         notes:
           type: string
+        assignedTo:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
     UpdateLeadRequest:
       type: object
       properties:
@@ -3688,6 +3857,13 @@ components:
           type: string
           description: Phone number in E.164 or UK format
           example: +44 20 7946 0958
+        enquiryType:
+          type: string
+          enum: *a5
+          description: Legal practice area
+          example: conveyancing
+        message:
+          type: string
         source:
           type: string
         score:
@@ -3696,6 +3872,11 @@ components:
           maximum: 100
         notes:
           type: string
+        assignedTo:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
         status:
           $ref: "#/components/schemas/LeadStatus"
     ConvertLeadRequest:
@@ -3713,20 +3894,10 @@ components:
           maxLength: 200
         practiceArea:
           type: string
-          enum:
-            - conveyancing
-            - litigation
-            - family
-            - probate
-            - employment
-            - immigration
-            - personal_injury
-            - commercial
-            - criminal
-            - ip
-            - insolvency
-            - other
+          enum: *a5
           default: other
+          description: Legal practice area
+          example: conveyancing
       required:
         - matterTitle
     ConvertLeadResponse:
@@ -3772,6 +3943,11 @@ components:
           format: uuid
           description: Unique identifier in UUID v4 format
           example: 123e4567-e89b-12d3-a456-426614174000
+        type:
+          type: string
+          enum: *a5
+          description: Legal practice area
+          example: conveyancing
         status:
           $ref: "#/components/schemas/QuoteStatus"
         items:
@@ -3779,6 +3955,32 @@ components:
           nullable: true
           items:
             nullable: true
+        fees:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              amount:
+                type: number
+            required:
+              - description
+              - amount
+        disbursements:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              amount:
+                type: number
+            required:
+              - description
+              - amount
         subtotal:
           type: string
           pattern: ^\d+\.\d{2}$
@@ -3828,8 +4030,11 @@ components:
       required:
         - id
         - leadId
+        - type
         - status
         - items
+        - fees
+        - disbursements
         - subtotal
         - vatAmount
         - total
@@ -3871,10 +4076,39 @@ components:
           format: uuid
           description: Unique identifier in UUID v4 format
           example: 123e4567-e89b-12d3-a456-426614174000
+        type:
+          type: string
+          enum: *a5
+          description: Legal practice area
+          example: conveyancing
         items:
           type: array
           items:
             nullable: true
+        fees:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              amount:
+                type: number
+            required:
+              - description
+              - amount
+        disbursements:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              amount:
+                type: number
+            required:
+              - description
+              - amount
         subtotal:
           type: string
           pattern: ^\d+\.\d{2}$
@@ -3903,6 +4137,11 @@ components:
     UpdateQuoteRequest:
       type: object
       properties:
+        type:
+          type: string
+          enum: *a5
+          description: Legal practice area
+          example: conveyancing
         status:
           $ref: "#/components/schemas/QuoteStatus"
         items:
@@ -3910,6 +4149,32 @@ components:
           nullable: true
           items:
             nullable: true
+        fees:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              amount:
+                type: number
+            required:
+              - description
+              - amount
+        disbursements:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              amount:
+                type: number
+            required:
+              - description
+              - amount
         subtotal:
           type: string
           pattern: ^\d+\.\d{2}$
@@ -4695,6 +4960,56 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    ClientUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ClientDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    MatterIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    MatterUpdateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    MatterDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
     DocumentIdParam:
       type: object
       properties:
@@ -4736,6 +5051,16 @@ components:
       required:
         - id
     DocumentEntitiesIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    DocumentDownloadIdParam:
       type: object
       properties:
         id:
@@ -4885,6 +5210,54 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    EmailAttachmentsIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailAttachmentsResponse:
+      type: object
+      properties:
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              filename:
+                type: string
+              mimeType:
+                type: string
+              size:
+                type: number
+              url:
+                type: string
+                format: uri
+            required:
+              - id
+              - filename
+              - mimeType
+              - size
+              - url
+      required:
+        - attachments
+    EmailSendIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
     TimeEntryIdParam:
       type: object
       properties:
@@ -4965,6 +5338,30 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    InvoicePayLinkIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentLinkResponse:
+      type: object
+      properties:
+        paymentUrl:
+          type: string
+          format: uri
+        token:
+          type: string
+        expiresAt:
+          type: string
+      required:
+        - paymentUrl
+        - token
+        - expiresAt
     PaymentIdParam:
       type: object
       properties:
@@ -5145,6 +5542,286 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    EmailAccountIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailAccountDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailAccountHealthIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailAccountHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        lastSyncAt:
+          type: string
+          nullable: true
+        webhookActive:
+          type: boolean
+      required:
+        - status
+        - lastSyncAt
+        - webhookActive
+    EmailAccountReconnectIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    ReconnectAccountRequest:
+      type: object
+      properties:
+        tokens:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - tokens
+    ReconnectAccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - status
+        - updatedAt
+    CalendarAccountIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    CalendarAccountDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    CalendarAccountHealthIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    CalendarAccountHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        lastSyncAt:
+          type: string
+          nullable: true
+        webhookActive:
+          type: boolean
+      required:
+        - status
+        - lastSyncAt
+        - webhookActive
+    CalendarAccountReconnectIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentProviderAccountIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentProviderAccountDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentProviderAccountHealthIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    PaymentProviderAccountReconnectIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    AccountingConnectionIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    AccountingConnectionDeleteIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    AccountingConnectionHealthIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    AccountingConnectionReconnectIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    EmailWebhookParams:
+      type: object
+      properties:
+        firmId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+      required:
+        - firmId
+        - accountId
+    WebhookHeaders:
+      type: object
+      properties:
+        x-webhook-secret:
+          type: string
+        x-event-id:
+          type: string
+      required:
+        - x-webhook-secret
+    CalendarWebhookParams:
+      type: object
+      properties:
+        firmId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+      required:
+        - firmId
+        - accountId
+    PaymentWebhookParams:
+      type: object
+      properties:
+        firmId:
+          type: string
+          format: uuid
+        accountId:
+          type: string
+          format: uuid
+      required:
+        - firmId
+        - accountId
+    AccountingWebhookParams:
+      type: object
+      properties:
+        firmId:
+          type: string
+          format: uuid
+        connectionId:
+          type: string
+          format: uuid
+      required:
+        - firmId
+        - connectionId
+    EsignatureWebhookParams:
+      type: object
+      properties:
+        firmId:
+          type: string
+          format: uuid
+        requestId:
+          type: string
+          format: uuid
+      required:
+        - firmId
+        - requestId
     SignatureRequestIdParam:
       type: object
       properties:
@@ -5155,6 +5832,45 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    SignatureRequestSendIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    SignatureRequestRemindIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    SignatureRequestVoidIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
+    VoidSignatureRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - reason
     MatterSearchIdParam:
       type: object
       properties:
@@ -5165,6 +5881,176 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    FileUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        firmId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        tags:
+          type: string
+      required:
+        - firmId
+    FileUploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        upload:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            url:
+              type: string
+              format: uri
+            filename:
+              type: string
+            originalName:
+              type: string
+            size:
+              type: number
+            mimeType:
+              type: string
+            metadata:
+              type: object
+              additionalProperties:
+                nullable: true
+          required:
+            - id
+            - url
+            - filename
+            - originalName
+            - size
+            - mimeType
+      required:
+        - success
+        - upload
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+        timestamp:
+          type: string
+        services:
+          type: object
+          properties:
+            postgres:
+              type: boolean
+            redis:
+              type: boolean
+            minio:
+              type: boolean
+            app:
+              type: boolean
+          required:
+            - postgres
+            - redis
+            - minio
+            - app
+        details:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - status
+        - timestamp
+        - services
+        - details
+    HealthCheckDegradedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+        timestamp:
+          type: string
+        services:
+          type: object
+          properties:
+            postgres:
+              type: boolean
+            redis:
+              type: boolean
+            minio:
+              type: boolean
+            app:
+              type: boolean
+          required:
+            - postgres
+            - redis
+            - minio
+            - app
+        details:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - status
+        - timestamp
+        - services
+        - details
+    ChatRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        model:
+          type: string
+      required:
+        - message
+    CreateJobRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - email
+            - generic
+        data:
+          type: object
+          additionalProperties:
+            nullable: true
+      required:
+        - type
+        - data
+    CreateJobResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        job:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            data:
+              type: object
+              additionalProperties:
+                nullable: true
+          required:
+            - id
+            - name
+            - data
+      required:
+        - success
+        - job
   parameters: {}
 paths:
   /api/approvals:
@@ -5398,7 +6284,7 @@ paths:
           in: query
         - schema:
             type: string
-            enum: *a3
+            enum: *a4
             description: Current status in client lifecycle
             example: active
           required: false
@@ -5488,6 +6374,71 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update client
+      description: Update a client's details
+      tags:
+        - Clients
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClientRequest"
+      responses:
+        "200":
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Archive client
+      description: Archive a client (soft delete)
+      tags:
+        - Clients
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Client archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/matters:
     get:
       summary: List matters
@@ -5512,7 +6463,7 @@ paths:
           in: query
         - schema:
             type: string
-            enum: *a6
+            enum: *a7
             description: Current status in matter lifecycle
             example: active
           required: false
@@ -5520,7 +6471,7 @@ paths:
           in: query
         - schema:
             type: string
-            enum: *a4
+            enum: *a5
             description: Legal practice area
             example: conveyancing
           required: false
@@ -5580,6 +6531,99 @@ paths:
                 $ref: "#/components/schemas/Matter"
         "400":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}:
+    get:
+      summary: Get matter
+      description: Retrieve a single matter by ID
+      tags:
+        - Matters
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Matter details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Matter"
+        "404":
+          description: Matter not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      summary: Update matter
+      description: Update a matter's details
+      tags:
+        - Matters
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMatterRequest"
+      responses:
+        "200":
+          description: Matter updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Matter"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Matter not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Archive matter
+      description: Archive a matter (soft delete)
+      tags:
+        - Matters
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Matter archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Matter not found
           content:
             application/json:
               schema:
@@ -5789,6 +6833,38 @@ paths:
                 $ref: "#/components/schemas/DocumentJobAcceptedResponse"
         "400":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/documents/{id}/download:
+    get:
+      summary: Download document file
+      description: Download the original document file from storage
+      tags:
+        - Documents
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: object
+                properties:
+                  file:
+                    type: string
+                    format: binary
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -6786,6 +7862,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/emails/{id}/attachments:
+    get:
+      summary: Get email attachments
+      description: List all attachments for an email
+      tags:
+        - Emails
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailAttachmentsResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/emails/{id}/send:
+    post:
+      summary: Send email (approval required)
+      description: Create approval request to send email
+      tags:
+        - Emails
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/time-entries:
     get:
       summary: List time entries
@@ -7251,6 +8390,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Invoice"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/invoices/{id}/pay-link:
+    post:
+      summary: Generate payment link
+      description: Generate a secure payment link for an invoice
+      tags:
+        - Invoices
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "201":
+          description: Payment link generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentLinkResponse"
         "400":
           description: Validation error
           content:
@@ -8296,9 +9469,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /api/conflicts/{matterId}:
+  /api/conflicts/by-matter/{matterId}:
     get:
-      summary: Get conflict check
+      summary: Get conflict check by matter
       description: Retrieve conflict check for a matter
       tags:
         - Conflicts
@@ -8612,6 +9785,836 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/email/accounts/{id}:
+    get:
+      summary: Get email account details
+      description: Retrieve email account with webhook configuration
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Email account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailAccountWithSecret"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Disconnect email account
+      description: Revoke email account connection
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Account disconnected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/email/accounts/{id}/health:
+    get:
+      summary: Check email account health
+      description: Get email account connection status and health
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailAccountHealthResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/email/accounts/{id}/reconnect:
+    post:
+      summary: Reconnect email account
+      description: Update email account tokens and reconnect
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReconnectAccountRequest"
+      responses:
+        "200":
+          description: Account reconnected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconnectAccountResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/calendar/accounts/{id}:
+    get:
+      summary: Get calendar account details
+      description: Retrieve calendar account with webhook configuration
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Calendar account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarAccountWithSecret"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Disconnect calendar account
+      description: Revoke calendar account connection
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Account disconnected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/calendar/accounts/{id}/health:
+    get:
+      summary: Check calendar account health
+      description: Get calendar account connection status and health
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarAccountHealthResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/calendar/accounts/{id}/reconnect:
+    post:
+      summary: Reconnect calendar account
+      description: Update calendar account tokens and reconnect
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tokens:
+                  type: object
+                  additionalProperties:
+                    nullable: true
+              required:
+                - tokens
+      responses:
+        "200":
+          description: Account reconnected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  updatedAt:
+                    type: string
+                required:
+                  - id
+                  - status
+                  - updatedAt
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/payments/accounts/{id}:
+    get:
+      summary: Get payment account details
+      description: Retrieve payment provider account with webhook configuration
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Payment account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentProviderAccountWithSecret"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Disconnect payment account
+      description: Revoke payment provider account connection
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Account disconnected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/payments/accounts/{id}/health:
+    get:
+      summary: Check payment account health
+      description: Get payment account connection status and health
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lastSyncAt:
+                    type: string
+                    nullable: true
+                  webhookActive:
+                    type: boolean
+                required:
+                  - status
+                  - lastSyncAt
+                  - webhookActive
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/payments/accounts/{id}/reconnect:
+    post:
+      summary: Reconnect payment account
+      description: Update payment account tokens and reconnect
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tokens:
+                  type: object
+                  additionalProperties:
+                    nullable: true
+              required:
+                - tokens
+      responses:
+        "200":
+          description: Account reconnected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  updatedAt:
+                    type: string
+                required:
+                  - id
+                  - status
+                  - updatedAt
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/accounting/connections/{id}:
+    get:
+      summary: Get accounting connection details
+      description: Retrieve accounting provider connection with webhook configuration
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Accounting connection details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountingConnectionWithSecret"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Disconnect accounting connection
+      description: Revoke accounting provider connection
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Connection disconnected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/accounting/connections/{id}/health:
+    get:
+      summary: Check accounting connection health
+      description: Get accounting connection status and health
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  lastSyncAt:
+                    type: string
+                    nullable: true
+                  webhookActive:
+                    type: boolean
+                required:
+                  - status
+                  - lastSyncAt
+                  - webhookActive
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/integrations/accounting/connections/{id}/reconnect:
+    post:
+      summary: Reconnect accounting connection
+      description: Update accounting connection tokens and reconnect
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tokens:
+                  type: object
+                  additionalProperties:
+                    nullable: true
+              required:
+                - tokens
+      responses:
+        "200":
+          description: Connection reconnected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  updatedAt:
+                    type: string
+                required:
+                  - id
+                  - status
+                  - updatedAt
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/webhooks/email/{firmId}/{accountId}:
+    post:
+      summary: Email provider webhook
+      description: Webhook endpoint for email provider events
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: firmId
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: accountId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: x-webhook-secret
+          in: header
+        - schema:
+            type: string
+          required: false
+          name: x-event-id
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                nullable: true
+      responses:
+        "200":
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted:
+                    type: boolean
+                  provider:
+                    type: string
+                required:
+                  - accepted
+                  - provider
+        "400":
+          description: Invalid webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/webhooks/calendar/{firmId}/{accountId}:
+    post:
+      summary: Calendar provider webhook
+      description: Webhook endpoint for calendar provider events
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: firmId
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: accountId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: x-webhook-secret
+          in: header
+        - schema:
+            type: string
+          required: false
+          name: x-event-id
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                nullable: true
+      responses:
+        "200":
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted:
+                    type: boolean
+                  provider:
+                    type: string
+                required:
+                  - accepted
+                  - provider
+        "400":
+          description: Invalid webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/webhooks/payments/{firmId}/{accountId}:
+    post:
+      summary: Payment provider webhook
+      description: Webhook endpoint for payment provider events
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: firmId
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: accountId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: x-webhook-secret
+          in: header
+        - schema:
+            type: string
+          required: false
+          name: x-event-id
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                nullable: true
+      responses:
+        "200":
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted:
+                    type: boolean
+                  provider:
+                    type: string
+                required:
+                  - accepted
+                  - provider
+        "400":
+          description: Invalid webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/webhooks/accounting/{firmId}/{connectionId}:
+    post:
+      summary: Accounting provider webhook
+      description: Webhook endpoint for accounting provider events
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: firmId
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: connectionId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: x-webhook-secret
+          in: header
+        - schema:
+            type: string
+          required: false
+          name: x-event-id
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                nullable: true
+      responses:
+        "200":
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted:
+                    type: boolean
+                  provider:
+                    type: string
+                required:
+                  - accepted
+                  - provider
+        "400":
+          description: Invalid webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/webhooks/esignature/{firmId}/{requestId}:
+    post:
+      summary: E-signature provider webhook
+      description: Webhook endpoint for e-signature provider events
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: firmId
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: requestId
+          in: path
+        - schema:
+            type: string
+          required: true
+          name: x-webhook-secret
+          in: header
+        - schema:
+            type: string
+          required: false
+          name: x-event-id
+          in: header
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                nullable: true
+      responses:
+        "200":
+          description: Event accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted:
+                    type: boolean
+                  provider:
+                    type: string
+                required:
+                  - accepted
+                  - provider
+        "400":
+          description: Invalid webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/signature-requests:
     get:
       summary: List signature requests
@@ -8716,6 +10719,114 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/signature-requests/{id}/send:
+    post:
+      summary: Send signature request (approval required)
+      description: Create approval request to send signature request to signers
+      tags:
+        - Integrations
+        - Approvals
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "201":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/signature-requests/{id}/remind:
+    post:
+      summary: Send reminder for signature request
+      description: Send reminder to signers who haven't signed yet
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      responses:
+        "200":
+          description: Reminder sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/signature-requests/{id}/void:
+    post:
+      summary: Void signature request
+      description: Cancel signature request and mark as void
+      tags:
+        - Integrations
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidSignatureRequestRequest"
+      responses:
+        "200":
+          description: Signature request voided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignatureRequest"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/search/semantic:
     post:
       summary: Semantic search
@@ -8783,6 +10894,108 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/storage/upload:
+    post:
+      summary: Upload file
+      description: Upload a file to MinIO storage
+      tags:
+        - Storage
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FileUploadRequest"
+      responses:
+        "200":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/health:
+    get:
+      summary: Health check
+      description: Check system health (PostgreSQL, Redis, MinIO)
+      tags:
+        - System
+      responses:
+        "200":
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
+        "503":
+          description: System degraded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckDegradedResponse"
+  /api/ai/chat:
+    post:
+      summary: AI chat (streaming)
+      description: Stream AI responses via OpenRouter
+      tags:
+        - AI
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Streaming response
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: string
+                required:
+                  - data
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/jobs/create:
+    post:
+      summary: Create background job
+      description: Add a job to the BullMQ queue
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJobRequest"
+      responses:
+        "200":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateJobResponse"
+        "400":
+          description: Validation error
           content:
             application/json:
               schema:

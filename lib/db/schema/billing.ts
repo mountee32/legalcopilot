@@ -189,6 +189,12 @@ export const invoices = pgTable(
     /** When fully paid */
     paidAt: timestamp("paid_at"),
 
+    /** Payment link token for client portal access */
+    paymentLinkToken: text("payment_link_token"),
+
+    /** Payment link expiration */
+    paymentLinkExpiresAt: timestamp("payment_link_expires_at"),
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

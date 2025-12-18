@@ -180,5 +180,15 @@ export const DocumentListSchema = z
   })
   .openapi("DocumentListResponse");
 
+export const DocumentDownloadResponseSchema = z
+  .object({
+    url: z.string(),
+    expiresAt: DateTimeSchema,
+    contentDisposition: z.enum(["inline", "attachment"]),
+    filename: z.string(),
+    mimeType: z.string().nullable(),
+  })
+  .openapi("DocumentDownloadResponse");
+
 export type Document = z.infer<typeof DocumentSchema>;
 export type CreateDocument = z.infer<typeof CreateDocumentSchema>;
