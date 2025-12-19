@@ -20,6 +20,10 @@ import { cn } from "@/lib/utils";
 interface DocumentUploadWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Pre-select a matter (skips the matter assignment step) */
+  defaultMatterId?: string;
+  /** Called when document is successfully saved */
+  onSuccess?: () => void;
 }
 
 const STEPS = [
@@ -31,8 +35,14 @@ const STEPS = [
 
 /**
  * 4-step wizard for document upload with AI analysis
+ * When defaultMatterId is provided, step 4 (matter assignment) is skipped.
  */
-export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizardProps) {
+export function DocumentUploadWizard({
+  open,
+  onOpenChange,
+  defaultMatterId,
+  onSuccess,
+}: DocumentUploadWizardProps) {
   const queryClient = useQueryClient();
 
   const {
@@ -44,6 +54,7 @@ export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizar
     status,
     error,
     isSubmitting,
+    hasDefaultMatter,
     setFile,
     setMatterId,
     setFormData,
@@ -53,11 +64,22 @@ export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizar
     saveDocument,
     reset,
   } = useDocumentUpload({
+    defaultMatterId,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      onSuccess?.();
       onOpenChange(false);
     },
   });
+
+  // When matter is pre-selected, use 3-step flow
+  const steps = hasDefaultMatter
+    ? [
+        { number: 1, title: "Upload" },
+        { number: 2, title: "Analyze" },
+        { number: 3, title: "Review" },
+      ]
+    : STEPS;
 
   const handleClose = () => {
     reset();
@@ -89,7 +111,7 @@ export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizar
 
         {/* Step Indicator */}
         <div className="flex items-center justify-between border-b pb-4">
-          {STEPS.map((s, index) => (
+          {steps.map((s, index) => (
             <div key={s.number} className="flex items-center">
               <div
                 className={cn(
@@ -111,7 +133,7 @@ export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizar
               >
                 {s.title}
               </span>
-              {index < STEPS.length - 1 && (
+              {index < steps.length - 1 && (
                 <div
                   className={cn(
                     "mx-4 h-px w-8 sm:w-12",
@@ -139,7 +161,9 @@ export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizar
             <AnalysisReview analysis={analysis} formData={formData} onFormChange={setFormData} />
           )}
 
-          {step === 4 && <MatterAssign selectedMatterId={matterId} onSelect={setMatterId} />}
+          {step === 4 && !hasDefaultMatter && (
+            <MatterAssign selectedMatterId={matterId} onSelect={setMatterId} />
+          )}
         </div>
 
         {/* Error Display */}
@@ -176,14 +200,21 @@ export function DocumentUploadWizard({ open, onOpenChange }: DocumentUploadWizar
               </Button>
             )}
 
-            {step === 3 && (
+            {step === 3 && !hasDefaultMatter && (
               <Button onClick={() => goToStep(4)} disabled={!canProceedFromStep3}>
                 Continue
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
 
-            {step === 4 && (
+            {step === 3 && hasDefaultMatter && (
+              <Button onClick={handleSave} disabled={!canProceedFromStep3 || isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Document"}
+                <Check className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+
+            {step === 4 && !hasDefaultMatter && (
               <Button onClick={handleSave} disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Save Document"}
                 <Check className="ml-2 h-4 w-4" />

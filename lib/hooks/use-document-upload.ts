@@ -5,6 +5,7 @@ import type { AnalysisResult, ReviewFormData } from "@/components/documents/anal
 import type { AnalysisStatus } from "@/components/documents/analysis-progress";
 
 interface UseDocumentUploadOptions {
+  defaultMatterId?: string;
   onSuccess?: (documentId: string) => void;
   onError?: (error: string) => void;
 }
@@ -46,11 +47,20 @@ const initialState: DocumentUploadState = {
  * Hook to orchestrate the document upload and analysis flow
  */
 export function useDocumentUpload(options: UseDocumentUploadOptions = {}) {
-  const [state, setState] = useState<DocumentUploadState>(initialState);
+  const [state, setState] = useState<DocumentUploadState>(() => ({
+    ...initialState,
+    matterId: options.defaultMatterId || null,
+  }));
 
   const reset = useCallback(() => {
-    setState(initialState);
-  }, []);
+    setState({
+      ...initialState,
+      matterId: options.defaultMatterId || null,
+    });
+  }, [options.defaultMatterId]);
+
+  // Whether the matter is pre-selected (skip step 4)
+  const hasDefaultMatter = !!options.defaultMatterId;
 
   const setFile = useCallback((file: File | null) => {
     setState((prev) => ({ ...prev, file, error: null }));
@@ -241,6 +251,7 @@ export function useDocumentUpload(options: UseDocumentUploadOptions = {}) {
 
   return {
     ...state,
+    hasDefaultMatter,
     setFile,
     setMatterId,
     setFormData,

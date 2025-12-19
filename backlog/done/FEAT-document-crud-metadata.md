@@ -240,3 +240,30 @@ vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
 ### Dependencies
 
 - None - all infrastructure exists
+
+---
+
+## QA Approval
+
+**Approved:** 2025-12-19
+**Status:** PASS
+
+### Tests Verified
+
+- API Tests: 15 passed (GET, PATCH, DELETE handlers)
+- Component Tests: 12 passed (DocumentMetadataEditor)
+
+### Implementation Verified
+
+- DELETE `/api/documents/[id]` implemented with storage cleanup and timeline event
+- PATCH supports extractedParties, extractedDates, aiSummary
+- Document detail page displays AI analysis with confidence badge, parties, dates, model info
+- Re-analyze button with confirmation dialog
+- Edit dialog using DocumentMetadataEditor component
+- Delete with confirmation dialog
+- Matter page DocumentsTab with upload, view, download, edit, delete actions
+
+### Pre-existing Test Failures (Unrelated)
+
+- 39 failures in other features (sidebar mock, timeline utils date edge cases, other API routes)
+- Not related to this feature - tracked separately

@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/lib/hooks/use-toast";
 import { format } from "date-fns";
-import { UploadDocumentDialog } from "@/components/documents/UploadDocumentDialog";
+import { DocumentUploadWizard } from "@/components/documents/upload-wizard";
 import { TemplateStatusCard } from "@/components/task-templates/template-status-card";
 import { SkippedTasksDialog } from "@/components/task-templates/skipped-tasks-dialog";
 import { TaskCard, TaskFormDialog, AddFromTemplateDialog } from "@/components/tasks";
@@ -279,7 +279,7 @@ function DocumentsTab({ matterId }: { matterId: string }) {
 
   const handleDocumentUploaded = () => {
     queryClient.invalidateQueries({ queryKey: ["matter-documents", matterId] });
-    setUploadDialogOpen(false);
+    // Dialog is closed by the wizard via onOpenChange
   };
 
   const getStatusBadge = (status: string) => {
@@ -319,7 +319,7 @@ function DocumentsTab({ matterId }: { matterId: string }) {
             }
           />
         </Card>
-        <UploadDocumentDialog
+        <DocumentUploadWizard
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}
           defaultMatterId={matterId}
@@ -401,8 +401,8 @@ function DocumentsTab({ matterId }: { matterId: string }) {
         ))}
       </div>
 
-      {/* Upload Dialog */}
-      <UploadDocumentDialog
+      {/* Upload Wizard */}
+      <DocumentUploadWizard
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         defaultMatterId={matterId}

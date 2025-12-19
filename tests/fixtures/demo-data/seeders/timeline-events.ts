@@ -31,6 +31,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // CONVEYANCING - Purchase of 15 Willow Lane (MAT-DEMO-001)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl1,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "matter_created" as const,
@@ -42,6 +43,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(45),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl2,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "conflict_check_run" as const,
@@ -52,6 +54,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(45),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl3,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "document_uploaded" as const,
@@ -62,6 +65,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(44),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl4,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "email_sent" as const,
@@ -72,6 +76,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(43),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl5,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "document_uploaded" as const,
@@ -83,6 +88,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(40),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl6,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "task_created" as const,
@@ -93,6 +99,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(39),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl7,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "document_summarized" as const,
@@ -104,6 +111,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       metadata: { model: "gpt-4", confidence: 0.94 },
     },
     {
+      id: DEMO_IDS.timelineEvents.tl8,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "email_sent" as const,
@@ -115,6 +123,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(35),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl9,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "document_uploaded" as const,
@@ -125,6 +134,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(28),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl10,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "email_received" as const,
@@ -135,6 +145,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(21),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl11,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "document_uploaded" as const,
@@ -146,6 +157,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(14),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl12,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       type: "email_sent" as const,
@@ -161,6 +173,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // LITIGATION - Apex vs BuildRight Construction Defects (MAT-DEMO-002)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl13,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "matter_created" as const,
@@ -172,6 +185,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(120),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl14,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "conflict_check_cleared" as const,
@@ -181,6 +195,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(120),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl15,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "document_uploaded" as const,
@@ -191,6 +206,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(118),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl16,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "email_sent" as const,
@@ -202,6 +218,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(115),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl17,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "document_uploaded" as const,
@@ -213,6 +230,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(100),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl18,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "email_received" as const,
@@ -224,6 +242,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(90),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl19,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "document_uploaded" as const,
@@ -235,6 +254,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(75),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl20,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "document_uploaded" as const,
@@ -245,6 +265,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(60),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl21,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "document_uploaded" as const,
@@ -256,6 +277,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(32),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl22,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.litigation,
       type: "calendar_event_created" as const,
@@ -270,6 +292,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // PERSONAL INJURY - RTA M6 Collision (MAT-DEMO-008)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl23,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "matter_created" as const,
@@ -281,6 +304,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(90),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl24,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "document_uploaded" as const,
@@ -291,6 +315,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(88),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl25,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "email_sent" as const,
@@ -301,6 +326,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(85),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl26,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "email_received" as const,
@@ -311,6 +337,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(75),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl27,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "task_created" as const,
@@ -322,6 +349,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(70),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl28,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "document_uploaded" as const,
@@ -333,6 +361,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(45),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl29,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.personalInjuryRTA,
       type: "document_summarized" as const,
@@ -348,6 +377,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // FAMILY - Thompson Divorce (MAT-DEMO-012)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl30,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.familyDivorce,
       type: "matter_created" as const,
@@ -359,6 +389,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(60),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl31,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.familyDivorce,
       type: "document_uploaded" as const,
@@ -370,6 +401,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(58),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl32,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.familyDivorce,
       type: "email_received" as const,
@@ -380,6 +412,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(45),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl33,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.familyDivorce,
       type: "document_uploaded" as const,
@@ -391,6 +424,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(40),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl34,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.familyDivorce,
       type: "task_created" as const,
@@ -401,6 +435,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(38),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl35,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.familyDivorce,
       type: "calendar_event_created" as const,
@@ -415,6 +450,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // EMPLOYMENT - Unfair Dismissal (MAT-DEMO-015)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl36,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "matter_created" as const,
@@ -426,6 +462,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(75),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl37,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "document_uploaded" as const,
@@ -436,6 +473,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(74),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl38,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "task_created" as const,
@@ -446,6 +484,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(73),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl39,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "document_uploaded" as const,
@@ -457,6 +496,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(50),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl40,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "document_uploaded" as const,
@@ -468,6 +508,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(48),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl41,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "document_uploaded" as const,
@@ -478,6 +519,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(20),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl42,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.employmentDismissal,
       type: "calendar_event_created" as const,
@@ -492,6 +534,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // PROBATE - Estate of John Roberts (MAT-DEMO-018)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl43,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.probateEstate,
       type: "matter_created" as const,
@@ -503,6 +546,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(80),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl44,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.probateEstate,
       type: "document_uploaded" as const,
@@ -513,6 +557,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(78),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl45,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.probateEstate,
       type: "task_created" as const,
@@ -524,6 +569,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(75),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl46,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.probateEstate,
       type: "document_uploaded" as const,
@@ -534,6 +580,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(60),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl47,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.probateEstate,
       type: "document_uploaded" as const,
@@ -545,6 +592,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(45),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl48,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.probateEstate,
       type: "document_uploaded" as const,
@@ -559,6 +607,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // CRIMINAL - Drink Driving Defence (MAT-DEMO-021)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl49,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.criminalDriving,
       type: "matter_created" as const,
@@ -570,6 +619,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(30),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl50,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.criminalDriving,
       type: "note_added" as const,
@@ -581,6 +631,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(30),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl51,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.criminalDriving,
       type: "document_uploaded" as const,
@@ -591,6 +642,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(25),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl52,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.criminalDriving,
       type: "task_created" as const,
@@ -601,6 +653,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(23),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl53,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.criminalDriving,
       type: "calendar_event_created" as const,
@@ -615,6 +668,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // IMMIGRATION - Skilled Worker Visa (MAT-DEMO-023)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl54,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.immigrationTier2,
       type: "matter_created" as const,
@@ -626,6 +680,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(35),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl55,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.immigrationTier2,
       type: "document_uploaded" as const,
@@ -636,6 +691,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(33),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl56,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.immigrationTier2,
       type: "document_uploaded" as const,
@@ -647,6 +703,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(30),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl57,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.immigrationTier2,
       type: "document_uploaded" as const,
@@ -657,6 +714,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(25),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl58,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.immigrationTier2,
       type: "calendar_event_created" as const,
@@ -667,6 +725,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(24),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl59,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.immigrationTier2,
       type: "note_added" as const,
@@ -681,6 +740,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
     // COMMERCIAL - Shareholder Agreement (MAT-DEMO-025)
     // =========================================================================
     {
+      id: DEMO_IDS.timelineEvents.tl60,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "matter_created" as const,
@@ -692,6 +752,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(40),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl61,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "conflict_check_cleared" as const,
@@ -701,6 +762,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(40),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl62,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "document_uploaded" as const,
@@ -711,6 +773,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(38),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl63,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "document_summarized" as const,
@@ -722,6 +785,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       metadata: { model: "gpt-4", confidence: 0.91 },
     },
     {
+      id: DEMO_IDS.timelineEvents.tl64,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "document_uploaded" as const,
@@ -732,6 +796,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(30),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl65,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "email_received" as const,
@@ -742,6 +807,7 @@ export async function seedTimelineEvents(ctx: SeederContext): Promise<number> {
       occurredAt: daysAgo(20),
     },
     {
+      id: DEMO_IDS.timelineEvents.tl66,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.commercialShareholder,
       type: "note_added" as const,

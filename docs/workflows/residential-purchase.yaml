@@ -1,0 +1,879 @@
+# Residential Purchase Workflow (Reference Template)
+#
+# This is the canonical workflow for residential property purchases.
+# Covers: freehold_purchase, leasehold_purchase, auction_purchase, new_build
+#
+# Regulatory basis: SRA Code of Conduct, MLR 2017, Land Registration Act 2002,
+#                   UK Finance Lenders' Handbook, Law Society Conveyancing Protocol
+
+workflow:
+  key: "residential-purchase"
+  version: "1.0.0"
+  name: "Residential Purchase"
+  description: "Standard workflow for residential property purchases including freehold, leasehold, auction, and new-build transactions."
+  practice_area: conveyancing
+  sub_types:
+    - freehold_purchase
+    - leasehold_purchase
+    - auction_purchase
+    - new_build
+  selection_conditions:
+    # Auto-select when matter has these properties
+    transaction_type: purchase
+    property_type: residential
+  is_default: true
+
+stages:
+  # ============================================================================
+  # STAGE 1: Client Onboarding & Instruction
+  # ============================================================================
+  - name: "Client Onboarding & Instruction"
+    description: "Initial client engagement, retainer, and file opening"
+    sort_order: 1
+    gate_type: hard
+    completion_criteria: all_mandatory_tasks
+    client_visible: true
+
+    tasks:
+      - title: "Record client instruction"
+        description: "Document the client's instructions including property details, purchase price, and timescales"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - client_instruction
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 1
+        due_relative_to: matter_created
+        client_visible: false
+        regulatory_basis: "SRA Code of Conduct - acting on instructions"
+        sort_order: 1
+
+      - title: "Issue client care letter"
+        description: "Send engagement letter with terms of business, costs estimate, and scope of retainer"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - signed_authority
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 2
+        due_relative_to: matter_created
+        client_visible: true
+        regulatory_basis: "SRA Code of Conduct 8.6 - client information"
+        sort_order: 2
+
+      - title: "Provide costs information"
+        description: "Ensure client has received clear information about fees and disbursements"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - client_instruction
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 2
+        due_relative_to: matter_created
+        client_visible: false
+        regulatory_basis: "SRA Transparency Rules"
+        sort_order: 3
+
+      - title: "Complete conflict check"
+        description: "Check for conflicts of interest against all parties"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: true
+        required_approver_role: supervisor
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 1
+        due_relative_to: matter_created
+        client_visible: false
+        regulatory_basis: "SRA Code of Conduct 6.1-6.2 - conflicts of interest"
+        sort_order: 4
+
+      - title: "Open matter file"
+        description: "Create file with matter reference and assign fee earner"
+        is_mandatory: true
+        requires_evidence: false
+        requires_approval: false
+        default_assignee_role: secretary
+        default_priority: medium
+        relative_due_days: 1
+        due_relative_to: matter_created
+        client_visible: false
+        regulatory_basis: "SRA Code - proper file management"
+        sort_order: 5
+
+  # ============================================================================
+  # STAGE 2: AML / Compliance
+  # ============================================================================
+  - name: "AML / Compliance"
+    description: "Anti-money laundering checks and customer due diligence"
+    sort_order: 2
+    gate_type: hard
+    completion_criteria: all_mandatory_tasks
+    client_visible: false
+
+    tasks:
+      - title: "Verify client identity"
+        description: "Obtain and verify photographic ID (passport/driving licence)"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - id_document
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 reg 28 - customer due diligence"
+        sort_order: 1
+
+      - title: "Verify client address"
+        description: "Obtain proof of address dated within 3 months"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - proof_of_address
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 reg 28 - customer due diligence"
+        sort_order: 2
+
+      - title: "Verify source of funds"
+        description: "Obtain evidence of source of deposit and completion funds"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - proof_of_funds
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 reg 28(4) - source of funds"
+        sort_order: 3
+
+      - title: "Verify source of wealth"
+        description: "Where required, document how client accumulated their wealth"
+        is_mandatory: false  # Only required for enhanced due diligence
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - source_of_wealth
+        requires_approval: true
+        required_approver_role: supervisor
+        default_assignee_role: fee_earner
+        default_priority: medium
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 reg 33 - enhanced due diligence"
+        sort_order: 4
+
+      - title: "Complete AML risk assessment"
+        description: "Assess client and transaction risk level and document findings"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: true
+        required_approver_role: supervisor
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 reg 18 - risk assessment"
+        sort_order: 5
+
+      - title: "Sanctions and PEP screening"
+        description: "Screen client against sanctions lists and PEP databases"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 - ongoing monitoring"
+        sort_order: 6
+
+  # ============================================================================
+  # STAGE 3: Investigation / Due Diligence
+  # ============================================================================
+  - name: "Investigation / Due Diligence"
+    description: "Title investigation, searches, and enquiries"
+    sort_order: 3
+    gate_type: soft
+    completion_criteria: all_mandatory_tasks
+    client_visible: true
+
+    tasks:
+      - title: "Obtain official copies from Land Registry"
+        description: "Order and review official copy of register and title plan"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - land_registry
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 2
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Law Society Conveyancing Protocol"
+        sort_order: 1
+
+      - title: "Review title documents"
+        description: "Analyse title for defects, restrictions, covenants, and rights"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - title_document
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Professional duty of care"
+        sort_order: 2
+
+      - title: "Order local authority search"
+        description: "Submit LLC1 and CON29 search application"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - search_result
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 3
+
+      - title: "Order drainage and water search"
+        description: "Submit drainage and water search with relevant water company"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - search_result
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 4
+
+      - title: "Order environmental search"
+        description: "Submit environmental search for contamination and flood risk"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - search_result
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 5
+
+      - title: "Assess chancel repair liability"
+        description: "Check chancel repair liability risk and obtain insurance if required"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - search_result
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: low
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 6
+
+      - title: "Review search results"
+        description: "Analyse all search results and flag any issues to client"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: task_created
+        client_visible: false
+        regulatory_basis: "Professional duty of care"
+        sort_order: 7
+
+      - title: "Raise enquiries with seller's solicitor"
+        description: "Submit pre-contract enquiries based on title and search review"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: false
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Law Society Conveyancing Protocol"
+        sort_order: 8
+
+      - title: "Review enquiry replies"
+        description: "Analyse replies to enquiries and raise follow-ups if needed"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 14
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Professional duty of care"
+        sort_order: 9
+
+      - title: "Report to client on title"
+        description: "Provide client with summary of title findings and any issues"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - client_instruction
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 14
+        due_relative_to: stage_started
+        client_visible: true
+        regulatory_basis: "SRA Code of Conduct - client communication"
+        sort_order: 10
+
+  # ============================================================================
+  # STAGE 4: Mortgage / Lender Compliance (conditional - if mortgage)
+  # ============================================================================
+  - name: "Mortgage / Lender Compliance"
+    description: "Lender requirements and certificate of title"
+    sort_order: 4
+    gate_type: hard
+    completion_criteria: all_mandatory_tasks
+    client_visible: false
+
+    tasks:
+      - title: "Review mortgage offer"
+        description: "Check mortgage offer terms and special conditions"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - contract
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 1
+
+      - title: "Satisfy lender special conditions"
+        description: "Complete any lender-specific requirements before exchange"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 2
+
+      - title: "Prepare certificate of title"
+        description: "Complete COT confirming compliance with lender requirements"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - signed_authority
+        requires_approval: true
+        required_approver_role: supervisor
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook Part 1"
+        sort_order: 3
+
+      - title: "Request mortgage advance"
+        description: "Submit funds request to lender with completion date"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: matter_opened
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 4
+
+  # ============================================================================
+  # STAGE 5: Contract / Exchange
+  # ============================================================================
+  - name: "Contract / Exchange"
+    description: "Contract approval, deposit, and exchange"
+    sort_order: 5
+    gate_type: hard
+    completion_criteria: all_mandatory_tasks
+    client_visible: true
+
+    tasks:
+      - title: "Review and approve contract"
+        description: "Review draft contract and negotiate amendments"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - contract
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Professional duty of care"
+        sort_order: 1
+
+      - title: "Report to client on contract"
+        description: "Explain contract terms and obtain client approval to proceed"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - client_instruction
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: task_created
+        client_visible: true
+        regulatory_basis: "SRA Code of Conduct - client communication"
+        sort_order: 2
+
+      - title: "Confirm deposit arrangements"
+        description: "Verify deposit funds are available and source confirmed"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - proof_of_funds
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 3
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "MLR 2017 - source of funds"
+        sort_order: 3
+
+      - title: "Obtain authority to exchange"
+        description: "Get written client authority to exchange contracts"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - signed_authority
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: urgent
+        relative_due_days: 1
+        due_relative_to: task_created
+        client_visible: false
+        regulatory_basis: "SRA Code - acting on instructions"
+        sort_order: 4
+
+      - title: "Exchange contracts"
+        description: "Exchange contracts with seller's solicitor and record time"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - contract
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: urgent
+        relative_due_days: 1
+        due_relative_to: task_created
+        client_visible: true
+        regulatory_basis: "Law Society Conveyancing Protocol"
+        sort_order: 5
+
+      - title: "Notify client of exchange"
+        description: "Confirm exchange to client with completion date"
+        is_mandatory: true
+        requires_evidence: false
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 0
+        due_relative_to: task_created
+        client_visible: true
+        regulatory_basis: "SRA Code - client communication"
+        sort_order: 6
+
+  # ============================================================================
+  # STAGE 6: Completion
+  # ============================================================================
+  - name: "Completion"
+    description: "Pre-completion, funds transfer, and keys"
+    sort_order: 6
+    gate_type: hard
+    completion_criteria: all_mandatory_tasks
+    client_visible: true
+
+    tasks:
+      - title: "Request completion funds from client"
+        description: "Send completion statement and request balance of funds"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - completion_statement
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: true
+        regulatory_basis: "SRA Accounts Rules"
+        sort_order: 1
+
+      - title: "Order OS1 priority search"
+        description: "Submit OS1 search at Land Registry for priority protection"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - search_result
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Land Registration Rules"
+        sort_order: 2
+
+      - title: "Order bankruptcy search"
+        description: "Submit K16 bankruptcy search against buyer"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - search_result
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 5
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 3
+
+      - title: "Prepare transfer deed (TR1)"
+        description: "Draft and agree transfer deed with seller's solicitor"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - contract
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: high
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Land Registration Act 2002"
+        sort_order: 4
+
+      - title: "Confirm funds received"
+        description: "Verify all completion funds received in client account"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - proof_of_funds
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: urgent
+        relative_due_days: 1
+        due_relative_to: task_created
+        client_visible: false
+        regulatory_basis: "SRA Accounts Rules"
+        sort_order: 5
+
+      - title: "Send completion funds"
+        description: "Transfer purchase monies to seller's solicitor"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: true
+        required_approver_role: supervisor
+        default_assignee_role: fee_earner
+        default_priority: urgent
+        relative_due_days: 0
+        due_relative_to: task_created
+        client_visible: false
+        regulatory_basis: "SRA Accounts Rules"
+        sort_order: 6
+
+      - title: "Confirm completion"
+        description: "Receive confirmation from seller's solicitor and record time"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: fee_earner
+        default_priority: urgent
+        relative_due_days: 0
+        due_relative_to: task_created
+        client_visible: true
+        regulatory_basis: "Law Society Conveyancing Protocol"
+        sort_order: 7
+
+      - title: "Release keys to client"
+        description: "Authorise estate agent to release keys and confirm to client"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: false
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: urgent
+        relative_due_days: 0
+        due_relative_to: task_created
+        client_visible: true
+        regulatory_basis: "Contract terms"
+        sort_order: 8
+
+  # ============================================================================
+  # STAGE 7: Post-Completion
+  # ============================================================================
+  - name: "Post-Completion"
+    description: "SDLT, registration, and file closure"
+    sort_order: 7
+    gate_type: soft
+    completion_criteria: all_mandatory_tasks
+    client_visible: true
+
+    tasks:
+      - title: "Submit SDLT return"
+        description: "File Stamp Duty Land Tax return with HMRC within 14 days"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: urgent
+        relative_due_days: 14
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Finance Act - SDLT deadline"
+        sort_order: 1
+
+      - title: "Pay SDLT"
+        description: "Pay Stamp Duty Land Tax and obtain SDLT5 certificate"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: urgent
+        relative_due_days: 14
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Finance Act - SDLT deadline"
+        sort_order: 2
+
+      - title: "Submit AP1 registration application"
+        description: "Lodge application at Land Registry within OS1 priority period"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - land_registry
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: high
+        relative_due_days: 20
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Land Registration Act 2002"
+        sort_order: 3
+
+      - title: "Confirm registration complete"
+        description: "Verify Land Registry has completed registration"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - land_registry
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 60
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "Land Registration Act 2002"
+        sort_order: 4
+
+      - title: "Send title to lender"
+        description: "Forward registered title to lender for their records"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: false
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 7
+        due_relative_to: task_created
+        client_visible: false
+        regulatory_basis: "UK Finance Lenders' Handbook"
+        sort_order: 5
+
+      - title: "Send title to client"
+        description: "Forward registered title documents to client"
+        is_mandatory: true
+        requires_evidence: false
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 7
+        due_relative_to: task_created
+        client_visible: true
+        regulatory_basis: "SRA Code - client communication"
+        sort_order: 6
+
+  # ============================================================================
+  # STAGE 8: Closure
+  # ============================================================================
+  - name: "Closure"
+    description: "File closure and archiving"
+    sort_order: 8
+    gate_type: none
+    completion_criteria: all_mandatory_tasks
+    client_visible: false
+
+    tasks:
+      - title: "Reconcile client account"
+        description: "Ensure all client funds distributed and account at nil balance"
+        is_mandatory: true
+        requires_evidence: true
+        requires_verified_evidence: true
+        required_evidence_types:
+          - other
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "SRA Accounts Rules"
+        sort_order: 1
+
+      - title: "Issue final invoice"
+        description: "Send final bill to client with account of disbursements"
+        is_mandatory: true
+        requires_evidence: false
+        requires_approval: false
+        default_assignee_role: paralegal
+        default_priority: medium
+        relative_due_days: 7
+        due_relative_to: stage_started
+        client_visible: true
+        regulatory_basis: "SRA Transparency Rules"
+        sort_order: 2
+
+      - title: "Close matter"
+        description: "Mark matter as closed and apply retention period"
+        is_mandatory: true
+        requires_evidence: false
+        requires_approval: false
+        default_assignee_role: secretary
+        default_priority: low
+        relative_due_days: 14
+        due_relative_to: stage_started
+        client_visible: false
+        regulatory_basis: "SRA retention requirements"
+        sort_order: 3
+
+# Summary:
+# - 8 stages
+# - 47 tasks total
+# - 45 mandatory tasks
+# - 4 hard gates (Onboarding, AML, Mortgage, Contract/Exchange, Completion)
+# - 2 soft gates (Investigation, Post-Completion)
+# - 1 no gate (Closure)

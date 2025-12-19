@@ -50,28 +50,24 @@ describe("DocumentMetadataEditor", () => {
     expect(screen.getByDisplayValue("2024-01-20")).toBeInTheDocument();
   });
 
-  it("should call onChange when title is updated", async () => {
-    const user = userEvent.setup();
+  it("should call onChange when title is updated", () => {
     const onChange = vi.fn();
     render(<DocumentMetadataEditor data={defaultData} onChange={onChange} />);
 
     const titleInput = screen.getByDisplayValue("Test Document");
-    await user.clear(titleInput);
-    await user.type(titleInput, "New Title");
+    fireEvent.change(titleInput, { target: { value: "New Title" } });
 
     expect(onChange).toHaveBeenCalled();
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];
     expect(lastCall.title).toBe("New Title");
   });
 
-  it("should call onChange when summary is updated", async () => {
-    const user = userEvent.setup();
+  it("should call onChange when summary is updated", () => {
     const onChange = vi.fn();
     render(<DocumentMetadataEditor data={defaultData} onChange={onChange} />);
 
     const summaryInput = screen.getByDisplayValue("This is a test summary");
-    await user.clear(summaryInput);
-    await user.type(summaryInput, "Updated summary");
+    fireEvent.change(summaryInput, { target: { value: "Updated summary" } });
 
     expect(onChange).toHaveBeenCalled();
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];
@@ -92,18 +88,19 @@ describe("DocumentMetadataEditor", () => {
     expect(lastCall.extractedParties[2]).toEqual({ name: "", role: "" });
   });
 
-  it("should remove a party when delete is clicked", async () => {
-    const user = userEvent.setup();
+  it("should remove a party when delete is clicked", () => {
     const onChange = vi.fn();
     render(<DocumentMetadataEditor data={defaultData} onChange={onChange} />);
 
-    // Find the delete buttons for parties (should be 2)
-    const deleteButtons = screen
-      .getAllByRole("button")
-      .filter((btn) => btn.querySelector("svg.lucide-trash-2"));
+    // Find all delete buttons (trash icons) - there are 2 for parties and 1 for dates = 3 total
+    // The first 2 are for parties
+    const allButtons = screen.getAllByRole("button");
+    const deleteButtons = allButtons.filter(
+      (btn) => btn.querySelector('[class*="lucide-trash"]') !== null
+    );
 
     // Click the first party's delete button
-    await user.click(deleteButtons[0]);
+    fireEvent.click(deleteButtons[0]);
 
     expect(onChange).toHaveBeenCalled();
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];
@@ -125,28 +122,24 @@ describe("DocumentMetadataEditor", () => {
     expect(lastCall.extractedDates[1]).toEqual({ label: "", date: "" });
   });
 
-  it("should update party name when edited", async () => {
-    const user = userEvent.setup();
+  it("should update party name when edited", () => {
     const onChange = vi.fn();
     render(<DocumentMetadataEditor data={defaultData} onChange={onChange} />);
 
     const nameInput = screen.getByDisplayValue("John Doe");
-    await user.clear(nameInput);
-    await user.type(nameInput, "Robert Brown");
+    fireEvent.change(nameInput, { target: { value: "Robert Brown" } });
 
     expect(onChange).toHaveBeenCalled();
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];
     expect(lastCall.extractedParties[0].name).toBe("Robert Brown");
   });
 
-  it("should update party role when edited", async () => {
-    const user = userEvent.setup();
+  it("should update party role when edited", () => {
     const onChange = vi.fn();
     render(<DocumentMetadataEditor data={defaultData} onChange={onChange} />);
 
     const roleInput = screen.getByDisplayValue("Buyer");
-    await user.clear(roleInput);
-    await user.type(roleInput, "Tenant");
+    fireEvent.change(roleInput, { target: { value: "Tenant" } });
 
     expect(onChange).toHaveBeenCalled();
     const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];

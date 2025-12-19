@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import {
   mockUser,
   mockFirmId,
@@ -16,7 +16,16 @@ import {
 } from "@tests/helpers/mocks";
 import { NotFoundError, ValidationError } from "@/middleware/withErrorHandler";
 
-// Mock dependencies
+// Mock middleware and dependencies - MUST be before route imports
+vi.mock("@/middleware/withAuth", () => ({
+  withAuth: (handler: any) => (request: any, ctx: any) =>
+    handler(request, { ...ctx, user: { user: { id: "user-1" } } }),
+}));
+
+vi.mock("@/middleware/withPermission", () => ({
+  withPermission: () => (handler: any) => handler,
+}));
+
 vi.mock("@/lib/db/tenant");
 vi.mock("@/lib/tenancy");
 vi.mock("@/lib/timeline/createEvent");
@@ -234,8 +243,9 @@ describe("Documents [id] API Route", () => {
         mockWithFirmDbError(new NotFoundError("Matter not found"))
       );
 
+      // Use valid UUID format for matterId to pass schema validation
       const request = createMockRequest("PATCH", "/api/documents/doc-123", {
-        matterId: "nonexistent-matter",
+        matterId: "123e4567-e89b-12d3-a456-426614174000",
       });
       const context = createMockContext({ id: "doc-123" });
 
