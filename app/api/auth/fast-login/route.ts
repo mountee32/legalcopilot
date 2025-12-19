@@ -119,6 +119,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "reports:*",
     "tasks:*",
     "calendar:*",
+    "ai:use",
+    "ai:configure",
   ],
   senior_associate: [
     "cases:*",
@@ -131,6 +133,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "emails:*",
     "tasks:*",
     "calendar:*",
+    "ai:use",
   ],
   associate: [
     "cases:read",
@@ -142,6 +145,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "emails:read",
     "tasks:*",
     "calendar:*",
+    "ai:use",
   ],
   paralegal: [
     "cases:read",
@@ -151,6 +155,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     "emails:read",
     "tasks:read",
     "calendar:read",
+    "ai:use",
   ],
   secretary: [
     "cases:read",

@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
-import { firms, users } from "@/lib/db/schema";
+import { firms, users, roles } from "@/lib/db/schema";
 import { DEMO_IDS, DEMO_PREFIX } from "../ids";
 import { SeederContext } from "../types";
+import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/auth/permissions";
 
 export async function seedFirm(ctx: SeederContext) {
   const now = new Date();
@@ -127,6 +128,57 @@ export async function seedFirm(ctx: SeederContext) {
     ctx.result.users.push({ id: user.id, name: user.name!, email: user.email! });
     console.log(`    Created user: ${user.name}`);
   }
+
+  // 3. Create default roles for the firm
+  const [adminRole] = await db
+    .insert(roles)
+    .values({
+      firmId: DEMO_IDS.firm,
+      name: "admin",
+      description: "Firm administrator with full access",
+      permissions: DEFAULT_ROLE_PERMISSIONS.admin,
+      isSystem: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [roles.firmId, roles.name],
+      set: {
+        permissions: DEFAULT_ROLE_PERMISSIONS.admin,
+        updatedAt: now,
+      },
+    })
+    .returning();
+
+  const [feeEarnerRole] = await db
+    .insert(roles)
+    .values({
+      firmId: DEMO_IDS.firm,
+      name: "fee_earner",
+      description: "Fee earner with standard permissions",
+      permissions: DEFAULT_ROLE_PERMISSIONS.fee_earner,
+      isSystem: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [roles.firmId, roles.name],
+      set: {
+        permissions: DEFAULT_ROLE_PERMISSIONS.fee_earner,
+        updatedAt: now,
+      },
+    })
+    .returning();
+
+  console.log(`    Created roles: admin, fee_earner`);
+
+  // 4. Assign roles to users (first user = admin, rest = fee_earner)
+  const { eq } = await import("drizzle-orm");
+  for (let i = 0; i < createdUsers.length; i++) {
+    const roleId = i === 0 ? adminRole.id : feeEarnerRole.id;
+    await db.update(users).set({ roleId, updatedAt: now }).where(eq(users.id, createdUsers[i].id));
+  }
+  console.log(`    Assigned roles to ${createdUsers.length} users`);
 
   return { firm, users: createdUsers };
 }

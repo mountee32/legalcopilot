@@ -55,7 +55,7 @@ export const DocumentSchema = z
 
 export const CreateDocumentSchema = z
   .object({
-    matterId: UuidSchema,
+    matterId: UuidSchema.optional(), // Optional - can be assigned later in upload wizard
     title: z.string().min(1).max(200),
     type: DocumentTypeSchema,
     uploadId: UuidSchema.optional(),

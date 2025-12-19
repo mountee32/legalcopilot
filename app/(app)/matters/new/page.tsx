@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/lib/hooks/use-toast";
+import { SubTypeSelect } from "@/components/task-templates/sub-type-select";
+import {
+  TemplateSelector,
+  type TemplateSelection,
+} from "@/components/task-templates/template-selector";
 import type { CreateMatter } from "@/lib/api/schemas/matters";
 
 type Client = {
@@ -30,6 +35,7 @@ export default function NewMatterPage() {
     practiceArea: "conveyancing",
     billingType: "hourly",
   });
+  const [templateSelection, setTemplateSelection] = useState<TemplateSelection | null>(null);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -63,6 +69,7 @@ export default function NewMatterPage() {
     setIsSubmitting(true);
 
     try {
+      // Create the matter
       const res = await fetch("/api/matters", {
         method: "POST",
         headers: {
@@ -78,10 +85,51 @@ export default function NewMatterPage() {
       }
 
       const matter = await res.json();
-      toast({
-        title: "Case created",
-        description: "The case has been created successfully.",
-      });
+
+      // Apply template if one was selected
+      if (templateSelection) {
+        try {
+          const templateRes = await fetch(`/api/matters/${matter.id}/apply-template`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              templateId: templateSelection.templateId,
+              selectedItemIds: templateSelection.selectedItemIds,
+            }),
+            credentials: "include",
+          });
+
+          if (templateRes.ok) {
+            const templateResult = await templateRes.json();
+            toast({
+              title: "Case created",
+              description: `Case created with ${templateResult.tasksCreated} tasks from template.`,
+            });
+          } else {
+            // Matter created but template failed - still redirect
+            toast({
+              title: "Case created",
+              description: "Case created, but failed to apply task template.",
+              variant: "destructive",
+            });
+          }
+        } catch {
+          // Template error shouldn't block matter creation success
+          toast({
+            title: "Case created",
+            description: "Case created, but failed to apply task template.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Case created",
+          description: "The case has been created successfully.",
+        });
+      }
+
       router.push(`/matters/${matter.id}`);
     } catch (error) {
       toast({
@@ -95,10 +143,19 @@ export default function NewMatterPage() {
   };
 
   const handleChange = (field: keyof CreateMatter, value: string | undefined) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value || undefined,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value || undefined };
+      // Clear subType and template when practice area changes
+      if (field === "practiceArea") {
+        updated.subType = undefined;
+        setTemplateSelection(null);
+      }
+      // Clear template when subType changes
+      if (field === "subType") {
+        setTemplateSelection(null);
+      }
+      return updated;
+    });
   };
 
   const getClientDisplayName = (client: Client) => {
@@ -169,29 +226,39 @@ export default function NewMatterPage() {
                 />
               </div>
 
-              {/* Practice Area */}
-              <div className="space-y-2">
-                <Label htmlFor="practiceArea">Practice Area *</Label>
-                <select
-                  id="practiceArea"
-                  value={formData.practiceArea}
-                  onChange={(e) => handleChange("practiceArea", e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  required
-                >
-                  <option value="conveyancing">Conveyancing</option>
-                  <option value="litigation">Litigation</option>
-                  <option value="family">Family</option>
-                  <option value="probate">Probate</option>
-                  <option value="employment">Employment</option>
-                  <option value="immigration">Immigration</option>
-                  <option value="personal_injury">Personal Injury</option>
-                  <option value="commercial">Commercial</option>
-                  <option value="criminal">Criminal</option>
-                  <option value="ip">IP</option>
-                  <option value="insolvency">Insolvency</option>
-                  <option value="other">Other</option>
-                </select>
+              {/* Practice Area & Sub-Type */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="practiceArea">Practice Area *</Label>
+                  <select
+                    id="practiceArea"
+                    value={formData.practiceArea}
+                    onChange={(e) => handleChange("practiceArea", e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    required
+                  >
+                    <option value="conveyancing">Conveyancing</option>
+                    <option value="litigation">Litigation</option>
+                    <option value="family">Family</option>
+                    <option value="probate">Probate</option>
+                    <option value="employment">Employment</option>
+                    <option value="immigration">Immigration</option>
+                    <option value="personal_injury">Personal Injury</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="criminal">Criminal</option>
+                    <option value="ip">IP</option>
+                    <option value="insolvency">Insolvency</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subType">Case Type</Label>
+                  <SubTypeSelect
+                    practiceArea={formData.practiceArea}
+                    value={formData.subType}
+                    onChange={(value) => handleChange("subType", value)}
+                  />
+                </div>
               </div>
 
               {/* Billing Type */}
@@ -282,6 +349,13 @@ export default function NewMatterPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Task Template Selection */}
+          <TemplateSelector
+            practiceArea={formData.practiceArea}
+            subType={formData.subType}
+            onTemplateChange={setTemplateSelection}
+          />
 
           {/* Actions */}
           <div className="flex justify-end gap-3 mt-6">

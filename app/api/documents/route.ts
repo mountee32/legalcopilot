@@ -34,19 +34,22 @@ export const POST = withErrorHandler(
     const firmId = await getOrCreateFirmIdForUser(user.user.id);
 
     const doc = await withFirmDb(firmId, async (tx) => {
-      const [matter] = await tx
-        .select({ id: matters.id })
-        .from(matters)
-        .where(and(eq(matters.id, data.matterId), eq(matters.firmId, firmId)))
-        .limit(1);
+      // Only validate matter exists if matterId is provided
+      if (data.matterId) {
+        const [matter] = await tx
+          .select({ id: matters.id })
+          .from(matters)
+          .where(and(eq(matters.id, data.matterId), eq(matters.firmId, firmId)))
+          .limit(1);
 
-      if (!matter) throw new NotFoundError("Matter not found");
+        if (!matter) throw new NotFoundError("Matter not found");
+      }
 
       const [doc] = await tx
         .insert(documents)
         .values({
           firmId,
-          matterId: data.matterId,
+          matterId: data.matterId ?? null,
           title: data.title,
           type: data.type,
           status: "draft",
@@ -63,18 +66,21 @@ export const POST = withErrorHandler(
         })
         .returning();
 
-      await createTimelineEvent(tx, {
-        firmId,
-        matterId: doc.matterId,
-        type: "document_uploaded",
-        title: "Document uploaded",
-        actorType: "user",
-        actorId: user.user.id,
-        entityType: "document",
-        entityId: doc.id,
-        occurredAt: new Date(),
-        metadata: { title: doc.title, mimeType: doc.mimeType, filename: doc.filename },
-      });
+      // Only create timeline event if document is assigned to a matter
+      if (doc.matterId) {
+        await createTimelineEvent(tx, {
+          firmId,
+          matterId: doc.matterId,
+          type: "document_uploaded",
+          title: "Document uploaded",
+          actorType: "user",
+          actorId: user.user.id,
+          entityType: "document",
+          entityId: doc.id,
+          occurredAt: new Date(),
+          metadata: { title: doc.title, mimeType: doc.mimeType, filename: doc.filename },
+        });
+      }
 
       return doc;
     });

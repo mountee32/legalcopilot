@@ -15,6 +15,7 @@ import {
   Sparkles,
   ListTodo,
   Calendar as CalendarIcon,
+  Plus,
 } from "lucide-react";
 import { UnifiedTimeline } from "./_components/timeline";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/lib/hooks/use-toast";
 import { format } from "date-fns";
+import { TemplateStatusCard } from "@/components/task-templates/template-status-card";
+import { SkippedTasksDialog } from "@/components/task-templates/skipped-tasks-dialog";
+import { TaskCard, TaskFormDialog, AddFromTemplateDialog } from "@/components/tasks";
+import type { Task } from "@/components/tasks";
 import type { Matter } from "@/lib/api/schemas/matters";
 
 async function fetchMatter(id: string): Promise<Matter> {
@@ -257,8 +262,30 @@ async function completeTask(taskId: string) {
   return res.json();
 }
 
-function TasksTab({ matterId }: { matterId: string }) {
+interface TasksTabProps {
+  matterId: string;
+  practiceArea: string;
+  subType: string | undefined;
+}
+
+async function updateTask(taskId: string, updates: Partial<Task>) {
+  const res = await fetch(`/api/tasks/${taskId}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error("Failed to update task");
+  return res.json();
+}
+
+function TasksTab({ matterId, practiceArea, subType }: TasksTabProps) {
+  const [showSkippedTasks, setShowSkippedTasks] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+
   const { data, isLoading } = useQuery({
     queryKey: ["matter-tasks", matterId],
     queryFn: () => fetchMatterTasks(matterId),
@@ -273,6 +300,24 @@ function TasksTab({ matterId }: { matterId: string }) {
     },
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (taskId: string) => updateTask(taskId, { status: "cancelled" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matter-tasks", matterId] });
+      queryClient.invalidateQueries({ queryKey: ["matter-timeline", matterId] });
+    },
+  });
+
+  const handleTasksChanged = () => {
+    queryClient.invalidateQueries({ queryKey: ["matter-tasks", matterId] });
+    queryClient.invalidateQueries({ queryKey: ["matter-timeline", matterId] });
+  };
+
+  const handleTasksAdded = () => {
+    queryClient.invalidateQueries({ queryKey: ["matter-tasks", matterId] });
+    queryClient.invalidateQueries({ queryKey: ["matter-timeline", matterId] });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -285,98 +330,120 @@ function TasksTab({ matterId }: { matterId: string }) {
 
   if (!data || data.tasks?.length === 0) {
     return (
-      <Card className="p-8">
-        <EmptyState
-          title="No tasks yet"
-          description="Tasks for this case will appear here."
-          action={
-            <Button>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate Tasks with AI
-            </Button>
-          }
+      <>
+        <TemplateStatusCard
+          matterId={matterId}
+          onAddSkippedTasks={() => setShowSkippedTasks(true)}
         />
-      </Card>
+        <Card className="p-8">
+          <EmptyState
+            title="No tasks yet"
+            description="Tasks for this case will appear here. Add tasks manually or from a template."
+            action={
+              <div className="flex gap-2">
+                <Button onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Task
+                </Button>
+                <Button variant="outline" onClick={() => setTemplateDialogOpen(true)}>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Add from Template
+                </Button>
+              </div>
+            }
+          />
+        </Card>
+        <SkippedTasksDialog
+          open={showSkippedTasks}
+          onOpenChange={setShowSkippedTasks}
+          matterId={matterId}
+          onTasksAdded={handleTasksAdded}
+        />
+        <TaskFormDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          matterId={matterId}
+          onSuccess={handleTasksChanged}
+        />
+        <AddFromTemplateDialog
+          open={templateDialogOpen}
+          onOpenChange={setTemplateDialogOpen}
+          matterId={matterId}
+          practiceArea={practiceArea}
+          subType={subType}
+          onTasksAdded={handleTasksAdded}
+        />
+      </>
     );
   }
 
-  const getPriorityColor = (priority: string) => {
-    const colors: Record<string, string> = {
-      urgent: "bg-red-100 text-red-700",
-      high: "bg-orange-100 text-orange-700",
-      medium: "bg-yellow-100 text-yellow-700",
-      low: "bg-slate-100 text-slate-700",
-    };
-    return colors[priority] || colors.medium;
-  };
-
-  const getStatusIcon = (status: string) => {
-    if (status === "completed") {
-      return <CheckSquare className="w-5 h-5 text-green-600" />;
-    }
-    if (status === "in_progress") {
-      return <Clock className="w-5 h-5 text-blue-600" />;
-    }
-    return <CheckSquare className="w-5 h-5 text-slate-400" />;
-  };
+  // Filter out cancelled tasks by default (show active tasks only)
+  const activeTasks = data.tasks.filter((task: Task) => task.status !== "cancelled");
 
   return (
-    <div className="space-y-3">
-      {data.tasks.map((task: any) => (
-        <Card key={task.id} className="p-4 hover:bg-slate-50 transition-colors">
-          <div className="flex items-start gap-4">
-            <div className="mt-0.5">{getStatusIcon(task.status)}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <p
-                  className={`font-medium ${task.status === "completed" ? "text-slate-500 line-through" : "text-slate-900"}`}
-                >
-                  {task.title}
-                </p>
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${getPriorityColor(task.priority)}`}
-                >
-                  {task.priority}
-                </span>
-              </div>
-              {task.description && (
-                <p className="text-sm text-slate-600 line-clamp-2">{task.description}</p>
-              )}
-              {task.dueDate && (
-                <p className="text-xs text-slate-500 mt-2">
-                  Due: {format(new Date(task.dueDate), "d MMM yyyy")}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {task.status !== "completed" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => completeMutation.mutate(task.id)}
-                  disabled={completeMutation.isPending}
-                  className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                >
-                  <CheckSquare className="w-4 h-4 mr-1" />
-                  {completeMutation.isPending ? "..." : "Complete"}
-                </Button>
-              )}
-              <Badge
-                variant={
-                  task.status === "completed"
-                    ? "secondary"
-                    : task.status === "in_progress"
-                      ? "default"
-                      : "outline"
-                }
-              >
-                {task.status.replace("_", " ")}
-              </Badge>
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+    <>
+      <TemplateStatusCard matterId={matterId} onAddSkippedTasks={() => setShowSkippedTasks(true)} />
+
+      {/* Header with action buttons */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-slate-900">Tasks ({activeTasks.length})</h3>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Task
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setTemplateDialogOpen(true)}>
+            <Sparkles className="w-4 h-4 mr-2" />
+            Add from Template
+          </Button>
+        </div>
+      </div>
+
+      {/* Task list */}
+      <div className="space-y-3">
+        {activeTasks.map((task: Task) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            onEdit={(t) => setEditingTask(t)}
+            onComplete={(taskId) => completeMutation.mutate(taskId)}
+            onCancel={(taskId) => cancelMutation.mutate(taskId)}
+            isUpdating={completeMutation.isPending || cancelMutation.isPending}
+          />
+        ))}
+      </div>
+
+      {/* Dialogs */}
+      <SkippedTasksDialog
+        open={showSkippedTasks}
+        onOpenChange={setShowSkippedTasks}
+        matterId={matterId}
+        onTasksAdded={handleTasksAdded}
+      />
+      <TaskFormDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        matterId={matterId}
+        onSuccess={handleTasksChanged}
+      />
+      <TaskFormDialog
+        open={editingTask !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingTask(null);
+        }}
+        matterId={matterId}
+        task={editingTask ?? undefined}
+        onSuccess={handleTasksChanged}
+      />
+      <AddFromTemplateDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        matterId={matterId}
+        practiceArea={practiceArea}
+        subType={subType}
+        onTasksAdded={handleTasksAdded}
+      />
+    </>
   );
 }
 
@@ -585,7 +652,11 @@ export default function MatterDetailPage() {
           </TabsContent>
 
           <TabsContent value="tasks">
-            <TasksTab matterId={matterId} />
+            <TasksTab
+              matterId={matterId}
+              practiceArea={matter.practiceArea}
+              subType={matter.subType ?? undefined}
+            />
           </TabsContent>
         </Tabs>
       </div>

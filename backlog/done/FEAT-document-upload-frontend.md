@@ -265,3 +265,205 @@ const pollJob = async () => {
 - Document versioning
 - Related document matching
 - Re-analysis scheduling
+
+---
+
+## Solution Design
+
+### Existing Code Found
+
+| Component              | Location                                        | Status                                 |
+| ---------------------- | ----------------------------------------------- | -------------------------------------- |
+| `UploadDocumentDialog` | `components/documents/UploadDocumentDialog.tsx` | Replace with wizard                    |
+| Upload API             | `app/api/storage/upload/route.ts`               | Ready (POST multipart)                 |
+| Documents API          | `app/api/documents/route.ts`                    | Ready (POST with uploadId)             |
+| Analyze API            | `app/api/documents/[id]/analyze/route.ts`       | Ready (sync + async)                   |
+| Jobs table             | `lib/db/schema/system.ts`                       | Ready                                  |
+| UI components          | `components/ui/`                                | Dialog, Input, Select, Badge, Skeleton |
+
+### Missing Backend
+
+| Endpoint             | Purpose         | Action     |
+| -------------------- | --------------- | ---------- |
+| `GET /api/jobs/[id]` | Poll job status | **CREATE** |
+
+### Files to Create
+
+| File                                         | Purpose                             |
+| -------------------------------------------- | ----------------------------------- |
+| `app/api/jobs/[id]/route.ts`                 | Job status polling endpoint         |
+| `components/documents/upload-wizard.tsx`     | Main 4-step wizard                  |
+| `components/documents/upload-dropzone.tsx`   | Drag-drop file input                |
+| `components/documents/analysis-progress.tsx` | Processing state                    |
+| `components/documents/analysis-review.tsx`   | Review/edit form                    |
+| `components/documents/matter-assign.tsx`     | Matter search                       |
+| `components/documents/confidence-badge.tsx`  | RAG indicator                       |
+| `lib/hooks/use-document-upload.ts`           | Upload + analyze orchestration hook |
+
+### Files to Modify
+
+| File           | Change                                                     |
+| -------------- | ---------------------------------------------------------- |
+| Documents page | Replace `UploadDocumentDialog` with `DocumentUploadWizard` |
+
+### Jobs API Design
+
+```typescript
+// GET /api/jobs/[id]
+// Response when pending/processing:
+{ "id": "uuid", "status": "pending" | "processing", "progress": 50 }
+
+// Response when completed:
+{ "id": "uuid", "status": "completed", "result": { ...analysis } }
+
+// Response when failed:
+{ "id": "uuid", "status": "failed", "error": "message" }
+```
+
+### Upload Flow Sequence
+
+```
+1. User drops PDF
+2. POST /api/storage/upload → { uploadId }
+3. POST /api/documents → { id: documentId }
+4. POST /api/documents/{id}/analyze?async=true → { jobId }
+5. Poll GET /api/jobs/{jobId} until completed
+6. Show review form with AI results
+7. User edits/confirms, selects matter
+8. PATCH /api/documents/{id} with final data
+```
+
+### Component Hierarchy
+
+```
+DocumentUploadWizard (Dialog)
+├── Step 1: UploadDropzone
+├── Step 2: AnalysisProgress
+├── Step 3: AnalysisReview
+│   ├── ConfidenceBadge
+│   ├── Form fields (title, type, date, summary)
+│   └── Read-only: parties, keyDates
+└── Step 4: MatterAssign
+    └── Command/Combobox for search
+```
+
+---
+
+## Test Strategy
+
+### Unit Tests
+
+#### `tests/unit/app/api/jobs/[id]/route.test.ts`
+
+- [x] GET - returns job status for pending job
+- [x] GET - returns job with result when completed
+- [x] GET - returns job with error when failed
+- [x] GET - returns 404 for non-existent job
+
+#### `tests/unit/components/documents/upload-dropzone.test.tsx`
+
+- [x] Renders drop zone when no file selected
+- [x] Shows selected file info when file is selected
+- [x] Calls onClear when clear button clicked
+- [x] Shows error for file too large
+- [x] Shows error for invalid file type
+- [x] Calls onFileSelect for valid file
+- [x] Is disabled when disabled prop is true
+
+#### `tests/unit/components/documents/analysis-progress.test.tsx`
+
+- [x] Shows uploading state
+- [x] Shows analyzing state
+- [x] Shows complete state
+- [x] Shows error state with message
+- [x] Shows retry button on error
+- [x] Does not show retry button when onRetry not provided
+- [x] Shows progress indicator during uploading
+- [x] Shows progress indicator during analyzing
+- [x] Does not show progress indicator when complete
+
+#### `tests/unit/components/documents/analysis-review.test.tsx`
+
+- [x] Renders confidence badge
+- [x] Renders form with pre-filled values
+- [x] Calls onFormChange when title is edited
+- [x] Renders extracted parties
+- [x] Renders key dates
+- [x] Toggles summary visibility
+- [x] Does not render parties section when empty
+- [x] Does not render key dates section when empty
+
+#### `tests/unit/components/documents/confidence-badge.test.tsx`
+
+- [x] Shows green for 80-100
+- [x] Shows amber for 50-79
+- [x] Shows red for 0-49
+- [x] Displays correct labels
+- [x] Renders percentage by default
+- [x] Hides percentage when showPercentage is false
+- [x] Uses computed level when level not provided
+- [x] Uses provided level over computed
+- [x] Applies custom className
+
+### E2E Tests
+
+#### `tests/e2e/browser/document-upload-wizard.spec.ts`
+
+- [ ] Complete upload flow with demo PDF
+- [ ] Verify AI analysis results displayed
+- [ ] Edit title and save
+- [ ] Assign to matter
+- [ ] Document appears in list after save
+
+(E2E tests deferred - requires integration with page)
+
+---
+
+## QA Decision
+
+**PASS** - 2025-12-18
+
+### Test Results
+
+| Test Suite                   | Tests  | Status          |
+| ---------------------------- | ------ | --------------- |
+| `jobs/[id]/route.test.ts`    | 4      | All passing     |
+| `confidence-badge.test.tsx`  | 9      | All passing     |
+| `upload-dropzone.test.tsx`   | 7      | All passing     |
+| `analysis-progress.test.tsx` | 9      | All passing     |
+| `analysis-review.test.tsx`   | 8      | All passing     |
+| **Total**                    | **37** | **All passing** |
+
+### Regression Analysis
+
+- Ran full unit test suite: 132 passed, 11 failed
+- 11 failures are **pre-existing** (portal auth, litigation bundles, probate routes)
+- **Zero new failures** introduced by upload wizard code
+- All 37 new tests pass consistently
+
+### Implementation Review
+
+- Components follow existing patterns in `components/ui/`
+- TypeScript types exported properly
+- Props interfaces well-defined
+- Error handling covers all states
+- RAG confidence levels match spec (green 80+, amber 50-79, red 0-49)
+
+### Files Delivered
+
+| File                                         | Purpose                |
+| -------------------------------------------- | ---------------------- |
+| `app/api/jobs/[id]/route.ts`                 | Job polling endpoint   |
+| `components/documents/confidence-badge.tsx`  | RAG indicator          |
+| `components/documents/upload-dropzone.tsx`   | Drag-drop file input   |
+| `components/documents/analysis-progress.tsx` | Processing state UI    |
+| `components/documents/analysis-review.tsx`   | Review/edit form       |
+| `components/documents/matter-assign.tsx`     | Matter search & select |
+| `components/documents/upload-wizard.tsx`     | Main 4-step wizard     |
+| `lib/hooks/use-document-upload.ts`           | Orchestration hook     |
+
+### Notes
+
+- Phase 2 (Upload Wizard) complete with all components
+- Phase 3 (Document List Improvements) not in scope for this item
+- Integration with documents page pending (replace UploadDocumentDialog)

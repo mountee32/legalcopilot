@@ -25,6 +25,12 @@ vi.mock("@/lib/timeline/createEvent", () => ({
 
 const mockParams = (id: string) => Promise.resolve({ id });
 
+// Test UUIDs
+const TEMPLATE_ID = "123e4567-e89b-12d3-a456-426614174001";
+const ITEM_1_ID = "123e4567-e89b-12d3-a456-426614174011";
+const ITEM_2_ID = "123e4567-e89b-12d3-a456-426614174012";
+const ITEM_3_ID = "123e4567-e89b-12d3-a456-426614174013";
+
 describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,8 +44,8 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
       tasksCreated: 5,
       tasksSkipped: 2,
       tasks: [
-        { id: "task-1", title: "AML Check", templateItemId: "item-1" },
-        { id: "task-2", title: "Conflict Check", templateItemId: "item-2" },
+        { id: "task-1", title: "AML Check", templateItemId: ITEM_1_ID },
+        { id: "task-2", title: "Conflict Check", templateItemId: ITEM_2_ID },
       ],
     };
     vi.mocked(withFirmDb).mockResolvedValueOnce(mockResult as any);
@@ -48,7 +54,7 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
     const request = new NextRequest("http://localhost/api/matters/m1/apply-template", {
       method: "POST",
       body: JSON.stringify({
-        templateId: "t1",
+        templateId: TEMPLATE_ID,
       }),
     });
     const response = await POST(request as any, { params: mockParams("m1") } as any);
@@ -67,8 +73,8 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
       tasksCreated: 3,
       tasksSkipped: 4,
       tasks: [
-        { id: "task-1", title: "Mandatory Task", templateItemId: "item-1" },
-        { id: "task-2", title: "Selected Optional", templateItemId: "item-3" },
+        { id: "task-1", title: "Mandatory Task", templateItemId: ITEM_1_ID },
+        { id: "task-2", title: "Selected Optional", templateItemId: ITEM_3_ID },
       ],
     };
     vi.mocked(withFirmDb).mockResolvedValueOnce(mockResult as any);
@@ -77,8 +83,8 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
     const request = new NextRequest("http://localhost/api/matters/m1/apply-template", {
       method: "POST",
       body: JSON.stringify({
-        templateId: "t1",
-        selectedItemIds: ["item-1", "item-3"],
+        templateId: TEMPLATE_ID,
+        selectedItemIds: [ITEM_1_ID, ITEM_3_ID],
       }),
     });
     const response = await POST(request as any, { params: mockParams("m1") } as any);
@@ -92,7 +98,7 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
       applicationId: "app-3",
       tasksCreated: 2,
       tasksSkipped: 0,
-      tasks: [{ id: "task-1", title: "Modified Title", templateItemId: "item-1" }],
+      tasks: [{ id: "task-1", title: "Modified Title", templateItemId: ITEM_1_ID }],
     };
     vi.mocked(withFirmDb).mockResolvedValueOnce(mockResult as any);
 
@@ -100,10 +106,10 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
     const request = new NextRequest("http://localhost/api/matters/m1/apply-template", {
       method: "POST",
       body: JSON.stringify({
-        templateId: "t1",
+        templateId: TEMPLATE_ID,
         modifications: [
           {
-            templateItemId: "item-1",
+            templateItemId: ITEM_1_ID,
             title: "Modified Title",
             priority: "high",
           },
@@ -125,7 +131,7 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
     const { POST } = await import("@/app/api/matters/[id]/apply-template/route");
     const request = new NextRequest("http://localhost/api/matters/nonexistent/apply-template", {
       method: "POST",
-      body: JSON.stringify({ templateId: "123e4567-e89b-12d3-a456-426614174000" }),
+      body: JSON.stringify({ templateId: TEMPLATE_ID }),
     });
     const response = await POST(request as any, { params: mockParams("nonexistent") } as any);
 
@@ -142,7 +148,7 @@ describe("Apply Template API - POST /api/matters/:id/apply-template", () => {
     const { POST } = await import("@/app/api/matters/[id]/apply-template/route");
     const request = new NextRequest("http://localhost/api/matters/m1/apply-template", {
       method: "POST",
-      body: JSON.stringify({ templateId: "123e4567-e89b-12d3-a456-426614174000" }),
+      body: JSON.stringify({ templateId: TEMPLATE_ID }),
     });
     const response = await POST(request as any, { params: mockParams("m1") } as any);
 

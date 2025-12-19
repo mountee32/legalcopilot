@@ -23,6 +23,7 @@ import { clearDemoData } from "./clear";
 
 // Import seeders (order matters - respect foreign key dependencies)
 import { seedFirm } from "./seeders/firm";
+import { seedTaskTemplates } from "./seeders/task-templates";
 import { seedClients } from "./seeders/clients";
 import { seedMatters } from "./seeders/matters";
 import { seedTasks } from "./seeders/tasks";
@@ -46,6 +47,7 @@ export async function seedDemoData(): Promise<SeedResult> {
 
   // 1. Core entities (must come first)
   await seedFirm(ctx);
+  await seedTaskTemplates(ctx);
   await seedClients(ctx);
   await seedMatters(ctx);
 

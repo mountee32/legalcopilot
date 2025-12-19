@@ -42,6 +42,7 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "conflict_check_waived",
   "approval_decided",
   "note_added",
+  "template_applied",
 ]);
 
 export const timelineEvents = pgTable(

@@ -1,8 +1,10 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { uploadFile, initializeBucket } from "@/lib/storage/minio";
 import { db } from "@/lib/db";
 import { uploads } from "@/lib/db/schema";
-import { z } from "zod";
+import { withAuth } from "@/middleware/withAuth";
+import { withErrorHandler } from "@/middleware/withErrorHandler";
+import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -21,28 +23,26 @@ const ALLOWED_MIME_TYPES = [
   "image/webp",
 ];
 
-export async function POST(req: NextRequest) {
-  try {
+export const POST = withErrorHandler(
+  withAuth(async (req, { user }) => {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const firmId = formData.get("firmId") as string | null;
     const description = formData.get("description") as string | null;
     const tags = formData.get("tags") as string | null;
 
-    if (!file) {
-      return Response.json({ error: "No file provided" }, { status: 400 });
-    }
+    // Get firmId from authenticated user
+    const firmId = await getOrCreateFirmIdForUser(user.user.id);
 
-    if (!firmId) {
-      return Response.json({ error: "firmId is required" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return Response.json({ error: "File size exceeds 10MB limit" }, { status: 400 });
+      return NextResponse.json({ error: "File size exceeds 10MB limit" }, { status: 400 });
     }
 
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return Response.json({ error: `File type ${file.type} is not allowed` }, { status: 400 });
+      return NextResponse.json({ error: `File type ${file.type} is not allowed` }, { status: 400 });
     }
 
     // Initialize bucket if not exists
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       upload: {
         id: upload.id,
@@ -87,8 +87,5 @@ export async function POST(req: NextRequest) {
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       },
     });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return Response.json({ error: "Failed to upload file" }, { status: 500 });
-  }
-}
+  })
+);

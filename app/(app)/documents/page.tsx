@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { UploadDocumentDialog } from "@/components/documents/UploadDocumentDialog";
+import { DocumentUploadWizard } from "@/components/documents/upload-wizard";
 import { format } from "date-fns";
 import type { Document } from "@/lib/api/schemas/documents";
 
@@ -188,7 +188,7 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      <UploadDocumentDialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen} />
+      <DocumentUploadWizard open={uploadDialogOpen} onOpenChange={setUploadDialogOpen} />
     </div>
   );
 }
