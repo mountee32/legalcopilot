@@ -193,7 +193,7 @@ export const POST = withErrorHandler(
                   id: taskNoteAttachments.id,
                   noteId: taskNoteAttachments.noteId,
                   documentId: taskNoteAttachments.documentId,
-                  documentName: documents.fileName,
+                  documentName: documents.filename,
                   createdAt: taskNoteAttachments.createdAt,
                 })
                 .from(taskNoteAttachments)

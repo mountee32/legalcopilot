@@ -189,6 +189,14 @@ export const DEMO_IDS = {
     task40: "de000000-0000-4000-a005-000000000040",
     task41: "de000000-0000-4000-a005-000000000041", // Skipped task
     task42: "de000000-0000-4000-a005-000000000042", // Not applicable task
+    // MAT-DEMO-001 Onboarding stage tasks (completed)
+    task43: "de000000-0000-4000-a005-000000000043", // Record client instruction
+    task44: "de000000-0000-4000-a005-000000000044", // Issue client care letter
+    task45: "de000000-0000-4000-a005-000000000045", // Complete conflict check
+    // MAT-DEMO-001 AML stage tasks (completed)
+    task46: "de000000-0000-4000-a005-000000000046", // Verify client identity
+    task47: "de000000-0000-4000-a005-000000000047", // Verify source of funds
+    task48: "de000000-0000-4000-a005-000000000048", // Complete AML risk assessment
   },
 
   invoices: {
@@ -546,6 +554,14 @@ export const DEMO_IDS = {
     ev4: "de000000-0000-4000-a022-000000000004",
     ev5: "de000000-0000-4000-a022-000000000005",
     ev6: "de000000-0000-4000-a022-000000000006",
+    // Additional evidence for Onboarding, AML, Investigation stages
+    ev7: "de000000-0000-4000-a022-000000000007", // task43: Record client instruction
+    ev8: "de000000-0000-4000-a022-000000000008", // task44: Issue client care letter
+    ev9: "de000000-0000-4000-a022-000000000009", // task45: Complete conflict check
+    ev10: "de000000-0000-4000-a022-000000000010", // task47: Verify source of funds
+    ev11: "de000000-0000-4000-a022-000000000011", // task48: Complete AML risk assessment
+    ev12: "de000000-0000-4000-a022-000000000012", // task2: Order local searches
+    ev13: "de000000-0000-4000-a022-000000000013", // task3: Draft contract report
   },
 
   // Task Exceptions (a023 = exceptions)

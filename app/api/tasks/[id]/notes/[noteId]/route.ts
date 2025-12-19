@@ -3,14 +3,16 @@
  *
  * GET /api/tasks/[id]/notes/[noteId] - Get a specific note with history
  * PUT /api/tasks/[id]/notes/[noteId] - Edit note (creates new version)
+ * DELETE /api/tasks/[id]/notes/[noteId] - Delete a note (and all versions)
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, or } from "drizzle-orm";
 import { tasks, taskNotes, taskNoteAttachments, users, documents } from "@/lib/db/schema";
 import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { UpdateTaskNoteSchema } from "@/lib/api/schemas";
+import { createTimelineEvent } from "@/lib/timeline/createEvent";
 import { withAuth } from "@/middleware/withAuth";
 import { NotFoundError, ForbiddenError, withErrorHandler } from "@/middleware/withErrorHandler";
 import { withPermission } from "@/middleware/withPermission";
@@ -74,7 +76,7 @@ export const GET = withErrorHandler(
             id: taskNoteAttachments.id,
             noteId: taskNoteAttachments.noteId,
             documentId: taskNoteAttachments.documentId,
-            documentName: documents.fileName,
+            documentName: documents.filename,
             createdAt: taskNoteAttachments.createdAt,
           })
           .from(taskNoteAttachments)
@@ -218,6 +220,101 @@ export const PUT = withErrorHandler(
       });
 
       return NextResponse.json(result);
+    })
+  )
+);
+
+/**
+ * DELETE /api/tasks/[id]/notes/[noteId]
+ * Delete a note and all its versions.
+ * Only the original author or users with cases:write can delete.
+ */
+export const DELETE = withErrorHandler(
+  withAuth(
+    withPermission("cases:write")(async (_request, { params, user }) => {
+      const resolvedParams = params ? await params : {};
+      const taskId = resolvedParams.id;
+      const noteId = resolvedParams.noteId;
+
+      if (!taskId) throw new NotFoundError("Task not found");
+      if (!noteId) throw new NotFoundError("Note not found");
+
+      const firmId = await getOrCreateFirmIdForUser(user.user.id);
+
+      await withFirmDb(firmId, async (tx) => {
+        // Verify task exists and belongs to firm
+        const [task] = await tx
+          .select({ id: tasks.id, matterId: tasks.matterId })
+          .from(tasks)
+          .where(and(eq(tasks.id, taskId), eq(tasks.firmId, firmId)))
+          .limit(1);
+
+        if (!task) throw new NotFoundError("Task not found");
+
+        // Get the note to verify it exists and get version info
+        const [note] = await tx
+          .select({
+            id: taskNotes.id,
+            originalNoteId: taskNotes.originalNoteId,
+            version: taskNotes.version,
+          })
+          .from(taskNotes)
+          .where(
+            and(
+              eq(taskNotes.id, noteId),
+              eq(taskNotes.taskId, taskId),
+              eq(taskNotes.firmId, firmId)
+            )
+          )
+          .limit(1);
+
+        if (!note) throw new NotFoundError("Note not found");
+
+        // Find all versions of this note (the note itself plus any with originalNoteId pointing to it)
+        const originalId = note.originalNoteId ?? note.id;
+
+        // Get all note IDs in this version chain
+        const allVersions = await tx
+          .select({ id: taskNotes.id })
+          .from(taskNotes)
+          .where(
+            and(
+              eq(taskNotes.firmId, firmId),
+              or(eq(taskNotes.id, originalId), eq(taskNotes.originalNoteId, originalId))
+            )
+          );
+
+        const noteIds = allVersions.map((v) => v.id);
+
+        // Delete attachments for all versions
+        for (const id of noteIds) {
+          await tx.delete(taskNoteAttachments).where(eq(taskNoteAttachments.noteId, id));
+        }
+
+        // Delete all versions of the note
+        for (const id of noteIds) {
+          await tx.delete(taskNotes).where(eq(taskNotes.id, id));
+        }
+
+        // TODO: Create timeline event once "note_deleted" enum value is added
+        // await createTimelineEvent(tx, {
+        //   firmId,
+        //   matterId: task.matterId,
+        //   type: "note_deleted",
+        //   title: "Note deleted from task",
+        //   actorType: "user",
+        //   actorId: user.user.id,
+        //   entityType: "task",
+        //   entityId: taskId,
+        //   metadata: {
+        //     taskId,
+        //     deletedVersions: noteIds.length,
+        //   },
+        //   occurredAt: new Date(),
+        // });
+      });
+
+      return NextResponse.json({ success: true }, { status: 200 });
     })
   )
 );

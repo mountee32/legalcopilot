@@ -136,7 +136,14 @@ export const GET = withErrorHandler(
                   .from(evidenceItems)
                   .where(eq(evidenceItems.taskId, task.id));
 
-                // Get latest note for blocking context
+                // Get notes count and latest note for blocking context
+                const [noteStats] = await tx
+                  .select({
+                    count: sql<number>`count(*)`,
+                  })
+                  .from(taskNotes)
+                  .where(and(eq(taskNotes.taskId, task.id), eq(taskNotes.isCurrent, true)));
+
                 const [latestNote] = await tx
                   .select({
                     content: taskNotes.content,
@@ -170,6 +177,7 @@ export const GET = withErrorHandler(
                   ...task,
                   evidenceCount: Number(evidenceCounts?.total ?? 0),
                   verifiedEvidenceCount: Number(evidenceCounts?.verified ?? 0),
+                  notesCount: Number(noteStats?.count ?? 0),
                   latestNote: latestNote?.content ?? null,
                   isBlocked,
                   blockingReasons,

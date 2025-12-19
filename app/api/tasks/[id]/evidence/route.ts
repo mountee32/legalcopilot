@@ -74,7 +74,7 @@ export const GET = withErrorHandler(
             type: evidenceItems.type,
             description: evidenceItems.description,
             documentId: evidenceItems.documentId,
-            documentName: documents.fileName,
+            documentName: documents.filename,
             addedById: evidenceItems.addedById,
             addedByName: users.name,
             addedAt: evidenceItems.addedAt,
@@ -186,11 +186,11 @@ export const POST = withErrorHandler(
         let documentName: string | null = null;
         if (data.documentId) {
           const [doc] = await tx
-            .select({ fileName: documents.fileName })
+            .select({ filename: documents.filename })
             .from(documents)
             .where(eq(documents.id, data.documentId))
             .limit(1);
-          documentName = doc?.fileName ?? null;
+          documentName = doc?.filename ?? null;
         }
 
         // Get user name for response

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Circle,
@@ -16,7 +16,11 @@ import {
   Check,
   Ban,
   StickyNote,
+  ChevronDown,
+  ChevronRight,
+  Paperclip,
 } from "lucide-react";
+import { TaskDetailPanel } from "./task-detail-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +59,7 @@ export interface WorkflowTask {
   assigneeId: string | null;
   evidenceCount: number;
   verifiedEvidenceCount: number;
+  notesCount: number;
   latestNote: string | null;
   isBlocked: boolean;
   blockingReasons: string[];
@@ -161,13 +166,43 @@ async function addNote(taskId: string, content: string) {
   return res.json();
 }
 
+async function editNote(taskId: string, noteId: string, content: string) {
+  const res = await fetch(`/api/tasks/${taskId}/notes/${noteId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to edit note");
+  }
+  return res.json();
+}
+
+async function deleteNote(taskId: string, noteId: string) {
+  const res = await fetch(`/api/tasks/${taskId}/notes/${noteId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to delete note");
+  }
+  return res.json();
+}
+
 export function WorkflowTaskRow({ task, disabled = false, onTaskUpdated }: WorkflowTaskRowProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [skipDialogOpen, setSkipDialogOpen] = useState(false);
   const [naDialogOpen, setNaDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [evidenceDialogOpen, setEvidenceDialogOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [reason, setReason] = useState("");
   const [noteContent, setNoteContent] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   // Determine visual status (blocked overrides in_progress/pending)
   const visualStatus =
@@ -246,6 +281,8 @@ export function WorkflowTaskRow({ task, disabled = false, onTaskUpdated }: Workf
       toast({ title: "Note added" });
       setNoteDialogOpen(false);
       setNoteContent("");
+      // Invalidate the notes query to refresh the detail panel
+      queryClient.invalidateQueries({ queryKey: ["tasks", task.id, "notes"] });
       onTaskUpdated();
     },
     onError: (error: Error) => {
@@ -257,129 +294,263 @@ export function WorkflowTaskRow({ task, disabled = false, onTaskUpdated }: Workf
     },
   });
 
+  const editNoteMutation = useMutation({
+    mutationFn: ({ noteId, content }: { noteId: string; content: string }) =>
+      editNote(task.id, noteId, content),
+    onSuccess: () => {
+      toast({ title: "Note updated" });
+      setNoteDialogOpen(false);
+      setNoteContent("");
+      setEditingNoteId(null);
+      queryClient.invalidateQueries({ queryKey: ["tasks", task.id, "notes"] });
+      onTaskUpdated();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update note",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteNoteMutation = useMutation({
+    mutationFn: (noteId: string) => deleteNote(task.id, noteId),
+    onSuccess: () => {
+      toast({ title: "Note deleted" });
+      queryClient.invalidateQueries({ queryKey: ["tasks", task.id, "notes"] });
+      onTaskUpdated();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete note",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Don't expand if clicking on buttons, dropdowns, or links
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a") || target.closest("[role='menu']")) {
+      return;
+    }
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleEditNote = (note: { id: string; content: string }) => {
+    setEditingNoteId(note.id);
+    setNoteContent(note.content);
+    setNoteDialogOpen(true);
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    deleteNoteMutation.mutate(noteId);
+  };
+
+  const handleNoteDialogClose = (open: boolean) => {
+    if (!open) {
+      setEditingNoteId(null);
+      setNoteContent("");
+    }
+    setNoteDialogOpen(open);
+  };
+
+  const handleNoteSave = () => {
+    if (editingNoteId) {
+      editNoteMutation.mutate({ noteId: editingNoteId, content: noteContent });
+    } else {
+      noteMutation.mutate(noteContent);
+    }
+  };
+
+  const isNoteSaving = noteMutation.isPending || editNoteMutation.isPending;
+
   return (
     <>
       <div
-        className={`flex items-center justify-between py-3 px-4 ${config.bg} ${config.border} border rounded-lg`}
+        className={`${config.border} border rounded-lg overflow-hidden transition-all duration-150 cursor-pointer`}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        onClick={handleRowClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <StatusIcon className={`w-5 h-5 flex-shrink-0 ${config.color}`} />
+        <div
+          className={`flex items-center justify-between py-3 px-4 ${config.bg} hover:bg-opacity-80 transition-colors`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Expand/Collapse chevron */}
+            {isExpanded ? (
+              <ChevronDown className="w-4 h-4 flex-shrink-0 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-4 h-4 flex-shrink-0 text-slate-400" />
+            )}
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-sm font-medium ${
-                  isResolved ? "text-slate-400 line-through" : "text-slate-700"
-                }`}
-              >
-                {task.title}
-              </span>
+            <StatusIcon className={`w-5 h-5 flex-shrink-0 ${config.color}`} />
 
-              {task.isMandatory && !isResolved && <span className="text-xs text-red-500">*</span>}
-
-              {/* Requirement indicators */}
-              {task.requiresEvidence && !isResolved && (
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
                 <span
-                  title={`Evidence: ${task.evidenceCount} attached${
-                    task.requiresVerifiedEvidence ? `, ${task.verifiedEvidenceCount} verified` : ""
+                  className={`text-sm font-medium ${
+                    isResolved ? "text-slate-400 line-through" : "text-slate-700"
                   }`}
                 >
-                  <FileCheck
-                    className={`w-3.5 h-3.5 ${
-                      task.evidenceCount > 0 ? "text-emerald-500" : "text-slate-400"
-                    }`}
-                  />
+                  {task.title}
                 </span>
-              )}
 
-              {task.requiresApproval && !isResolved && (
-                <span title={`Approval: ${task.approvalStatus || "not requested"}`}>
-                  <Shield
-                    className={`w-3.5 h-3.5 ${
-                      task.approvalStatus === "approved"
-                        ? "text-emerald-500"
-                        : task.approvalStatus === "pending"
-                          ? "text-amber-500"
-                          : "text-slate-400"
+                {task.isMandatory && !isResolved && <span className="text-xs text-red-500">*</span>}
+
+                {/* Requirement indicators */}
+                {task.requiresEvidence && !isResolved && (
+                  <span
+                    title={`Evidence: ${task.evidenceCount} attached${
+                      task.requiresVerifiedEvidence
+                        ? `, ${task.verifiedEvidenceCount} verified`
+                        : ""
                     }`}
-                  />
-                </span>
+                  >
+                    <FileCheck
+                      className={`w-3.5 h-3.5 ${
+                        task.evidenceCount > 0 ? "text-emerald-500" : "text-slate-400"
+                      }`}
+                    />
+                  </span>
+                )}
+
+                {task.requiresApproval && !isResolved && (
+                  <span title={`Approval: ${task.approvalStatus || "not requested"}`}>
+                    <Shield
+                      className={`w-3.5 h-3.5 ${
+                        task.approvalStatus === "approved"
+                          ? "text-emerald-500"
+                          : task.approvalStatus === "pending"
+                            ? "text-amber-500"
+                            : "text-slate-400"
+                      }`}
+                    />
+                  </span>
+                )}
+              </div>
+
+              {/* Blocking reasons or note (only when collapsed) */}
+              {!isExpanded && task.isBlocked && task.blockingReasons.length > 0 && (
+                <p className="text-xs text-red-600 mt-0.5">
+                  {task.blockingReasons.join(" \u00B7 ")}
+                </p>
+              )}
+              {!isExpanded && task.latestNote && !task.isBlocked && (
+                <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3" />
+                  <span className="truncate max-w-[300px]">{task.latestNote}</span>
+                </p>
               )}
             </div>
+          </div>
 
-            {/* Blocking reasons or note */}
-            {task.isBlocked && task.blockingReasons.length > 0 && (
-              <p className="text-xs text-red-600 mt-0.5">{task.blockingReasons.join(" \u00B7 ")}</p>
-            )}
-            {task.latestNote && !task.isBlocked && (
-              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Count badges */}
+            {task.notesCount > 0 && (
+              <span
+                className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"
+                title={`${task.notesCount} note${task.notesCount > 1 ? "s" : ""}`}
+              >
                 <MessageSquare className="w-3 h-3" />
-                <span className="truncate max-w-[300px]">{task.latestNote}</span>
-              </p>
+                {task.notesCount}
+              </span>
+            )}
+            {task.evidenceCount > 0 && (
+              <span
+                className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"
+                title={`${task.evidenceCount} attachment${task.evidenceCount > 1 ? "s" : ""}`}
+              >
+                <Paperclip className="w-3 h-3" />
+                {task.evidenceCount}
+              </span>
+            )}
+
+            {/* Date */}
+            {task.completedAt ? (
+              <span className="text-xs text-slate-500">
+                {format(new Date(task.completedAt), "d MMM yyyy")}
+              </span>
+            ) : task.dueDate ? (
+              <span
+                className={`text-xs ${
+                  new Date(task.dueDate) < new Date()
+                    ? "text-red-600 font-medium"
+                    : "text-slate-500"
+                }`}
+              >
+                Due {format(new Date(task.dueDate), "d MMM")}
+              </span>
+            ) : null}
+
+            {/* Status Badge */}
+            <Badge
+              variant="outline"
+              className={`text-xs ${config.bg} ${config.color} ${config.border}`}
+            >
+              {visualStatus === "blocked"
+                ? "Blocked"
+                : task.status.replace("_", " ").charAt(0).toUpperCase() +
+                  task.status.replace("_", " ").slice(1)}
+            </Badge>
+
+            {/* Actions Menu */}
+            {!disabled && !isResolved && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => completeMutation.mutate()}
+                    disabled={completeMutation.isPending || task.isBlocked}
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Complete
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNoteDialogOpen(true)}>
+                    <StickyNote className="h-4 w-4 mr-2" />
+                    Add Note
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSkipDialogOpen(true)}>
+                    <SkipForward className="h-4 w-4 mr-2" />
+                    Skip
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setNaDialogOpen(true)}>
+                    <Ban className="h-4 w-4 mr-2" />
+                    Mark N/A
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Date */}
-          {task.completedAt ? (
-            <span className="text-xs text-slate-500">
-              {format(new Date(task.completedAt), "d MMM yyyy")}
-            </span>
-          ) : task.dueDate ? (
-            <span
-              className={`text-xs ${
-                new Date(task.dueDate) < new Date() ? "text-red-600 font-medium" : "text-slate-500"
-              }`}
-            >
-              Due {format(new Date(task.dueDate), "d MMM")}
-            </span>
-          ) : null}
-
-          {/* Status Badge */}
-          <Badge
-            variant="outline"
-            className={`text-xs ${config.bg} ${config.color} ${config.border}`}
-          >
-            {visualStatus === "blocked"
-              ? "Blocked"
-              : task.status.replace("_", " ").charAt(0).toUpperCase() +
-                task.status.replace("_", " ").slice(1)}
-          </Badge>
-
-          {/* Actions Menu */}
-          {!disabled && !isResolved && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => completeMutation.mutate()}
-                  disabled={completeMutation.isPending || task.isBlocked}
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Complete
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setNoteDialogOpen(true)}>
-                  <StickyNote className="h-4 w-4 mr-2" />
-                  Add Note
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSkipDialogOpen(true)}>
-                  <SkipForward className="h-4 w-4 mr-2" />
-                  Skip
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setNaDialogOpen(true)}>
-                  <Ban className="h-4 w-4 mr-2" />
-                  Mark N/A
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+        {/* Task Detail Panel */}
+        <TaskDetailPanel
+          taskId={task.id}
+          isExpanded={isExpanded}
+          onAddNote={() => setNoteDialogOpen(true)}
+          onEditNote={handleEditNote}
+          onDeleteNote={handleDeleteNote}
+          isDeletingNote={deleteNoteMutation.isPending}
+          onAddEvidence={() => {
+            // TODO: Implement evidence dialog
+            toast({ title: "Add Evidence", description: "This feature is coming soon." });
+          }}
+        />
       </div>
 
       {/* Skip Dialog */}
@@ -441,12 +612,16 @@ export function WorkflowTaskRow({ task, disabled = false, onTaskUpdated }: Workf
         </DialogContent>
       </Dialog>
 
-      {/* Add Note Dialog */}
-      <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+      {/* Add/Edit Note Dialog */}
+      <Dialog open={noteDialogOpen} onOpenChange={handleNoteDialogClose}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Note</DialogTitle>
-            <DialogDescription>Add a note to this task for context or tracking.</DialogDescription>
+            <DialogTitle>{editingNoteId ? "Edit Note" : "Add Note"}</DialogTitle>
+            <DialogDescription>
+              {editingNoteId
+                ? "Update your note. A new version will be created."
+                : "Add a note to this task for context or tracking."}
+            </DialogDescription>
           </DialogHeader>
           <Textarea
             placeholder="Your note..."
@@ -455,14 +630,11 @@ export function WorkflowTaskRow({ task, disabled = false, onTaskUpdated }: Workf
             rows={4}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNoteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => handleNoteDialogClose(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => noteMutation.mutate(noteContent)}
-              disabled={!noteContent.trim() || noteMutation.isPending}
-            >
-              {noteMutation.isPending ? "Saving..." : "Add Note"}
+            <Button onClick={handleNoteSave} disabled={!noteContent.trim() || isNoteSaving}>
+              {isNoteSaving ? "Saving..." : editingNoteId ? "Update Note" : "Add Note"}
             </Button>
           </DialogFooter>
         </DialogContent>

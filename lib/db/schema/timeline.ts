@@ -85,6 +85,7 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
 
   // Note events
   "note_added",
+  "note_deleted",
   "template_applied",
 ]);
 
