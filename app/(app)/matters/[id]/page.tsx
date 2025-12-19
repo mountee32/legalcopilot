@@ -16,6 +16,11 @@ import {
   ListTodo,
   Calendar as CalendarIcon,
   Plus,
+  Download,
+  Eye,
+  Pencil,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import { UnifiedTimeline } from "./_components/timeline";
 import { Button } from "@/components/ui/button";
@@ -24,8 +29,25 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/lib/hooks/use-toast";
 import { format } from "date-fns";
+import { UploadDocumentDialog } from "@/components/documents/UploadDocumentDialog";
 import { TemplateStatusCard } from "@/components/task-templates/template-status-card";
 import { SkippedTasksDialog } from "@/components/task-templates/skipped-tasks-dialog";
 import { TaskCard, TaskFormDialog, AddFromTemplateDialog } from "@/components/tasks";
@@ -174,39 +196,91 @@ function OverviewTab({ matter }: { matter: Matter }) {
   );
 }
 
+async function deleteDocument(id: string): Promise<void> {
+  const res = await fetch(`/api/documents/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete document");
+}
+
+async function getDownloadUrl(id: string): Promise<{ url: string }> {
+  const res = await fetch(`/api/documents/${id}/download`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to get download URL");
+  return res.json();
+}
+
 function DocumentsTab({ matterId }: { matterId: string }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["matter-documents", matterId],
     queryFn: () => fetchMatterDocuments(matterId),
     staleTime: 30_000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-16" />
-        ))}
-      </div>
-    );
-  }
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteDocument(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matter-documents", matterId] });
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
+      toast({ title: "Document deleted", description: "Document has been removed" });
+    },
+    onError: () => {
+      toast({
+        title: "Delete failed",
+        description: "Could not delete document",
+        variant: "destructive",
+      });
+    },
+  });
 
-  if (!data || data.documents?.length === 0) {
-    return (
-      <Card className="p-8">
-        <EmptyState
-          title="No documents yet"
-          description="Documents will appear here when uploaded to this case."
-          action={
-            <Button>
-              <FileText className="w-4 h-4 mr-2" />
-              Upload Document
-            </Button>
-          }
-        />
-      </Card>
-    );
-  }
+  const handleView = async (id: string) => {
+    try {
+      const { url } = await getDownloadUrl(id);
+      window.open(url, "_blank");
+    } catch (err) {
+      toast({
+        title: "View failed",
+        description: "Could not open document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownload = async (id: string) => {
+    try {
+      const { url } = await getDownloadUrl(id);
+      window.open(url, "_blank");
+    } catch (err) {
+      toast({
+        title: "Download failed",
+        description: "Could not download document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteClick = (doc: { id: string; title: string }) => {
+    setDocumentToDelete(doc);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDocumentUploaded = () => {
+    queryClient.invalidateQueries({ queryKey: ["matter-documents", matterId] });
+    setUploadDialogOpen(false);
+  };
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: "default" | "secondary" | "outline"; label: string }> =
@@ -220,21 +294,72 @@ function DocumentsTab({ matterId }: { matterId: string }) {
     return <Badge variant={c.variant}>{c.label}</Badge>;
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-16" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!data || data.documents?.length === 0) {
+    return (
+      <>
+        <Card className="p-8">
+          <EmptyState
+            title="No documents yet"
+            description="Documents will appear here when uploaded to this case."
+            action={
+              <Button onClick={() => setUploadDialogOpen(true)}>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Document
+              </Button>
+            }
+          />
+        </Card>
+        <UploadDocumentDialog
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          defaultMatterId={matterId}
+          onSuccess={handleDocumentUploaded}
+        />
+      </>
+    );
+  }
+
   return (
-    <div className="space-y-3">
-      {data.documents.map((doc: any) => (
-        <Link key={doc.id} href={`/documents/${doc.id}`}>
-          <Card className="p-4 hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer">
+    <>
+      {/* Header with upload button */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-slate-900">
+          Documents ({data.documents.length})
+        </h3>
+        <Button size="sm" onClick={() => setUploadDialogOpen(true)}>
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Document
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        {data.documents.map((doc: any) => (
+          <Card
+            key={doc.id}
+            className="p-4 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+          >
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
+              <Link href={`/documents/${doc.id}`} className="flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+              </Link>
+              <Link href={`/documents/${doc.id}`} className="flex-1 min-w-0 cursor-pointer">
                 <p className="font-medium text-slate-900 truncate">{doc.title}</p>
                 <p className="text-sm text-slate-500">
                   {doc.type?.replace("_", " ")} • {doc.filename || "No file"}
                 </p>
-              </div>
+              </Link>
               <div className="flex items-center gap-3">
                 {getStatusBadge(doc.status)}
                 {doc.documentDate && (
@@ -242,12 +367,71 @@ function DocumentsTab({ matterId }: { matterId: string }) {
                     {format(new Date(doc.documentDate), "d MMM yyyy")}
                   </span>
                 )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleView(doc.id)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDownload(doc.id)}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/documents/${doc.id}`)}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteClick({ id: doc.id, title: doc.title })}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </Card>
-        </Link>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {/* Upload Dialog */}
+      <UploadDocumentDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        defaultMatterId={matterId}
+        onSuccess={handleDocumentUploaded}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Document</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{documentToDelete?.title}"? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => documentToDelete && deleteMutation.mutate(documentToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

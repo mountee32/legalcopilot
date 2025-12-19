@@ -247,10 +247,30 @@ export const AnalyzeDocumentResponseSchema = z
   .openapi("AnalyzeDocumentResponse");
 
 // ============================================================================
+// Document Update Schema (for PATCH /api/documents/[id])
+// ============================================================================
+
+/** Schema for updating document metadata including AI-extracted fields */
+export const UpdateDocumentMetadataSchema = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    type: DocumentTypeSchema.optional(),
+    matterId: UuidSchema.nullable().optional(),
+    documentDate: z.union([DateSchema, DateTimeSchema]).nullable().optional(),
+    recipient: z.string().nullable().optional(),
+    sender: z.string().nullable().optional(),
+    aiSummary: z.string().nullable().optional(),
+    extractedParties: z.array(ExtractedPartySchema).nullable().optional(),
+    extractedDates: z.array(ExtractedDateSchema).nullable().optional(),
+  })
+  .openapi("UpdateDocumentMetadata");
+
+// ============================================================================
 // Type Exports
 // ============================================================================
 
 export type Document = z.infer<typeof DocumentSchema>;
+export type UpdateDocumentMetadata = z.infer<typeof UpdateDocumentMetadataSchema>;
 export type CreateDocument = z.infer<typeof CreateDocumentSchema>;
 export type AnalyzeDocumentRequest = z.infer<typeof AnalyzeDocumentRequestSchema>;
 export type ExtractedParty = z.infer<typeof ExtractedPartySchema>;

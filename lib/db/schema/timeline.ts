@@ -17,6 +17,8 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "matter_updated",
   "matter_archived",
   "document_uploaded",
+  "document_deleted",
+  "document_analyzed",
   "document_extracted",
   "document_chunked",
   "document_summarized",
