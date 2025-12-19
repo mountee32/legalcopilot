@@ -63,9 +63,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6 md:p-8">
-        <div className="max-w-6xl mx-auto">
-          <DashboardSkeleton />
+      <div className="min-h-screen bg-slate-50">
+        <div className="p-6 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <DashboardSkeleton />
+          </div>
         </div>
       </div>
     );
@@ -73,16 +75,18 @@ export default function DashboardPage() {
 
   if (isError) {
     return (
-      <div className="p-6 md:p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-12">
-            <h2 className="text-lg font-semibold mb-2">Failed to load dashboard</h2>
-            <p className="text-muted-foreground mb-4">
-              There was an error loading the dashboard data.
-            </p>
-            <button onClick={() => refetch()} className="text-primary hover:underline">
-              Try again
-            </button>
+      <div className="min-h-screen bg-slate-50">
+        <div className="p-6 md:p-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center py-12">
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                Failed to load dashboard
+              </h2>
+              <p className="text-slate-600 mb-4">There was an error loading the dashboard data.</p>
+              <button onClick={() => refetch()} className="text-primary hover:underline">
+                Try again
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -90,46 +94,48 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 md:p-8" data-testid="dashboard-page">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Greeting */}
-        <DashboardGreeting />
+    <div className="min-h-screen bg-slate-50" data-testid="dashboard-page">
+      <div className="p-6 md:p-8">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Greeting */}
+          <DashboardGreeting />
 
-        {/* Top row: AI Briefing + Urgent Items */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <AIBriefingCard
-            taskCount={data.tasksTotal}
-            emailCount={0}
-            meetingCount={data.calendarEvents.length}
+          {/* Top row: AI Briefing + Urgent Items */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <AIBriefingCard
+              taskCount={data.tasksTotal}
+              emailCount={0}
+              meetingCount={data.calendarEvents.length}
+            />
+            <UrgentItemsCard items={data.urgentItems} />
+          </div>
+
+          {/* Approval Queue - full width */}
+          <ApprovalQueueCard
+            approvals={data.approvals}
+            total={data.approvalsTotal}
+            onApprove={handleApprove}
+            onReject={handleReject}
           />
-          <UrgentItemsCard items={data.urgentItems} />
-        </div>
 
-        {/* Approval Queue - full width */}
-        <ApprovalQueueCard
-          approvals={data.approvals}
-          total={data.approvalsTotal}
-          onApprove={handleApprove}
-          onReject={handleReject}
-        />
+          {/* Bottom row: Tasks + Calendar */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <TasksTodayCard
+              tasks={data.tasks}
+              total={data.tasksTotal}
+              onComplete={handleTaskComplete}
+            />
+            <CalendarTodayCard events={data.calendarEvents} />
+          </div>
 
-        {/* Bottom row: Tasks + Calendar */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <TasksTodayCard
-            tasks={data.tasks}
-            total={data.tasksTotal}
-            onComplete={handleTaskComplete}
+          {/* Firm Snapshot - full width */}
+          <FirmSnapshotCard
+            activeCases={data.activeCases}
+            wipValue={data.wipValue}
+            collectedMTD={data.collectedMTD}
+            overdueInvoices={data.overdueInvoices}
           />
-          <CalendarTodayCard events={data.calendarEvents} />
         </div>
-
-        {/* Firm Snapshot - full width */}
-        <FirmSnapshotCard
-          activeCases={data.activeCases}
-          wipValue={data.wipValue}
-          collectedMTD={data.collectedMTD}
-          overdueInvoices={data.overdueInvoices}
-        />
       </div>
     </div>
   );

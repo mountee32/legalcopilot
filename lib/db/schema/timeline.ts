@@ -12,10 +12,17 @@ import { users } from "./users";
 
 export const timelineActorTypeEnum = pgEnum("timeline_actor_type", ["user", "system", "ai"]);
 
+/**
+ * Timeline event types.
+ * Extended to include workflow, task status, and evidence events.
+ */
 export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
+  // Matter events
   "matter_created",
   "matter_updated",
   "matter_archived",
+
+  // Document events
   "document_uploaded",
   "document_deleted",
   "document_analyzed",
@@ -23,10 +30,36 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "document_chunked",
   "document_summarized",
   "document_entities_extracted",
+
+  // Email events
   "email_received",
   "email_sent",
+
+  // Task events (existing)
   "task_created",
   "task_completed",
+
+  // Task events (new - Enhanced Task Model)
+  "task_skipped", // Task deliberately skipped
+  "task_not_applicable", // Task marked not applicable
+  "task_evidence_added", // Evidence attached to task
+  "task_evidence_verified", // Evidence verified
+  "task_approval_requested", // Task approval requested
+  "task_approved", // Task approved by supervisor
+  "task_rejected", // Task rejected by supervisor
+
+  // Workflow stage events (new - Enhanced Task Model)
+  "stage_started", // Stage work began
+  "stage_completed", // Stage completed
+  "stage_skipped", // Stage skipped (applicability conditions not met)
+  "stage_gate_blocked", // Attempted to proceed but gate blocked
+  "stage_gate_overridden", // Gate manually overridden
+
+  // Workflow events (new - Enhanced Task Model)
+  "workflow_activated", // Workflow attached to matter
+  "workflow_changed", // Workflow changed mid-matter
+
+  // Billing events
   "time_entry_submitted",
   "time_entry_approved",
   "invoice_generated",
@@ -34,15 +67,23 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "invoice_voided",
   "payment_recorded",
   "payment_deleted",
+
+  // Calendar events
   "calendar_event_created",
   "calendar_event_updated",
   "calendar_event_deleted",
+
+  // Lead/Quote events
   "lead_converted",
   "quote_converted",
+
+  // Compliance events
   "conflict_check_run",
   "conflict_check_cleared",
   "conflict_check_waived",
   "approval_decided",
+
+  // Note events
   "note_added",
   "template_applied",
 ]);
@@ -70,6 +111,13 @@ export const timelineEvents = pgTable(
     entityType: text("entity_type"),
     entityId: uuid("entity_id"),
     metadata: jsonb("metadata"),
+
+    /**
+     * Visibility of this event.
+     * - internal: Staff only (default)
+     * - client_visible: Visible in client portal
+     */
+    visibility: text("visibility").default("internal"), // "internal" | "client_visible"
 
     occurredAt: timestamp("occurred_at").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

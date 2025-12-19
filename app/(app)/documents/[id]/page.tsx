@@ -61,6 +61,8 @@ interface DocumentDetail {
   mimeType: string | null;
   fileSize: number | null;
   documentDate: string | null;
+  recipient: string | null;
+  sender: string | null;
   aiSummary: string | null;
   aiConfidence: number | null;
   aiModel: string | null;
@@ -240,7 +242,10 @@ export default function DocumentDetailPage() {
       setEditFormData({
         title: document.title,
         type: document.type,
+        status: document.status || "draft",
         documentDate: document.documentDate ? document.documentDate.split("T")[0] : "",
+        recipient: document.recipient || "",
+        sender: document.sender || "",
         aiSummary: document.aiSummary || "",
         extractedParties: document.extractedParties || [],
         extractedDates: document.extractedDates || [],
@@ -254,7 +259,10 @@ export default function DocumentDetailPage() {
       updateMutation.mutate({
         title: editFormData.title,
         type: editFormData.type,
+        status: editFormData.status,
         documentDate: editFormData.documentDate || null,
+        recipient: editFormData.recipient || null,
+        sender: editFormData.sender || null,
         aiSummary: editFormData.aiSummary || null,
         extractedParties: editFormData.extractedParties,
         extractedDates: editFormData.extractedDates,

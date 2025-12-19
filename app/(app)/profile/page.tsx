@@ -18,34 +18,36 @@ export default function ProfilePage() {
       .slice(0, 2) || "U";
 
   return (
-    <div className="p-6 md:p-8">
-      <h1 className="text-3xl font-bold mb-6">Profile</h1>
+    <div className="min-h-screen bg-slate-50">
+      <div className="p-6 md:p-8 max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-6">Profile</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Your Profile
-          </CardTitle>
-          <CardDescription>Manage your account information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
-              <AvatarFallback className="text-lg">{initials}</AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className="text-xl font-semibold">{user?.name || "User"}</h2>
-              <p className="text-muted-foreground">{user?.email}</p>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Your Profile
+            </CardTitle>
+            <CardDescription>Manage your account information</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+                <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-xl font-semibold">{user?.name || "User"}</h2>
+                <p className="text-muted-foreground">{user?.email}</p>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">Profile editing coming soon.</p>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="mt-6 space-y-4">
+              <p className="text-sm text-muted-foreground">Profile editing coming soon.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

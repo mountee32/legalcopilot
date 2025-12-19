@@ -180,14 +180,14 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-slate-900/95 border-slate-800/50 text-slate-100 max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-serif text-amber-50">Create New Event</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Create New Event</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title" className="text-slate-300">
+            <Label htmlFor="title" className="text-slate-700">
               Title <span className="text-red-400">*</span>
             </Label>
             <Input
@@ -195,21 +195,21 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Event title"
-              className="bg-slate-800/50 border-slate-700/50 text-slate-100"
+              className="bg-white border-slate-300"
               maxLength={200}
             />
             {errors.title && <p className="text-sm text-red-400">{errors.title}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="eventType" className="text-slate-300">
+            <Label htmlFor="eventType" className="text-slate-700">
               Event Type <span className="text-red-400">*</span>
             </Label>
             <select
               id="eventType"
               value={eventType}
               onChange={(e) => setEventType(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-md text-slate-100"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
             >
               <option value="hearing">Hearing</option>
               <option value="deadline">Deadline</option>
@@ -234,7 +234,7 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-slate-300">
+              <Label htmlFor="startDate" className="text-slate-700">
                 Start Date <span className="text-red-400">*</span>
               </Label>
               <Input
@@ -242,14 +242,14 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-slate-800/50 border-slate-700/50 text-slate-100"
+                className="bg-white border-slate-300"
               />
               {errors.startDate && <p className="text-sm text-red-400">{errors.startDate}</p>}
             </div>
 
             {!allDay && (
               <div className="space-y-2">
-                <Label htmlFor="startTime" className="text-slate-300">
+                <Label htmlFor="startTime" className="text-slate-700">
                   Start Time <span className="text-red-400">*</span>
                 </Label>
                 <Input
@@ -257,7 +257,7 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="bg-slate-800/50 border-slate-700/50 text-slate-100"
+                  className="bg-white border-slate-300"
                 />
                 {errors.startTime && <p className="text-sm text-red-400">{errors.startTime}</p>}
               </div>
@@ -266,7 +266,7 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="endDate" className="text-slate-300">
+              <Label htmlFor="endDate" className="text-slate-700">
                 End Date
               </Label>
               <Input
@@ -274,13 +274,13 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-slate-800/50 border-slate-700/50 text-slate-100"
+                className="bg-white border-slate-300"
               />
             </div>
 
             {!allDay && (
               <div className="space-y-2">
-                <Label htmlFor="endTime" className="text-slate-300">
+                <Label htmlFor="endTime" className="text-slate-700">
                   End Time
                 </Label>
                 <Input
@@ -288,21 +288,21 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="bg-slate-800/50 border-slate-700/50 text-slate-100"
+                  className="bg-white border-slate-300"
                 />
               </div>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="priority" className="text-slate-300">
+            <Label htmlFor="priority" className="text-slate-700">
               Priority
             </Label>
             <select
               id="priority"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-md text-slate-100"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -312,7 +312,7 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-slate-300">
+            <Label htmlFor="description" className="text-slate-700">
               Description
             </Label>
             <textarea
@@ -321,12 +321,12 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Event description"
               rows={3}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-md text-slate-100"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location" className="text-slate-300">
+            <Label htmlFor="location" className="text-slate-700">
               Location
             </Label>
             <Input
@@ -334,19 +334,19 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Event location"
-              className="bg-slate-800/50 border-slate-700/50 text-slate-100"
+              className="bg-white border-slate-300"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="matterId" className="text-slate-300">
+            <Label htmlFor="matterId" className="text-slate-700">
               Associated Matter
             </Label>
             <select
               id="matterId"
               value={matterId}
               onChange={(e) => setMatterId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-md text-slate-100"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
             >
               <option value="">None</option>
               {mattersData?.matters?.map((matter) => (
@@ -358,19 +358,10 @@ export function EventFormDialog({ open, onOpenChange }: EventFormDialogProps) {
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50 text-slate-300"
-            >
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={createEventMutation.isPending}
-              className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30"
-            >
+            <Button type="submit" disabled={createEventMutation.isPending}>
               {createEventMutation.isPending ? "Creating..." : "Create Event"}
             </Button>
           </DialogFooter>

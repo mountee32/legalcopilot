@@ -18,7 +18,7 @@ export const GET = withErrorHandler(
 
       const result = await withFirmDb(firmId, async (tx) => {
         // WIP breakdown by status
-        let wipWhere = [eq(timeEntries.firmId, firmId), eq(timeEntries.isBillable, true)];
+        const wipWhere = [eq(timeEntries.firmId, firmId), eq(timeEntries.isBillable, true)];
         if (query.from) {
           wipWhere.push(gte(timeEntries.workDate, query.from));
         }
@@ -53,7 +53,7 @@ export const GET = withErrorHandler(
         const ninetyDaysAgo = new Date(now);
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-        let debtWhere = [
+        const debtWhere = [
           eq(invoices.firmId, firmId),
           sql`${invoices.status} IN ('sent', 'viewed', 'partially_paid', 'overdue')`,
         ];
@@ -70,7 +70,7 @@ export const GET = withErrorHandler(
           .where(and(...debtWhere));
 
         // Revenue breakdown
-        let revenueWhere = [eq(invoices.firmId, firmId)];
+        const revenueWhere = [eq(invoices.firmId, firmId)];
         if (query.from) {
           revenueWhere.push(gte(invoices.invoiceDate, query.from));
         }

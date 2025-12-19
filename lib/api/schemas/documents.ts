@@ -255,6 +255,7 @@ export const UpdateDocumentMetadataSchema = z
   .object({
     title: z.string().min(1).max(200).optional(),
     type: DocumentTypeSchema.optional(),
+    status: DocumentStatusSchema.optional(),
     matterId: UuidSchema.nullable().optional(),
     documentDate: z.union([DateSchema, DateTimeSchema]).nullable().optional(),
     recipient: z.string().nullable().optional(),

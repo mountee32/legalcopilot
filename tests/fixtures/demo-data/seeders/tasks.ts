@@ -18,20 +18,25 @@ export async function seedTasks(ctx: SeederContext) {
   const nextMonth = new Date(now.getTime() + 2592000000).toISOString();
 
   const tasksData = [
-    // Conveyancing tasks
+    // Conveyancing tasks - linked to workflow stages
     {
       id: DEMO_IDS.tasks.task1,
       firmId: DEMO_IDS.firm,
       matterId: DEMO_IDS.matters.conveyancing,
       title: "Chase seller's solicitors for replies to enquiries",
       description: "Follow up on outstanding responses to property enquiries sent last week",
-      status: "in_progress" as const,
+      status: "completed" as const,
       priority: "high" as const,
       assigneeId: DEMO_IDS.users.associate,
       createdById: DEMO_IDS.users.associate,
       dueDate: new Date(today),
-      createdAt: now,
-      updatedAt: now,
+      completedAt: new Date(now.getTime() - 6 * 86400000),
+      createdAt: new Date(now.getTime() - 10 * 86400000),
+      updatedAt: new Date(now.getTime() - 6 * 86400000),
+      // Link to workflow stage
+      matterStageId: DEMO_IDS.matterStages.ms1_3, // Investigation stage
+      source: "workflow" as const,
+      isMandatory: true,
     },
     {
       id: DEMO_IDS.tasks.task2,
@@ -39,13 +44,19 @@ export async function seedTasks(ctx: SeederContext) {
       matterId: DEMO_IDS.matters.conveyancing,
       title: "Order local searches",
       description: "Submit search application to local authority",
-      status: "pending" as const,
+      status: "completed" as const,
       priority: "high" as const,
       assigneeId: DEMO_IDS.users.paralegal1,
       createdById: DEMO_IDS.users.associate,
       dueDate: new Date(tomorrow),
-      createdAt: now,
-      updatedAt: now,
+      completedAt: new Date(now.getTime() - 8 * 86400000),
+      createdAt: new Date(now.getTime() - 10 * 86400000),
+      updatedAt: new Date(now.getTime() - 8 * 86400000),
+      // Link to workflow stage
+      matterStageId: DEMO_IDS.matterStages.ms1_3, // Investigation stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true,
     },
     {
       id: DEMO_IDS.tasks.task3,
@@ -53,13 +64,19 @@ export async function seedTasks(ctx: SeederContext) {
       matterId: DEMO_IDS.matters.conveyancing,
       title: "Draft contract report for client",
       description: "Prepare detailed report on contract terms and searches",
-      status: "pending" as const,
+      status: "completed" as const,
       priority: "medium" as const,
       assigneeId: DEMO_IDS.users.associate,
       createdById: DEMO_IDS.users.associate,
       dueDate: new Date(nextWeek),
-      createdAt: now,
-      updatedAt: now,
+      completedAt: new Date(now.getTime() - 5 * 86400000),
+      createdAt: new Date(now.getTime() - 10 * 86400000),
+      updatedAt: new Date(now.getTime() - 5 * 86400000),
+      // Link to workflow stage
+      matterStageId: DEMO_IDS.matterStages.ms1_3, // Investigation stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true,
     },
     // Litigation tasks
     {
@@ -455,6 +472,7 @@ export async function seedTasks(ctx: SeederContext) {
     // ==========================================================
     // MAT-DEMO-001 Showcase Tasks - Full Conveyancing Workflow
     // Purchase of 15 Willow Lane, Richmond for Margaret Thompson
+    // Enhanced Task Model fields demonstrated
     // ==========================================================
     {
       id: DEMO_IDS.tasks.task31,
@@ -471,6 +489,12 @@ export async function seedTasks(ctx: SeederContext) {
       completedAt: new Date(yesterday),
       createdAt: new Date(now.getTime() - 5 * 86400000),
       updatedAt: new Date(yesterday),
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_4, // Mortgage stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // Mortgage offer document required
+      requiresApproval: false,
     },
     {
       id: DEMO_IDS.tasks.task32,
@@ -487,6 +511,16 @@ export async function seedTasks(ctx: SeederContext) {
       completedAt: now,
       createdAt: new Date(now.getTime() - 4 * 86400000),
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_4, // Mortgage stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // Search results and title docs required
+      requiresApproval: true,
+      requiredApproverRole: "partner",
+      approvalStatus: "approved",
+      approvedById: DEMO_IDS.users.partner,
+      approvedAt: now,
     },
     {
       id: DEMO_IDS.tasks.task33,
@@ -502,6 +536,12 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(today),
       createdAt: new Date(yesterday),
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_5, // Exchange stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // Source of funds evidence required
+      requiresApproval: false,
     },
     {
       id: DEMO_IDS.tasks.task34,
@@ -517,6 +557,14 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(tomorrow),
       createdAt: new Date(yesterday),
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_5, // Exchange stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // Signed TR1 required
+      requiresApproval: true,
+      requiredApproverRole: "partner",
+      approvalStatus: "pending", // Awaiting partner review
     },
     {
       id: DEMO_IDS.tasks.task35,
@@ -532,6 +580,12 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(tomorrow),
       createdAt: now,
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_6, // Completion stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: false,
+      requiresApproval: false,
     },
     {
       id: DEMO_IDS.tasks.task36,
@@ -547,6 +601,12 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(tomorrow),
       createdAt: now,
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_5, // Exchange stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // OS1 search result required
+      requiresApproval: false,
     },
     {
       id: DEMO_IDS.tasks.task37,
@@ -562,6 +622,13 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(nextWeek),
       createdAt: now,
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_5, // Exchange stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // Signed contracts required
+      requiresApproval: true,
+      requiredApproverRole: "partner",
     },
     {
       id: DEMO_IDS.tasks.task38,
@@ -577,6 +644,12 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(nextWeek),
       createdAt: now,
       updatedAt: now,
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_7, // Post-Completion stage
+      source: "workflow" as const,
+      isMandatory: true,
+      requiresEvidence: true, // SDLT5 certificate required
+      requiresApproval: false,
     },
     {
       id: DEMO_IDS.tasks.task39,
@@ -592,6 +665,12 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(today),
       createdAt: new Date(now.getTime() - 60 * 60000), // 1 hour ago
       updatedAt: now,
+      // Enhanced Task Model fields - communication tasks are typically optional
+      // No stage - this is a manual task not part of workflow
+      source: "manual" as const,
+      isMandatory: false,
+      requiresEvidence: false,
+      requiresApproval: false,
     },
     {
       id: DEMO_IDS.tasks.task40,
@@ -607,6 +686,60 @@ export async function seedTasks(ctx: SeederContext) {
       dueDate: new Date(tomorrow),
       createdAt: new Date(now.getTime() - 2 * 60 * 60000), // 2 hours ago
       updatedAt: now,
+      // Enhanced Task Model fields - additional enquiry follow-up
+      // No stage - this is a manual follow-up task
+      source: "manual" as const,
+      isMandatory: false, // Optional follow-up task
+      requiresEvidence: false,
+      requiresApproval: false,
+    },
+    // ==========================================================
+    // Additional showcase tasks demonstrating skipped/not_applicable
+    // ==========================================================
+    // Task 41: Skipped task - building survey declined
+    // Exception record in task-exceptions.ts provides the reason
+    {
+      id: DEMO_IDS.tasks.task41,
+      firmId: DEMO_IDS.firm,
+      matterId: DEMO_IDS.matters.conveyancing,
+      title: "Arrange building survey",
+      description:
+        "Optional full building survey. Client advised but declined - proceeding with mortgage valuation only.",
+      status: "skipped" as const,
+      priority: "low" as const,
+      assigneeId: null,
+      createdById: DEMO_IDS.users.associate,
+      dueDate: null,
+      createdAt: new Date(now.getTime() - 10 * 86400000),
+      updatedAt: new Date(now.getTime() - 8 * 86400000),
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_3, // Investigation stage (skipped)
+      source: "workflow" as const,
+      isMandatory: false,
+      requiresEvidence: false,
+      requiresApproval: false,
+    },
+    // Task 42: Not applicable task - Help to Buy ISA not relevant
+    // Exception record in task-exceptions.ts provides the reason
+    {
+      id: DEMO_IDS.tasks.task42,
+      firmId: DEMO_IDS.firm,
+      matterId: DEMO_IDS.matters.conveyancing,
+      title: "Review Help to Buy ISA",
+      description: "Check client's Help to Buy ISA bonus eligibility and transfer requirements.",
+      status: "not_applicable" as const,
+      priority: "low" as const,
+      assigneeId: null,
+      createdById: DEMO_IDS.users.associate,
+      dueDate: null,
+      createdAt: new Date(now.getTime() - 10 * 86400000),
+      updatedAt: new Date(now.getTime() - 9 * 86400000),
+      // Enhanced Task Model fields
+      matterStageId: DEMO_IDS.matterStages.ms1_4, // Mortgage stage (N/A - client not using Help to Buy)
+      source: "workflow" as const,
+      isMandatory: false,
+      requiresEvidence: false,
+      requiresApproval: false,
     },
   ];
 

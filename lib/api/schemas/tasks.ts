@@ -11,8 +11,16 @@ export const TaskPrioritySchema = z
   .openapi("TaskPriority");
 
 export const TaskStatusSchema = z
-  .enum(["pending", "in_progress", "completed", "cancelled"])
+  .enum(["pending", "in_progress", "completed", "cancelled", "skipped", "not_applicable"])
   .openapi("TaskStatus");
+
+export const TaskSourceSchema = z
+  .enum(["workflow", "workflow_change", "manual", "ai"])
+  .openapi("TaskSource");
+
+export const ApprovalStatusSchema = z
+  .enum(["pending", "approved", "rejected"])
+  .openapi("ApprovalStatus");
 
 export const TaskAiSourceSchema = z
   .enum(["email", "document", "matter", "other"])
@@ -86,3 +94,76 @@ export const GenerateTasksSchema = z
     goal: z.string().max(2000).optional(),
   })
   .openapi("GenerateTasksRequest");
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Task Action Schemas (Phase 3: Task Status Extensions)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Schema for skipping a task.
+ * Requires a reason for audit trail.
+ */
+export const SkipTaskSchema = z
+  .object({
+    reason: z
+      .string()
+      .min(10, "Reason must be at least 10 characters")
+      .max(2000, "Reason must be at most 2000 characters"),
+  })
+  .openapi("SkipTaskRequest");
+
+/**
+ * Schema for marking a task as not applicable.
+ * Requires a reason for audit trail.
+ */
+export const MarkNotApplicableSchema = z
+  .object({
+    reason: z
+      .string()
+      .min(10, "Reason must be at least 10 characters")
+      .max(2000, "Reason must be at most 2000 characters"),
+  })
+  .openapi("MarkNotApplicableRequest");
+
+/**
+ * Schema for requesting approval on a task.
+ * Optional notes can be included for the approver.
+ */
+export const RequestApprovalSchema = z
+  .object({
+    notes: z.string().max(2000).optional(),
+  })
+  .openapi("RequestApprovalRequest");
+
+/**
+ * Schema for approving a task.
+ * Optional notes can be included.
+ */
+export const ApproveTaskSchema = z
+  .object({
+    notes: z.string().max(2000).optional(),
+  })
+  .openapi("ApproveTaskRequest");
+
+/**
+ * Schema for rejecting a task approval.
+ * Requires a reason explaining why approval was rejected.
+ */
+export const RejectTaskSchema = z
+  .object({
+    reason: z
+      .string()
+      .min(10, "Reason must be at least 10 characters")
+      .max(2000, "Reason must be at most 2000 characters"),
+  })
+  .openapi("RejectTaskRequest");
+
+/**
+ * Schema for completing a task.
+ * Optional notes can be included.
+ */
+export const CompleteTaskSchema = z
+  .object({
+    notes: z.string().max(2000).optional(),
+  })
+  .openapi("CompleteTaskRequest");

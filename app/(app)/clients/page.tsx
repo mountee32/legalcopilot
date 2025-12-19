@@ -122,65 +122,69 @@ export default function ClientsPage() {
   });
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Clients</h1>
-            <p className="text-muted-foreground mt-1">Manage your client directory</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto p-6 md:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">Clients</h1>
+              <p className="text-slate-600 mt-1">Manage your client directory</p>
+            </div>
+            <Button onClick={() => router.push("/clients/new")}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Client
+            </Button>
           </div>
-          <Button onClick={() => router.push("/clients/new")}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Client
-          </Button>
-        </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, or reference..."
-              value={search}
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search by name, email, or reference..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-9"
+              />
+            </div>
+            <select
+              value={typeFilter}
               onChange={(e) => {
-                setSearch(e.target.value);
+                setTypeFilter(e.target.value);
                 setPage(1);
               }}
-              className="pl-9"
-            />
+              className="px-3 py-2 border border-slate-300 rounded-md bg-white text-sm"
+            >
+              <option value="">All Types</option>
+              <option value="individual">Individual</option>
+              <option value="company">Company</option>
+              <option value="trust">Trust</option>
+              <option value="estate">Estate</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 border border-slate-300 rounded-md bg-white text-sm"
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="prospect">Prospect</option>
+              <option value="dormant">Dormant</option>
+              <option value="archived">Archived</option>
+            </select>
           </div>
-          <select
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 border rounded-md bg-background"
-          >
-            <option value="">All Types</option>
-            <option value="individual">Individual</option>
-            <option value="company">Company</option>
-            <option value="trust">Trust</option>
-            <option value="estate">Estate</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 border rounded-md bg-background"
-          >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="prospect">Prospect</option>
-            <option value="dormant">Dormant</option>
-            <option value="archived">Archived</option>
-          </select>
         </div>
+      </div>
 
-        {/* Content */}
+      {/* Content */}
+      <div className="max-w-6xl mx-auto p-6 md:p-8">
         {isLoading ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (

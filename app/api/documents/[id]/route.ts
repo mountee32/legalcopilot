@@ -113,6 +113,7 @@ export const PATCH = withErrorHandler(
 
         if (data.title !== undefined) updateData.title = data.title;
         if (data.type !== undefined) updateData.type = data.type;
+        if (data.status !== undefined) updateData.status = data.status;
         if (data.matterId !== undefined) updateData.matterId = data.matterId;
         if (data.documentDate !== undefined) {
           updateData.documentDate = data.documentDate ? new Date(data.documentDate) : null;

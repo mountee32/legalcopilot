@@ -16,6 +16,8 @@ import {
   Settings,
   HelpCircle,
   Scale,
+  GitBranch,
+  Shield,
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { UserMenu } from "./user-menu";
@@ -35,6 +37,8 @@ const mainNavItems = [
 const secondaryNavItems = [
   { href: "/billing", icon: Clock, label: "Time & Billing" },
   { href: "/reports", icon: BarChart3, label: "Reports" },
+  { href: "/compliance", icon: Shield, label: "Compliance" },
+  { href: "/settings/workflows", icon: GitBranch, label: "Workflows" },
 ];
 
 const tertiaryNavItems = [

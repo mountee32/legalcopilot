@@ -187,6 +187,8 @@ export const DEMO_IDS = {
     task38: "de000000-0000-4000-a005-000000000038",
     task39: "de000000-0000-4000-a005-000000000039",
     task40: "de000000-0000-4000-a005-000000000040",
+    task41: "de000000-0000-4000-a005-000000000041", // Skipped task
+    task42: "de000000-0000-4000-a005-000000000042", // Not applicable task
   },
 
   invoices: {
@@ -491,5 +493,113 @@ export const DEMO_IDS = {
     pi6: "de000000-0000-4000-a016-000000000061",
     pi7: "de000000-0000-4000-a016-000000000062",
     pi8: "de000000-0000-4000-a016-000000000063",
+  },
+
+  // Workflow Templates (a018 = templates, a019 = stages, a020 = task templates)
+  workflowTemplates: {
+    residentialPurchase: "de000000-0000-4000-a018-000000000001",
+    residentialSale: "de000000-0000-4000-a018-000000000002",
+    debtRecovery: "de000000-0000-4000-a018-000000000003",
+  },
+
+  workflowStages: {
+    // Residential Purchase stages
+    rpOnboarding: "de000000-0000-4000-a019-000000000001",
+    rpAML: "de000000-0000-4000-a019-000000000002",
+    rpInvestigation: "de000000-0000-4000-a019-000000000003",
+    rpMortgage: "de000000-0000-4000-a019-000000000004",
+    rpExchange: "de000000-0000-4000-a019-000000000005",
+    rpCompletion: "de000000-0000-4000-a019-000000000006",
+    rpPostCompletion: "de000000-0000-4000-a019-000000000007",
+    // Residential Sale stages
+    rsOnboarding: "de000000-0000-4000-a019-000000000010",
+    rsAML: "de000000-0000-4000-a019-000000000011",
+    rsContractPrep: "de000000-0000-4000-a019-000000000012",
+    rsExchange: "de000000-0000-4000-a019-000000000013",
+    rsCompletion: "de000000-0000-4000-a019-000000000014",
+    // Debt Recovery stages
+    drOnboarding: "de000000-0000-4000-a019-000000000020",
+    drPreAction: "de000000-0000-4000-a019-000000000021",
+    drProceedings: "de000000-0000-4000-a019-000000000022",
+    drEnforcement: "de000000-0000-4000-a019-000000000023",
+  },
+
+  // Task Notes (a021 = notes)
+  taskNotes: {
+    // MAT-DEMO-001 task notes
+    note1: "de000000-0000-4000-a021-000000000001",
+    note2: "de000000-0000-4000-a021-000000000002",
+    note3: "de000000-0000-4000-a021-000000000003",
+    note4: "de000000-0000-4000-a021-000000000004",
+    note5: "de000000-0000-4000-a021-000000000005",
+    note6: "de000000-0000-4000-a021-000000000006",
+    note7: "de000000-0000-4000-a021-000000000007",
+    note8: "de000000-0000-4000-a021-000000000008",
+  },
+
+  // Evidence Items (a022 = evidence)
+  evidenceItems: {
+    // MAT-DEMO-001 evidence
+    ev1: "de000000-0000-4000-a022-000000000001",
+    ev2: "de000000-0000-4000-a022-000000000002",
+    ev3: "de000000-0000-4000-a022-000000000003",
+    ev4: "de000000-0000-4000-a022-000000000004",
+    ev5: "de000000-0000-4000-a022-000000000005",
+    ev6: "de000000-0000-4000-a022-000000000006",
+  },
+
+  // Task Exceptions (a023 = exceptions)
+  taskExceptions: {
+    // MAT-DEMO-001 exceptions
+    exc1: "de000000-0000-4000-a023-000000000001", // Task 41 skipped
+    exc2: "de000000-0000-4000-a023-000000000002", // Task 42 not applicable
+  },
+
+  // Matter Workflows (a024 = matter workflows)
+  matterWorkflows: {
+    // Workflow activated on MAT-DEMO-001 (conveyancing purchase)
+    mw1: "de000000-0000-4000-a024-000000000001",
+  },
+
+  // Matter Stages (a025 = matter stages)
+  matterStages: {
+    // MAT-DEMO-001 stages (Residential Purchase workflow)
+    ms1_1: "de000000-0000-4000-a025-000000000001", // Onboarding
+    ms1_2: "de000000-0000-4000-a025-000000000002", // AML
+    ms1_3: "de000000-0000-4000-a025-000000000003", // Investigation
+    ms1_4: "de000000-0000-4000-a025-000000000004", // Mortgage (skipped - no mortgage)
+    ms1_5: "de000000-0000-4000-a025-000000000005", // Exchange
+    ms1_6: "de000000-0000-4000-a025-000000000006", // Completion
+    ms1_7: "de000000-0000-4000-a025-000000000007", // Post-Completion
+  },
+
+  workflowTaskTemplates: {
+    // Residential Purchase - Stage 1 (Onboarding)
+    rp1_1: "de000000-0000-4000-a020-000000000001",
+    rp1_2: "de000000-0000-4000-a020-000000000002",
+    rp1_3: "de000000-0000-4000-a020-000000000003",
+    // Residential Purchase - Stage 2 (AML)
+    rp2_1: "de000000-0000-4000-a020-000000000010",
+    rp2_2: "de000000-0000-4000-a020-000000000011",
+    rp2_3: "de000000-0000-4000-a020-000000000012",
+    // Residential Purchase - Stage 3 (Investigation)
+    rp3_1: "de000000-0000-4000-a020-000000000020",
+    rp3_2: "de000000-0000-4000-a020-000000000021",
+    rp3_3: "de000000-0000-4000-a020-000000000022",
+    rp3_4: "de000000-0000-4000-a020-000000000023",
+    // Residential Purchase - Stage 4 (Mortgage)
+    rp4_1: "de000000-0000-4000-a020-000000000030",
+    rp4_2: "de000000-0000-4000-a020-000000000031",
+    // Residential Purchase - Stage 5 (Exchange)
+    rp5_1: "de000000-0000-4000-a020-000000000040",
+    rp5_2: "de000000-0000-4000-a020-000000000041",
+    rp5_3: "de000000-0000-4000-a020-000000000042",
+    // Residential Purchase - Stage 6 (Completion)
+    rp6_1: "de000000-0000-4000-a020-000000000050",
+    rp6_2: "de000000-0000-4000-a020-000000000051",
+    rp6_3: "de000000-0000-4000-a020-000000000052",
+    // Residential Purchase - Stage 7 (Post-Completion)
+    rp7_1: "de000000-0000-4000-a020-000000000060",
+    rp7_2: "de000000-0000-4000-a020-000000000061",
   },
 };

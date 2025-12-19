@@ -27,6 +27,9 @@ import { seedTaskTemplates } from "./seeders/task-templates";
 import { seedClients } from "./seeders/clients";
 import { seedMatters } from "./seeders/matters";
 import { seedTasks } from "./seeders/tasks";
+import { seedTaskNotes } from "./seeders/task-notes";
+import { seedEvidenceItems } from "./seeders/evidence-items";
+import { seedTaskExceptions } from "./seeders/task-exceptions";
 import { seedTimeEntries } from "./seeders/time-entries";
 import { seedInvoices } from "./seeders/invoices";
 import { seedDocuments } from "./seeders/documents";
@@ -36,6 +39,7 @@ import { seedCompliance } from "./seeders/compliance";
 import { seedTimelineEvents } from "./seeders/timeline-events";
 import { seedEmails } from "./seeders/emails";
 import { seedApprovals } from "./seeders/approvals";
+import { seedWorkflows, seedMatterWorkflows } from "./seeders/workflows";
 
 /**
  * Seeds all demo data in the correct order.
@@ -48,13 +52,20 @@ export async function seedDemoData(): Promise<SeedResult> {
   // 1. Core entities (must come first)
   await seedFirm(ctx);
   await seedTaskTemplates(ctx);
+  await seedWorkflows(ctx); // System-level workflow templates
   await seedClients(ctx);
   await seedMatters(ctx);
 
-  // 2. Matter-related data
+  // 2. Activate workflows on matters (must come after matters, before tasks)
+  await seedMatterWorkflows(ctx);
+
+  // 3. Matter-related data
   await seedTasks(ctx);
+  await seedTaskNotes(ctx);
+  await seedTaskExceptions(ctx); // After tasks (exceptions reference tasks)
   await seedTimeEntries(ctx);
   await seedDocuments(ctx);
+  await seedEvidenceItems(ctx); // After documents (evidence can reference documents)
   await seedTimelineEvents(ctx);
 
   // 3. Billing
@@ -76,7 +87,7 @@ export async function seedDemoData(): Promise<SeedResult> {
   console.log(`  - Clients: ${ctx.result.clients.length}`);
   console.log(`  - Matters: ${ctx.result.matters.length}`);
   console.log(`  - Time entries: ${ctx.result.timeEntries.length}`);
-  console.log(`  - Tasks: ${ctx.result.tasks.length}`);
+  console.log(`  - Tasks: ${ctx.result.tasks.length} (with notes & evidence)`);
   console.log("");
 
   return ctx.result;

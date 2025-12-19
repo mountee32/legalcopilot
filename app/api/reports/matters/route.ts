@@ -18,7 +18,7 @@ export const GET = withErrorHandler(
 
       const result = await withFirmDb(firmId, async (tx) => {
         // Build WHERE clause for date range
-        let whereClauses = [eq(matters.firmId, firmId)];
+        const whereClauses = [eq(matters.firmId, firmId)];
         if (query.from) {
           whereClauses.push(gte(matters.createdAt, new Date(query.from).toISOString()));
         }

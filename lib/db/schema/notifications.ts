@@ -19,18 +19,38 @@ import {
 import { firms } from "./firms";
 import { users } from "./users";
 
+/**
+ * Notification types.
+ * Extended to include workflow compliance notifications.
+ */
 export const notificationTypeEnum = pgEnum("notification_type", [
+  // Task notifications
   "task_assigned",
   "task_due",
   "task_overdue",
+
+  // Approval notifications
   "approval_required",
   "approval_decided",
+
+  // Deadline notifications
   "deadline_approaching",
   "deadline_passed",
+
+  // Communication notifications
   "email_received",
   "document_uploaded",
+
+  // Billing notifications
   "invoice_paid",
   "payment_received",
+
+  // Workflow compliance notifications (new - Enhanced Task Model)
+  "stage_gate_blocked", // Cannot proceed - hard gate blocking progress
+  "evidence_required", // Task needs evidence before completion
+  "task_approval_needed", // Task requires approval before completion
+
+  // System notifications
   "system",
 ]);
 

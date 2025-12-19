@@ -24,7 +24,7 @@ export const GET = withErrorHandler(
           .where(and(eq(matters.firmId, firmId), eq(matters.status, "active")));
 
         // Revenue calculation (paid and partially paid invoices)
-        let revenueWhere = [
+        const revenueWhere = [
           eq(invoices.firmId, firmId),
           sql`${invoices.status} IN ('paid', 'partially_paid')`,
         ];
@@ -43,7 +43,7 @@ export const GET = withErrorHandler(
           .where(and(...revenueWhere));
 
         // WIP calculation (submitted and approved time entries not yet billed)
-        let wipWhere = [
+        const wipWhere = [
           eq(timeEntries.firmId, firmId),
           sql`${timeEntries.status} IN ('submitted', 'approved')`,
           eq(timeEntries.isBillable, true),

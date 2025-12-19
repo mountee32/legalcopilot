@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Plus, Trash2, User, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +27,10 @@ export interface ExtractedDate {
 export interface DocumentMetadata {
   title: string;
   type: string;
+  status: string;
   documentDate: string;
+  recipient: string;
+  sender: string;
   aiSummary: string;
   extractedParties: ExtractedParty[];
   extractedDates: ExtractedDate[];
@@ -53,6 +55,16 @@ const DOCUMENT_TYPES = [
   { value: "financial", label: "Financial" },
   { value: "other", label: "Other" },
 ];
+
+const DOCUMENT_STATUSES = [
+  { value: "draft", label: "Draft" },
+  { value: "pending_review", label: "Pending Review" },
+  { value: "approved", label: "Approved" },
+  { value: "sent", label: "Sent" },
+  { value: "archived", label: "Archived" },
+];
+
+const CORRESPONDENCE_TYPES = ["letter_in", "letter_out", "email_in", "email_out"];
 
 /**
  * Edit document metadata including AI-extracted parties and dates
@@ -130,15 +142,56 @@ export function DocumentMetadataEditor({ data, onChange, className }: DocumentMe
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="documentDate">Document Date</Label>
-            <Input
-              id="documentDate"
-              type="date"
-              value={data.documentDate}
-              onChange={(e) => handleChange("documentDate", e.target.value)}
-            />
+            <Label htmlFor="status">Status</Label>
+            <Select value={data.status} onValueChange={(value) => handleChange("status", value)}>
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {DOCUMENT_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="documentDate">Document Date</Label>
+          <Input
+            id="documentDate"
+            type="date"
+            value={data.documentDate}
+            onChange={(e) => handleChange("documentDate", e.target.value)}
+          />
+        </div>
+
+        {/* Recipient/Sender for correspondence types */}
+        {CORRESPONDENCE_TYPES.includes(data.type) && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="sender">Sender</Label>
+              <Input
+                id="sender"
+                value={data.sender}
+                onChange={(e) => handleChange("sender", e.target.value)}
+                placeholder="Enter sender name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recipient">Recipient</Label>
+              <Input
+                id="recipient"
+                value={data.recipient}
+                onChange={(e) => handleChange("recipient", e.target.value)}
+                placeholder="Enter recipient name"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="summary">Summary</Label>

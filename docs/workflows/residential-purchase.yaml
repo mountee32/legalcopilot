@@ -402,6 +402,9 @@ stages:
     gate_type: hard
     completion_criteria: all_mandatory_tasks
     client_visible: false
+    # PEER REVIEW FIX: Added applicability conditions - stage skipped for cash purchases
+    applicability_conditions:
+      has_mortgage: true
 
     tasks:
       - title: "Review mortgage offer"
@@ -874,6 +877,9 @@ stages:
 # - 8 stages
 # - 47 tasks total
 # - 45 mandatory tasks
-# - 4 hard gates (Onboarding, AML, Mortgage, Contract/Exchange, Completion)
+# - 5 hard gates (Onboarding, AML, Mortgage*, Contract/Exchange, Completion)
+#   *Mortgage stage is conditional (has_mortgage: true) - skipped for cash purchases
 # - 2 soft gates (Investigation, Post-Completion)
 # - 1 no gate (Closure)
+#
+# PEER REVIEW FIX: Corrected hard gate count from 4 to 5

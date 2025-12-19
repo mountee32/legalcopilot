@@ -1,6 +1,60 @@
 # FEAT: Enhanced Task Model - Phase 1 MVP
 
-## Status: Design Complete (Review Incorporated)
+## Status: Implementation Complete - Pending Tests
+
+### Implementation Summary (Completed Dec 2024)
+
+All 9 phases of the implementation plan have been delivered:
+
+| Phase                             | Description                                                                            | Files Created/Modified       |
+| --------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------- |
+| **1. Foundation Schema**          | New tables for exceptions, task-notes, evidence; extended tasks/timeline/notifications | 7 schema files               |
+| **2. Task Notes & Evidence APIs** | CRUD endpoints for notes and evidence with verification                                | 7 API routes                 |
+| **3. Task Status Extensions**     | Skip, not-applicable, approval, completion predicates                                  | 6 API routes + 3 lib files   |
+| **4. Workflow Templates Schema**  | 5 workflow tables + 3 enums                                                            | 2 schema files               |
+| **5. Workflow Engine**            | Activation, completion, gating, stage progression, due dates                           | 6 lib files                  |
+| **6. Workflow API**               | Template listing, matter workflow activation, stage management                         | 6 API routes                 |
+| **7. Bulk Operations**            | Bulk complete, assign, due-date endpoints                                              | 4 files                      |
+| **8. Workflow Viewer UI**         | Settings pages for viewing workflow templates                                          | 5 UI components + nav update |
+| **9. Demo Data**                  | Workflow seeders with 3 templates, 7 stages, 20 task templates                         | 3 files                      |
+
+**Key Files Delivered:**
+
+Schema:
+
+- `lib/db/schema/workflows.ts` - workflowTemplates, workflowStages, workflowTaskTemplates, matterWorkflows, matterStages
+- `lib/db/schema/evidence.ts` - evidenceItems with verification
+- `lib/db/schema/task-notes.ts` - taskNotes with versioning, taskNoteAttachments
+- `lib/db/schema/exceptions.ts` - taskExceptions for audit trail
+
+Workflow Engine:
+
+- `lib/workflows/activate.ts` - activateWorkflow, evaluateApplicabilityConditions
+- `lib/workflows/completion.ts` - checkStageCompletion, calculateWorkflowProgress
+- `lib/workflows/gating.ts` - checkGate, overrideGate
+- `lib/workflows/stage-progression.ts` - handleTaskStatusChange, advanceToNextStage
+- `lib/workflows/due-dates.ts` - calculateDueDate
+
+Task Helpers:
+
+- `lib/tasks/completion.ts` - checkTaskCompletion, canTransitionToCompleted
+- `lib/tasks/exceptions.ts` - logException, logTaskSkipped, logTaskNotApplicable
+
+UI:
+
+- `app/(app)/settings/workflows/page.tsx` - Workflow list with search/filter
+- `app/(app)/settings/workflows/[id]/page.tsx` - Workflow detail with stages
+- `components/workflows/workflow-card.tsx`, `workflow-stage-view.tsx`, `workflow-task-row.tsx`
+
+**Remaining Work:**
+
+- [ ] Unit tests (~355 planned - see Test Strategy below)
+- [ ] Integration tests
+- [ ] E2E browser tests for workflow UI
+
+---
+
+## Status: Design Complete (Review + Peer Review Incorporated)
 
 ## Review Refinements (Critical)
 
@@ -68,6 +122,48 @@ Stage `startedAt` should be set automatically when:
 | ------------------------------ | -------------------------------------------------------------------------------------- |
 | `completionCriteria: "custom"` | Accept value, treat same as `"all_mandatory_tasks"`. Log TODO for Phase 2.             |
 | Bulk operations dry-run        | Optional enhancement: `?dryRun=true` returns eligible/blocked tasks without executing. |
+
+---
+
+## Peer Review Fixes
+
+The following issues were identified during dev peer review and have been addressed:
+
+| Priority   | Issue                                                                                       | Fix                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **High**   | `workflowTemplates.subType` was single string but reference workflow has multiple sub-types | Changed to `subTypes: jsonb` (string array, nullable for "all sub-types")                              |
+| **High**   | Stage 4 (Mortgage) is conditional but schema had no per-stage conditions                    | Added `applicabilityConditions: jsonb` to `workflowStages` table                                       |
+| **Medium** | Unclear how skipped/not_applicable tasks affect `all_mandatory_tasks` completion            | Clarified: tasks with status `skipped` or `not_applicable` (with logged exception) count as "resolved" |
+| **Medium** | `subType` was required but catch-all workflows have no sub-type                             | Made `subTypes` nullable (null = applies to all sub-types in practice area)                            |
+| **Medium** | Task instances don't persist required evidence types (template edits could change history)  | Added `requiredEvidenceTypes: jsonb` to task instances (denormalized for immutability)                 |
+| **Low**    | YAML summary miscounted hard gates (said 4, actually 5)                                     | Corrected summary and noted Mortgage stage is conditional                                              |
+
+### Round 2 Peer Review Fixes
+
+| Priority   | Issue                                                                               | Fix                                                                                                       |
+| ---------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **High**   | Applicability condition naming inconsistent (`hasMortgage` vs `has_mortgage`)       | Standardized to **snake_case** (`has_mortgage`) to match YAML/database conventions                        |
+| **Medium** | Stage progression doesn't define how `skipped` affects `startedAt`/`currentStageId` | Added explicit behavior: skipped stages treated as "completed" for progression                            |
+| **Low**    | Stage skips not represented in timeline or exception logs                           | Added `stage_skipped` timeline event; stage skips also logged to `taskExceptions` with objectType="stage" |
+
+### Stage Skip Behavior (Clarification)
+
+When a stage's `applicabilityConditions` evaluate to false:
+
+1. **Stage status** is set to `skipped` immediately on workflow activation
+2. **skippedReason** is set to explain why (e.g., "Applicability condition not met: has_mortgage = false")
+3. **Tasks are NOT created** for skipped stages (no point creating tasks that don't apply)
+4. **Stage is treated as "completed"** for gating purposes:
+   - Next stage can proceed (hard gate of previous stage is satisfied)
+   - `currentStageId` advances past skipped stages
+   - `startedAt` is NOT set (stage never started)
+5. **Timeline event** `stage_skipped` is logged with reason
+6. **Exception log** entry is created with objectType="stage", exceptionType="not_applicable"
+
+Additional schema changes for peer review fixes:
+
+- `matterStages.status` now includes `"skipped"` for conditional stages that don't apply
+- `matterStages.skippedReason` added for audit trail when stage is skipped
 
 ---
 
@@ -165,8 +261,12 @@ export const workflowTemplates = pgTable("workflow_templates", {
   /** Practice area this applies to */
   practiceArea: practiceAreaEnum("practice_area").notNull(),
 
-  /** Sub-type within practice area */
-  subType: text("sub_type").notNull(),
+  /**
+   * Sub-types this workflow applies to (null = all sub-types in practice area).
+   * Array of sub-type strings, e.g. ["freehold_purchase", "leasehold_purchase"]
+   * PEER REVIEW FIX: Changed from single string to jsonb array to support multiple sub-types
+   */
+  subTypes: jsonb("sub_types"), // string[] | null
 
   /** Conditions for auto-selection (JSON) */
   selectionConditions: jsonb("selection_conditions"),
@@ -203,8 +303,27 @@ export const workflowStages = pgTable("workflow_stages", {
   /** Gate type for this stage */
   gateType: workflowGateTypeEnum("gate_type").notNull().default("none"),
 
-  /** Completion criteria: "all_mandatory_tasks" | "all_tasks" | "custom" */
+  /**
+   * Completion criteria for this stage.
+   * - "all_mandatory_tasks": All mandatory tasks must be completed, skipped (with exception), or not_applicable (with exception)
+   * - "all_tasks": All tasks must be resolved (completed/skipped/not_applicable)
+   * - "custom": Custom logic (Phase 2 - treated as all_mandatory_tasks for now)
+   *
+   * PEER REVIEW FIX: Clarified that skipped/not_applicable with logged exception counts as "resolved"
+   */
   completionCriteria: text("completion_criteria").notNull().default("all_mandatory_tasks"),
+
+  /**
+   * Conditions under which this stage applies (null = always applies).
+   * Stage is skipped entirely if conditions evaluate to false.
+   * Example: { "has_mortgage": true } - stage only applies if matter has mortgage
+   *
+   * Condition keys use snake_case to match YAML and database conventions.
+   * Common conditions: has_mortgage, is_leasehold, is_new_build, has_help_to_buy
+   *
+   * PEER REVIEW FIX: Added to support conditional stages (e.g., Mortgage stage only for mortgaged purchases)
+   */
+  applicabilityConditions: jsonb("applicability_conditions"),
 
   /** Is this stage visible to clients in portal? */
   clientVisible: boolean("client_visible").notNull().default(true),
@@ -321,8 +440,22 @@ export const matterStages = pgTable("matter_stages", {
   /** Stage name (denormalized) */
   name: text("name").notNull(),
 
-  /** Status */
-  status: text("status").notNull().default("pending"), // pending | in_progress | completed
+  /**
+   * Status:
+   * - "pending": Not started
+   * - "in_progress": Active
+   * - "completed": All completion criteria met
+   * - "skipped": Stage does not apply to this matter (conditions not met)
+   *
+   * PEER REVIEW FIX: Added "skipped" status for conditional stages that don't apply
+   */
+  status: text("status").notNull().default("pending"), // pending | in_progress | completed | skipped
+
+  /**
+   * Why this stage was skipped (if status = skipped).
+   * PEER REVIEW FIX: Track reason for audit trail
+   */
+  skippedReason: text("skipped_reason"),
 
   /** When stage was started (SET AUTOMATICALLY - see note above) */
   startedAt: timestamp("started_at"),
@@ -601,6 +734,13 @@ export const taskSourceEnum = pgEnum("task_source", [
   /** Does this task require evidence? */
   requiresEvidence: boolean("requires_evidence").notNull().default(false),
 
+  /**
+   * Required evidence types for this task (denormalized from template).
+   * Array of evidence type codes, e.g. ["id_document", "proof_of_address"]
+   * PEER REVIEW FIX: Persisted on instance so template changes don't affect historical requirements
+   */
+  requiredEvidenceTypes: jsonb("required_evidence_types"),  // string[] | null
+
   /** Must evidence be verified (not just attached)? */
   requiresVerifiedEvidence: boolean("requires_verified_evidence").notNull().default(true),
 
@@ -648,6 +788,7 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   // NEW stage events
   "stage_started",
   "stage_completed",
+  "stage_skipped",        // PEER REVIEW FIX: Track when stage is skipped due to applicability conditions
   "stage_gate_blocked",
   "stage_gate_overridden",
 
@@ -1145,6 +1286,13 @@ The residential-purchase workflow serves as the reference template. Other practi
 |                        | Mandatory immutability                                         | ✅     |
 |                        | Require verified evidence                                      | ✅     |
 |                        | Automatic stage start                                          | ✅     |
+| **Peer Review R1**     | subTypes as jsonb array (not single string)                    | ✅     |
+|                        | applicabilityConditions for conditional stages                 | ✅     |
+|                        | skipped/not_applicable completion clarification                | ✅     |
+|                        | requiredEvidenceTypes persisted on task instance               | ✅     |
+| **Peer Review R2**     | snake_case for condition keys (has_mortgage)                   | ✅     |
+|                        | Stage skip progression behavior documented                     | ✅     |
+|                        | stage_skipped timeline event added                             | ✅     |
 | **Schema**             | New tables (4): workflows, evidence, task-notes, exceptions    | ✅     |
 |                        | Modified tables (3): tasks, timeline, notifications            | ✅     |
 | **API**                | Task notes endpoints                                           | ✅     |

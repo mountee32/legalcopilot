@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
-import { tasks } from "@/lib/db/schema";
+import { and, eq, sql } from "drizzle-orm";
+import { tasks, taskNotes, evidenceItems } from "@/lib/db/schema";
 import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { UpdateTaskSchema } from "@/lib/api/schemas";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
 import { withAuth } from "@/middleware/withAuth";
-import { NotFoundError, withErrorHandler } from "@/middleware/withErrorHandler";
+import { NotFoundError, ValidationError, withErrorHandler } from "@/middleware/withErrorHandler";
 import { withPermission } from "@/middleware/withPermission";
 
 export const GET = withErrorHandler(
@@ -17,18 +17,42 @@ export const GET = withErrorHandler(
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
 
-      const task = await withFirmDb(firmId, async (tx) => {
-        const [row] = await tx
+      const result = await withFirmDb(firmId, async (tx) => {
+        const [task] = await tx
           .select()
           .from(tasks)
           .where(and(eq(tasks.id, id), eq(tasks.firmId, firmId)))
           .limit(1);
 
-        return row ?? null;
+        if (!task) return null;
+
+        // Get notes count (current versions only)
+        const [notesCountRow] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(taskNotes)
+          .where(
+            and(
+              eq(taskNotes.taskId, id),
+              eq(taskNotes.firmId, firmId),
+              eq(taskNotes.isCurrent, true)
+            )
+          );
+
+        // Get evidence count
+        const [evidenceCountRow] = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(evidenceItems)
+          .where(and(eq(evidenceItems.taskId, id), eq(evidenceItems.firmId, firmId)));
+
+        return {
+          ...task,
+          notesCount: Number(notesCountRow?.count ?? 0),
+          evidenceCount: Number(evidenceCountRow?.count ?? 0),
+        };
       });
 
-      if (!task) throw new NotFoundError("Task not found");
-      return NextResponse.json(task);
+      if (!result) throw new NotFoundError("Task not found");
+      return NextResponse.json(result);
     })
   )
 );
@@ -41,6 +65,12 @@ export const PATCH = withErrorHandler(
 
       const firmId = await getOrCreateFirmIdForUser(user.user.id);
       const body = await request.json();
+
+      // isMandatory is immutable after creation - reject any attempt to change it
+      if ("isMandatory" in body) {
+        throw new ValidationError("The isMandatory field cannot be changed after task creation");
+      }
+
       const data = UpdateTaskSchema.parse(body);
 
       const updated = await withFirmDb(firmId, async (tx) => {

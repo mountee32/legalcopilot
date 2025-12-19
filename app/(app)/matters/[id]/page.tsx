@@ -21,8 +21,10 @@ import {
   Pencil,
   Trash2,
   Upload,
+  Workflow,
 } from "lucide-react";
 import { UnifiedTimeline } from "./_components/timeline";
+import { WorkflowSummaryCard, WorkflowProgressPanel } from "./_components/workflow";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -96,10 +98,18 @@ function RiskIndicator({ score }: { score: number | null }) {
   );
 }
 
-function OverviewTab({ matter }: { matter: Matter }) {
+interface OverviewTabProps {
+  matter: Matter;
+  onNavigateToWorkflow: () => void;
+}
+
+function OverviewTab({ matter, onNavigateToWorkflow }: OverviewTabProps) {
   return (
     <div className="grid md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-6">
+        {/* Workflow Summary */}
+        <WorkflowSummaryCard matterId={matter.id} onNavigateToWorkflow={onNavigateToWorkflow} />
+
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Case Details</h3>
           <dl className="grid grid-cols-2 gap-4">
@@ -817,10 +827,14 @@ export default function MatterDetailPage() {
               <CheckSquare className="w-4 h-4" />
               Tasks
             </TabsTrigger>
+            <TabsTrigger value="workflow" className="gap-2">
+              <Workflow className="w-4 h-4" />
+              Workflow
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
-            <OverviewTab matter={matter} />
+            <OverviewTab matter={matter} onNavigateToWorkflow={() => setActiveTab("workflow")} />
           </TabsContent>
 
           <TabsContent value="timeline">
@@ -841,6 +855,10 @@ export default function MatterDetailPage() {
               practiceArea={matter.practiceArea}
               subType={matter.subType ?? undefined}
             />
+          </TabsContent>
+
+          <TabsContent value="workflow">
+            <WorkflowProgressPanel matterId={matterId} />
           </TabsContent>
         </Tabs>
       </div>
