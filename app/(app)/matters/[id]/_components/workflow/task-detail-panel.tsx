@@ -7,6 +7,7 @@ import { TaskAttachmentsList, type EvidenceAttachment } from "./task-attachments
 
 interface TaskDetailPanelProps {
   taskId: string;
+  matterId: string;
   isExpanded: boolean;
   onAddNote: () => void;
   onEditNote?: (note: TaskNote) => void;
@@ -50,6 +51,7 @@ function LoadingSkeleton() {
 
 export function TaskDetailPanel({
   taskId,
+  matterId,
   isExpanded,
   onAddNote,
   onEditNote,
@@ -88,7 +90,7 @@ export function TaskDetailPanel({
 
   return (
     <div
-      className="px-4 pb-4 pt-2 bg-slate-50 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-150"
+      className="ml-12 mr-4 mb-4 mt-2 p-4 bg-white rounded-lg border border-slate-100 animate-in fade-in slide-in-from-top-1 duration-150"
       data-testid="task-detail-panel"
     >
       {hasError && (
@@ -98,14 +100,14 @@ export function TaskDetailPanel({
       )}
 
       {isLoading && !hasError && (
-        <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
           <LoadingSkeleton />
           <LoadingSkeleton />
         </div>
       )}
 
       {!isLoading && !hasError && (
-        <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
           <TaskNotesList
             notes={notesData?.notes ?? []}
             onAddNote={onAddNote}

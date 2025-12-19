@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Check, Lock, AlertTriangle, SkipForward } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { WorkflowTaskRow, type WorkflowTask } from "./workflow-task-row";
+import { TABLE_GRID_CLASSES } from "./workflow-table";
+import { cn } from "@/lib/utils";
 
 export interface WorkflowStage {
   id: string;
@@ -25,6 +26,7 @@ export interface WorkflowStage {
 
 interface StageAccordionProps {
   stage: WorkflowStage;
+  matterId: string;
   isCurrentStage: boolean;
   previousStageComplete: boolean;
   onTaskUpdated: () => void;
@@ -35,30 +37,43 @@ const statusConfig = {
     bg: "bg-emerald-50",
     border: "border-emerald-200",
     text: "text-emerald-700",
+    badgeBg: "bg-emerald-100",
+    badgeText: "text-emerald-700",
     icon: Check,
+    label: "Completed",
   },
   in_progress: {
     bg: "bg-amber-50",
     border: "border-amber-200",
     text: "text-amber-700",
+    badgeBg: "bg-amber-100",
+    badgeText: "text-amber-700",
     icon: null,
+    label: "In Progress",
   },
   pending: {
     bg: "bg-slate-50",
     border: "border-slate-200",
     text: "text-slate-500",
+    badgeBg: "bg-slate-100",
+    badgeText: "text-slate-600",
     icon: null,
+    label: "Pending",
   },
   skipped: {
     bg: "bg-slate-50",
     border: "border-slate-200",
     text: "text-slate-400",
+    badgeBg: "bg-slate-100",
+    badgeText: "text-slate-400",
     icon: SkipForward,
+    label: "Skipped",
   },
 };
 
 export function StageAccordion({
   stage,
+  matterId,
   isCurrentStage,
   previousStageComplete,
   onTaskUpdated,
@@ -83,24 +98,43 @@ export function StageAccordion({
   // Check if any tasks are blocked
   const hasBlockedTasks = stage.tasks.some((t) => t.isBlocked);
 
+  // Determine remarks content
+  const remarksContent =
+    stage.status === "skipped"
+      ? stage.skippedReason || "Stage skipped"
+      : hasBlockedTasks
+        ? `${stage.tasks.filter((t) => t.isBlocked).length} task${stage.tasks.filter((t) => t.isBlocked).length > 1 ? "s" : ""} blocked`
+        : `${stage.completedMandatoryTasks}/${stage.mandatoryTasks} mandatory`;
+
+  // Determine visual status for badge
+  const visualStatus = isBlockedByGate ? "blocked" : stage.status;
+
   return (
-    <Card className={`overflow-hidden ${config.border} ${isBlockedByGate ? "border-red-200" : ""}`}>
-      {/* Stage Header */}
+    <div className="group">
+      {/* Stage Header Row */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors ${
-          config.bg
-        } ${isBlockedByGate ? "bg-red-50" : ""}`}
+        className={cn(
+          TABLE_GRID_CLASSES,
+          "w-full items-center px-4 py-3 text-left",
+          "hover:bg-slate-100/50 transition-colors",
+          isExpanded && "bg-slate-100/30",
+          isBlockedByGate && "bg-red-50/50"
+        )}
       >
-        <div className="flex items-center gap-3">
+        {/* Name Column */}
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Chevron */}
           {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
+            <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
           ) : (
-            <ChevronRight className="w-5 h-5 text-slate-400" />
+            <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
           )}
 
+          {/* Status Icon */}
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            className={cn(
+              "w-6 h-6 rounded flex items-center justify-center flex-shrink-0",
               stage.status === "completed"
                 ? "bg-emerald-100"
                 : stage.status === "skipped"
@@ -108,86 +142,111 @@ export function StageAccordion({
                   : isBlockedByGate
                     ? "bg-red-100"
                     : "bg-slate-100"
-            }`}
+            )}
           >
             {StatusIcon ? (
               <StatusIcon
-                className={`w-4 h-4 ${
+                className={cn(
+                  "w-3.5 h-3.5",
                   stage.status === "completed" ? "text-emerald-600" : "text-slate-400"
-                }`}
+                )}
               />
             ) : isBlockedByGate ? (
-              <Lock className="w-4 h-4 text-red-500" />
+              <Lock className="w-3.5 h-3.5 text-red-500" />
             ) : (
-              <span className={`text-sm font-semibold ${config.text}`}>
+              <span className={cn("text-xs font-semibold", config.text)}>
                 {stage.completedMandatoryTasks}
               </span>
             )}
           </div>
 
-          <div className="text-left">
-            <div className="flex items-center gap-2">
-              <h4
-                className={`font-medium ${
-                  stage.status === "skipped" ? "text-slate-400 line-through" : "text-slate-900"
-                }`}
-              >
-                {stage.name}
-              </h4>
+          {/* Stage Name */}
+          <span
+            className={cn(
+              "font-medium truncate",
+              stage.status === "skipped" ? "text-slate-400" : "text-slate-900"
+            )}
+          >
+            {stage.name}
+          </span>
 
-              {/* Gate Badge */}
-              {stage.gateType === "hard" && (
-                <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Hard Gate
-                </Badge>
-              )}
-              {stage.gateType === "soft" && (
-                <Badge
-                  variant="outline"
-                  className="text-xs bg-amber-50 text-amber-700 border-amber-200"
-                >
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  Soft Gate
-                </Badge>
-              )}
+          {/* Gate Icons */}
+          {stage.gateType === "hard" && (
+            <span
+              title="Hard Gate - Previous stage must be completed before this stage can begin"
+              className="flex-shrink-0 text-red-600"
+            >
+              <Lock className="w-4 h-4" />
+            </span>
+          )}
+          {stage.gateType === "soft" && (
+            <span
+              title="Soft Gate - Previous stage should be completed, but this stage can proceed with warnings"
+              className="flex-shrink-0 text-amber-600"
+            >
+              <AlertTriangle className="w-4 h-4" />
+            </span>
+          )}
 
-              {/* Current Stage Indicator */}
-              {isCurrentStage && stage.status !== "completed" && (
-                <Badge className="text-xs">Current</Badge>
-              )}
-
-              {/* Blocked Tasks Warning */}
-              {hasBlockedTasks && stage.status !== "completed" && (
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-              )}
-            </div>
-
-            <p className="text-sm text-slate-500">
-              {stage.status === "skipped"
-                ? stage.skippedReason || "Stage skipped"
-                : `${stage.completedMandatoryTasks} of ${stage.mandatoryTasks} mandatory tasks`}
-            </p>
-          </div>
+          {/* Current Stage Indicator */}
+          {isCurrentStage && stage.status !== "completed" && (
+            <Badge className="text-xs flex-shrink-0">Current</Badge>
+          )}
         </div>
 
-        {/* Progress */}
-        {stage.status !== "skipped" && (
-          <div className="flex items-center gap-3">
-            <div className="w-24">
+        {/* Status Column */}
+        <div className="flex items-center">
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs",
+              visualStatus === "blocked"
+                ? "bg-red-100 text-red-700 border-red-200"
+                : cn(config.badgeBg, config.badgeText, config.border)
+            )}
+          >
+            {visualStatus === "blocked" ? "Blocked" : config.label}
+          </Badge>
+        </div>
+
+        {/* Progress Column */}
+        <div className="flex items-center gap-2">
+          {stage.status !== "skipped" && (
+            <>
               <Progress
                 value={progress}
-                className={`h-2 ${stage.status === "completed" ? "[&>div]:bg-emerald-500" : ""}`}
+                className={cn(
+                  "flex-1 h-2",
+                  stage.status === "completed" && "[&>div]:bg-emerald-500"
+                )}
               />
-            </div>
-            <span className={`text-sm font-semibold ${config.text} w-10`}>{progress}%</span>
-          </div>
-        )}
+              <span className={cn("text-xs font-medium w-8", config.text)}>{progress}%</span>
+            </>
+          )}
+        </div>
+
+        {/* Remarks Column */}
+        <div className="flex items-center min-w-0">
+          <span
+            className={cn(
+              "text-sm truncate",
+              hasBlockedTasks && stage.status !== "completed" ? "text-amber-600" : "text-slate-500"
+            )}
+          >
+            {hasBlockedTasks && stage.status !== "completed" && (
+              <AlertTriangle className="w-3 h-3 inline mr-1" />
+            )}
+            {remarksContent}
+          </span>
+        </div>
+
+        {/* Actions Column */}
+        <div className="flex items-center justify-end">{/* Future: Stage skip button, etc. */}</div>
       </button>
 
       {/* Gate Blocked Message */}
       {isExpanded && isBlockedByGate && (
-        <div className="px-4 py-3 bg-red-50 border-t border-red-200 flex items-center gap-2">
+        <div className="px-4 py-2 bg-red-50 border-y border-red-100 flex items-center gap-2">
           <Lock className="w-4 h-4 text-red-500" />
           <span className="text-sm text-red-700">
             This stage is blocked until the previous stage is complete
@@ -197,26 +256,26 @@ export function StageAccordion({
 
       {/* Tasks List */}
       {isExpanded && stage.tasks.length > 0 && (
-        <div className="px-4 pb-4 pt-2 bg-slate-50 border-t border-slate-200">
-          <div className="space-y-2">
-            {stage.tasks.map((task) => (
-              <WorkflowTaskRow
-                key={task.id}
-                task={task}
-                disabled={isBlockedByGate || stage.status === "skipped"}
-                onTaskUpdated={onTaskUpdated}
-              />
-            ))}
-          </div>
+        <div className="bg-white border-t border-slate-100">
+          {stage.tasks.map((task) => (
+            <WorkflowTaskRow
+              key={task.id}
+              task={task}
+              matterId={matterId}
+              disabled={isBlockedByGate || stage.status === "skipped"}
+              onTaskUpdated={onTaskUpdated}
+              isNested={true}
+            />
+          ))}
         </div>
       )}
 
       {/* Empty Tasks State */}
       {isExpanded && stage.tasks.length === 0 && stage.status !== "skipped" && (
-        <div className="px-4 py-6 bg-slate-50 border-t border-slate-200 text-center text-sm text-slate-500">
+        <div className="px-4 py-6 bg-white border-t border-slate-100 text-center text-sm text-slate-500">
           No tasks in this stage
         </div>
       )}
-    </Card>
+    </div>
   );
 }

@@ -22,8 +22,8 @@ interface DocumentUploadWizardProps {
   onOpenChange: (open: boolean) => void;
   /** Pre-select a matter (skips the matter assignment step) */
   defaultMatterId?: string;
-  /** Called when document is successfully saved */
-  onSuccess?: () => void;
+  /** Called when document is successfully saved. Receives the new document ID. */
+  onSuccess?: (documentId: string) => void;
 }
 
 const STEPS = [
@@ -65,9 +65,9 @@ export function DocumentUploadWizard({
     reset,
   } = useDocumentUpload({
     defaultMatterId,
-    onSuccess: () => {
+    onSuccess: (documentId: string) => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
-      onSuccess?.();
+      onSuccess?.(documentId);
       onOpenChange(false);
     },
   });

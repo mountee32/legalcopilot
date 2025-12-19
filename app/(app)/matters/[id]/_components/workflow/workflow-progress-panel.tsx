@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { StageAccordion, type WorkflowStage } from "./stage-accordion";
+import { WorkflowTable } from "./workflow-table";
 
 interface WorkflowData {
   workflow: {
@@ -148,12 +149,13 @@ export function WorkflowProgressPanel({ matterId }: WorkflowProgressPanelProps) 
         </div>
       </Card>
 
-      {/* Stage Accordions */}
-      <div className="space-y-3">
+      {/* Stage Table */}
+      <WorkflowTable>
         {stages.map((stage, index) => (
           <StageAccordion
             key={stage.id}
             stage={stage}
+            matterId={matterId}
             isCurrentStage={stage.id === workflow.currentStageId}
             previousStageComplete={
               index === 0 ||
@@ -163,7 +165,7 @@ export function WorkflowProgressPanel({ matterId }: WorkflowProgressPanelProps) 
             onTaskUpdated={handleTaskUpdated}
           />
         ))}
-      </div>
+      </WorkflowTable>
     </div>
   );
 }
