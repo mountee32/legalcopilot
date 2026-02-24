@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -185,15 +185,25 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
           })}
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => recalc.mutate()}
-          disabled={recalc.isPending}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${recalc.isPending ? "animate-spin" : ""}`} />
-          {recalc.isPending ? "Calculating..." : "Recalculate Risk"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => window.open(`/api/matters/${matterId}/export/findings`, "_blank")}
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5" />
+            Download Report
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => recalc.mutate()}
+            disabled={recalc.isPending}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${recalc.isPending ? "animate-spin" : ""}`} />
+            {recalc.isPending ? "Calculating..." : "Recalculate Risk"}
+          </Button>
+        </div>
       </div>
 
       {/* Category filter chips */}

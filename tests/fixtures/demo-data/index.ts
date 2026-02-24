@@ -44,6 +44,7 @@ import { seedPipeline } from "./seeders/pipeline";
 import { seedEmailImports } from "./seeders/email-imports";
 import { seedEmailResponses } from "./seeders/email-responses";
 import { seedTaxonomy } from "./seeders/taxonomy";
+import { seedTemplates } from "./seeders/templates";
 
 /**
  * Seeds all demo data in the correct order.
@@ -95,6 +96,9 @@ export async function seedDemoData(): Promise<SeedResult> {
 
   // 9. Taxonomy (firm pack fork + matter risk scores)
   await seedTaxonomy(ctx);
+
+  // 10. Document templates (system PI demand letter)
+  await seedTemplates(ctx);
 
   console.log("\n✅ Demo data seeding complete!\n");
   console.log("Summary:");

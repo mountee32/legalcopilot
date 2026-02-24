@@ -29,6 +29,7 @@ import { UnifiedTimeline } from "./_components/timeline";
 import { WorkflowSummaryCard, WorkflowProgressPanel } from "./_components/workflow";
 import { RiskGauge } from "@/components/matter/risk-gauge";
 import { FindingsTab } from "@/components/matter/findings-tab";
+import { GenerateDocumentDialog } from "@/components/matter/generate-document-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -105,9 +106,10 @@ function RiskIndicator({ score }: { score: number | null }) {
 interface OverviewTabProps {
   matter: Matter;
   onNavigateToWorkflow: () => void;
+  onGenerateDocument: () => void;
 }
 
-function OverviewTab({ matter, onNavigateToWorkflow }: OverviewTabProps) {
+function OverviewTab({ matter, onNavigateToWorkflow, onGenerateDocument }: OverviewTabProps) {
   return (
     <div className="grid md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-6">
@@ -201,6 +203,15 @@ function OverviewTab({ matter, onNavigateToWorkflow }: OverviewTabProps) {
             <Button variant="outline" size="sm" className="w-full justify-start">
               <CalendarIcon className="w-4 h-4 mr-2" />
               Suggest calendar items
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={onGenerateDocument}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Generate Document
             </Button>
           </div>
         </Card>
@@ -950,6 +961,7 @@ export default function MatterDetailPage() {
   const router = useRouter();
   const matterId = params.id as string;
   const [activeTab, setActiveTab] = useState("overview");
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
 
   const {
     data: matter,
@@ -1063,7 +1075,11 @@ export default function MatterDetailPage() {
           </TabsList>
 
           <TabsContent value="overview">
-            <OverviewTab matter={matter} onNavigateToWorkflow={() => setActiveTab("workflow")} />
+            <OverviewTab
+              matter={matter}
+              onNavigateToWorkflow={() => setActiveTab("workflow")}
+              onGenerateDocument={() => setGenerateDialogOpen(true)}
+            />
           </TabsContent>
 
           <TabsContent value="timeline">
@@ -1099,6 +1115,13 @@ export default function MatterDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <GenerateDocumentDialog
+        matterId={matterId}
+        practiceArea={matter.practiceArea}
+        open={generateDialogOpen}
+        onOpenChange={setGenerateDialogOpen}
+      />
     </div>
   );
 }

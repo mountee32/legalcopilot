@@ -46,6 +46,7 @@ export * from "./practice-modules";
 export * from "./taxonomy";
 export * from "./pipeline";
 export * from "./email-imports";
+export * from "./generation";
 
 // TODO: Add as implemented:
 // export * from "./users";

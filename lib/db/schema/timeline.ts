@@ -110,6 +110,9 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
 
   // Risk assessment events
   "risk_assessed",
+
+  // Document generation events
+  "document_generated",
 ]);
 
 export const timelineEvents = pgTable(

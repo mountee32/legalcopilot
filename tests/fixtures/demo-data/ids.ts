@@ -665,6 +665,11 @@ export const DEMO_IDS = {
     piCustom: "de000000-0000-4000-b001-000000000001",
   },
 
+  // Document Templates (a033)
+  documentTemplates: {
+    piDemandLetter: "de000000-0000-4000-a033-000000000001",
+  },
+
   workflowTaskTemplates: {
     // Residential Purchase - Stage 1 (Onboarding)
     rp1_1: "de000000-0000-4000-a020-000000000001",
