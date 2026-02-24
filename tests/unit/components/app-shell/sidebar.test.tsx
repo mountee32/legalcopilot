@@ -34,6 +34,7 @@ vi.mock("lucide-react", () => {
     Scale: createMockIcon("Scale"),
     Shield: createMockIcon("Shield"),
     GitBranch: createMockIcon("GitBranch"),
+    Activity: createMockIcon("Activity"),
     ChevronUp: createMockIcon("ChevronUp"),
     User: createMockIcon("User"),
     LogOut: createMockIcon("LogOut"),
@@ -101,6 +102,7 @@ describe("Sidebar", () => {
     render(<Sidebar />);
 
     expect(screen.getByTestId("nav-item-time-&-billing")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-analytics")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-reports")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-compliance")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-workflows")).toBeInTheDocument();

@@ -113,6 +113,9 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
 
   // Document generation events
   "document_generated",
+
+  // AI chat events
+  "ai_chat_started",
 ]);
 
 export const timelineEvents = pgTable(

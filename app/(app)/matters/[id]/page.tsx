@@ -30,6 +30,7 @@ import { WorkflowSummaryCard, WorkflowProgressPanel } from "./_components/workfl
 import { RiskGauge } from "@/components/matter/risk-gauge";
 import { FindingsTab } from "@/components/matter/findings-tab";
 import { GenerateDocumentDialog } from "@/components/matter/generate-document-dialog";
+import { CaseChatPanel } from "@/components/matter/case-chat-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -107,9 +108,15 @@ interface OverviewTabProps {
   matter: Matter;
   onNavigateToWorkflow: () => void;
   onGenerateDocument: () => void;
+  onAskAI: () => void;
 }
 
-function OverviewTab({ matter, onNavigateToWorkflow, onGenerateDocument }: OverviewTabProps) {
+function OverviewTab({
+  matter,
+  onNavigateToWorkflow,
+  onGenerateDocument,
+  onAskAI,
+}: OverviewTabProps) {
   return (
     <div className="grid md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-6">
@@ -192,7 +199,7 @@ function OverviewTab({ matter, onNavigateToWorkflow, onGenerateDocument }: Overv
             AI Actions
           </h3>
           <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full justify-start">
+            <Button variant="outline" size="sm" className="w-full justify-start" onClick={onAskAI}>
               <MessageSquare className="w-4 h-4 mr-2" />
               Ask AI about this case
             </Button>
@@ -962,6 +969,7 @@ export default function MatterDetailPage() {
   const matterId = params.id as string;
   const [activeTab, setActiveTab] = useState("overview");
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
 
   const {
     data: matter,
@@ -1079,6 +1087,7 @@ export default function MatterDetailPage() {
               matter={matter}
               onNavigateToWorkflow={() => setActiveTab("workflow")}
               onGenerateDocument={() => setGenerateDialogOpen(true)}
+              onAskAI={() => setChatPanelOpen(true)}
             />
           </TabsContent>
 
@@ -1122,6 +1131,8 @@ export default function MatterDetailPage() {
         open={generateDialogOpen}
         onOpenChange={setGenerateDialogOpen}
       />
+
+      <CaseChatPanel matterId={matterId} open={chatPanelOpen} onOpenChange={setChatPanelOpen} />
     </div>
   );
 }

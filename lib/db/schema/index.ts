@@ -42,6 +42,7 @@ export * from "./integrations";
 export * from "./taxonomy";
 export * from "./pipeline";
 export * from "./email-imports";
+export * from "./case-chat";
 
 // Compliance & Audit
 export * from "./approvals";

@@ -47,6 +47,8 @@ export * from "./taxonomy";
 export * from "./pipeline";
 export * from "./email-imports";
 export * from "./generation";
+export * from "./case-chat";
+export * from "./analytics";
 
 // TODO: Add as implemented:
 // export * from "./users";
