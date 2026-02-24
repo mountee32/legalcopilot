@@ -6,6 +6,11 @@ vi.mock("@/lib/timeline/createEvent", () => ({
   createTimelineEvent: vi.fn(),
 }));
 
+// Mock email send queue
+vi.mock("@/lib/queue/email-send", () => ({
+  emailSendQueue: { add: vi.fn().mockResolvedValue({}) },
+}));
+
 // Create mock db transaction
 function createMockTx(mocks: {
   selectResult?: unknown[];

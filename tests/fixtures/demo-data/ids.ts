@@ -645,6 +645,21 @@ export const DEMO_IDS = {
     jamesClarke: "de000000-0000-4000-a030-000000000001",
   },
 
+  // Outbound Email Responses (a031)
+  outboundEmails: {
+    reply1: "de000000-0000-4000-a031-000000000001", // Reply to email1 (Thompson complaint)
+    reply2: "de000000-0000-4000-a031-000000000002", // Reply to email2 (opposing counsel)
+    reply3: "de000000-0000-4000-a031-000000000003", // Reply to email9 (visa granted)
+    reply4: "de000000-0000-4000-a031-000000000004", // Reply to email10 (shareholder) - draft
+  },
+
+  // Email-sourced Tasks (a032)
+  emailTasks: {
+    et1: "de000000-0000-4000-a032-000000000001", // Confirm court attendance
+    et2: "de000000-0000-4000-a032-000000000002", // Notify client of hearing date
+    et3: "de000000-0000-4000-a032-000000000003", // Prepare plea hearing bundle
+  },
+
   workflowTaskTemplates: {
     // Residential Purchase - Stage 1 (Onboarding)
     rp1_1: "de000000-0000-4000-a020-000000000001",

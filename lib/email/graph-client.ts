@@ -228,6 +228,62 @@ function sleep(ms: number): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Send email via Graph API
+// ---------------------------------------------------------------------------
+
+export interface GraphSendMessage {
+  subject: string;
+  body: { contentType: "HTML" | "Text"; content: string };
+  toRecipients: Array<{ emailAddress: { name?: string; address: string } }>;
+  ccRecipients?: Array<{ emailAddress: { name?: string; address: string } }>;
+  bccRecipients?: Array<{ emailAddress: { name?: string; address: string } }>;
+  /** Include the original email's internetMessageId for reply threading. */
+  internetMessageId?: string;
+}
+
+/**
+ * Send an email via Graph API. Returns void — Graph returns 202 Accepted with no body.
+ * For replies, set `message.internetMessageId` to the original email's messageId so
+ * Graph threads it correctly (sends as In-Reply-To header).
+ */
+export async function sendEmail(account: EmailAccount, message: GraphSendMessage): Promise<void> {
+  const accessToken = await refreshTokenIfNeeded(account);
+  const url = `${GRAPH_BASE}/me/sendMail`;
+
+  const graphPayload: Record<string, unknown> = {
+    message: {
+      subject: message.subject,
+      body: message.body,
+      toRecipients: message.toRecipients,
+      ccRecipients: message.ccRecipients || [],
+      bccRecipients: message.bccRecipients || [],
+    },
+    saveToSentItems: true,
+  };
+
+  // For reply threading, set the conversationId / In-Reply-To header
+  if (message.internetMessageId) {
+    (graphPayload.message as Record<string, unknown>).internetMessageHeaders = [
+      { name: "In-Reply-To", value: message.internetMessageId },
+    ];
+  }
+
+  const res = await graphFetchWithRetry(
+    url,
+    accessToken,
+    account,
+    "POST",
+    JSON.stringify(graphPayload)
+  );
+
+  // Graph sendMail returns 202 Accepted with no body on success
+  if (res.status !== 202 && !res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Graph sendMail failed: ${res.status} ${errorText}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Custom errors
 // ---------------------------------------------------------------------------
 

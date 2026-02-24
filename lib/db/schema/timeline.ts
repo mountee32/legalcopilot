@@ -102,6 +102,11 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "email_import_completed",
   "email_import_failed",
   "email_import_unmatched",
+
+  // Email response events
+  "email_response_generated",
+  "email_tasks_created",
+  "email_delivery_failed",
 ]);
 
 export const timelineEvents = pgTable(

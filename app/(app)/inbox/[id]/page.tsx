@@ -2,16 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Sparkles, CheckCircle, XCircle, Edit, Mail, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Sparkles,
+  CheckCircle,
+  XCircle,
+  Edit,
+  Mail,
+  FileText,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
+import { ThreadView } from "@/components/email/thread-view";
+import { DeliveryStatus } from "@/components/email/delivery-status";
+import { TaskCreator } from "@/components/email/task-creator";
 
 interface EmailDetail {
   id: string;
+  direction: string;
   fromAddress: { email: string; name?: string };
   toAddresses: Array<{ email: string; name?: string }>;
   subject: string;
@@ -22,11 +36,25 @@ interface EmailDetail {
   aiSentiment: string | null;
   aiUrgency: number | null;
   aiSuggestedResponse: string | null;
-  aiSuggestedTasks: string[] | null;
+  aiSuggestedTasks: Array<{ title: string; dueInDays?: number }> | string[] | null;
   aiMatchConfidence: number | null;
   matterId: string | null;
-  createdAt: string;
   status: string;
+  sentAt: string | null;
+  createdAt: string;
+  threadId: string | null;
+}
+
+interface ThreadEmail {
+  id: string;
+  direction: string;
+  fromAddress: { email: string; name?: string };
+  toAddresses: Array<{ email: string; name?: string }>;
+  subject: string;
+  bodyText: string | null;
+  status: string;
+  sentAt: string | null;
+  createdAt: string;
 }
 
 export default function EmailDetailPage() {
@@ -38,66 +66,86 @@ export default function EmailDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [draftResponse, setDraftResponse] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [threadEmails, setThreadEmails] = useState<ThreadEmail[]>([]);
 
   useEffect(() => {
     if (params.id) {
       fetchEmail(params.id as string);
+      fetchThread(params.id as string);
     }
   }, [params.id]);
 
   const fetchEmail = async (id: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/emails/${id}`, {
-        credentials: "include",
-      });
-
+      const res = await fetch(`/api/emails/${id}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch email");
-
       const data = await res.json();
       setEmail(data);
       setDraftResponse(data.aiSuggestedResponse || "");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load email",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Error", description: "Failed to load email", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const fetchThread = async (id: string) => {
+    try {
+      const res = await fetch(`/api/emails/${id}/thread`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setThreadEmails(data.thread || []);
+    } catch {
+      // Thread loading is non-critical
+    }
+  };
+
   const handleApproveAndSend = async () => {
     if (!email) return;
-
     setIsSending(true);
     try {
       const res = await fetch(`/api/emails/${email.id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          response: draftResponse,
-        }),
+        body: JSON.stringify({ response: draftResponse }),
       });
-
       if (!res.ok) throw new Error("Failed to send email");
-
-      toast({
-        title: "Email sent",
-        description: "Your response has been sent successfully",
-      });
-
+      toast({ title: "Email sent", description: "Your response has been sent for approval" });
       router.push("/inbox");
-    } catch (error) {
+    } catch {
+      toast({ title: "Error", description: "Failed to send email", variant: "destructive" });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleRegenerateResponse = async () => {
+    if (!email) return;
+    setIsRegenerating(true);
+    try {
+      const res = await fetch(`/api/emails/${email.id}/generate-response`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to generate response");
+      const data = await res.json();
+      setDraftResponse(data.response);
+      setEmail((prev) => (prev ? { ...prev, aiSuggestedResponse: data.response } : null));
+      toast({
+        title: "Response regenerated",
+        description: `Context-aware draft generated (${data.tokensUsed} tokens)`,
+      });
+    } catch {
       toast({
         title: "Error",
-        description: "Failed to send email",
+        description: "Failed to regenerate response",
         variant: "destructive",
       });
     } finally {
-      setIsSending(false);
+      setIsRegenerating(false);
     }
   };
 
@@ -110,6 +158,13 @@ export default function EmailDetailPage() {
       minute: "2-digit",
     });
   };
+
+  // Normalize suggested tasks to consistent format
+  const normalizedSuggestedTasks = email?.aiSuggestedTasks
+    ? (email.aiSuggestedTasks as Array<{ title: string; dueInDays?: number } | string>).map((t) =>
+        typeof t === "string" ? { title: t } : t
+      )
+    : [];
 
   if (isLoading) {
     return (
@@ -139,6 +194,7 @@ export default function EmailDetailPage() {
   }
 
   const confidence = email.aiMatchConfidence || 0;
+  const isOutbound = email.direction === "outbound";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
@@ -151,6 +207,13 @@ export default function EmailDetailPage() {
           </Button>
         </div>
 
+        {/* Thread View */}
+        {threadEmails.length > 1 && (
+          <Card className="mb-6 p-4">
+            <ThreadView threadEmails={threadEmails} currentEmailId={email.id} />
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Original Email */}
           <div>
@@ -159,7 +222,10 @@ export default function EmailDetailPage() {
                 <div className="flex items-start gap-3 mb-4">
                   <Mail className="h-5 w-5 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-bold mb-2">Original Email</h2>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h2 className="text-xl font-bold">Original Email</h2>
+                      {isOutbound && <DeliveryStatus status={email.status} sentAt={email.sentAt} />}
+                    </div>
                     <p className="text-slate-300 text-sm">{formatDate(email.createdAt)}</p>
                   </div>
                 </div>
@@ -234,22 +300,20 @@ export default function EmailDetailPage() {
                       </Badge>
                     )}
                   </div>
-
-                  {email.aiSuggestedTasks && email.aiSuggestedTasks.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-blue-200">
-                      <h4 className="text-xs font-semibold text-slate-700 mb-2">SUGGESTED TASKS</h4>
-                      <ul className="space-y-1">
-                        {email.aiSuggestedTasks.map((task, idx) => (
-                          <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
-                            <span className="text-blue-600">•</span>
-                            <span>{task}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               </Card>
+            )}
+
+            {/* Task Creator */}
+            {normalizedSuggestedTasks.length > 0 && (
+              <div className="mt-4">
+                <TaskCreator
+                  emailId={email.id}
+                  suggestedTasks={normalizedSuggestedTasks}
+                  matterId={email.matterId}
+                  onTasksCreated={() => fetchEmail(email.id)}
+                />
+              </div>
             )}
           </div>
 
@@ -268,15 +332,33 @@ export default function EmailDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="text-white hover:bg-white/20"
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    {isEditing ? "Done" : "Edit"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleRegenerateResponse}
+                      disabled={isRegenerating}
+                      className="text-white hover:bg-white/20"
+                    >
+                      {isRegenerating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span className="ml-1.5 hidden sm:inline">
+                        {isRegenerating ? "Generating..." : "Regenerate"}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="text-white hover:bg-white/20"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      {isEditing ? "Done" : "Edit"}
+                    </Button>
+                  </div>
                 </div>
               </div>
 

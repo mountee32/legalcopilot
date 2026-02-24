@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { db } from "@/lib/db";
-import { signatureRequests, timeEntries } from "@/lib/db/schema";
+import { emails, signatureRequests, timeEntries } from "@/lib/db/schema";
 
 type ApprovalRow = {
   firmId: string;
@@ -42,5 +42,15 @@ export async function applyRejectionSideEffectsIfSupported(
           eq(signatureRequests.firmId, approval.firmId)
         )
       );
+  }
+
+  if (approval.action === "email.send") {
+    const emailId = approval.entityId ?? null;
+    if (!emailId) return;
+
+    await tx
+      .update(emails)
+      .set({ status: "draft", approvalRequestId: null, updatedAt: new Date() })
+      .where(and(eq(emails.id, emailId), eq(emails.firmId, approval.firmId)));
   }
 }

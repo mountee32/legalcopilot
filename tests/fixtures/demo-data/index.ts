@@ -42,6 +42,7 @@ import { seedApprovals } from "./seeders/approvals";
 import { seedWorkflows, seedMatterWorkflows } from "./seeders/workflows";
 import { seedPipeline } from "./seeders/pipeline";
 import { seedEmailImports } from "./seeders/email-imports";
+import { seedEmailResponses } from "./seeders/email-responses";
 
 /**
  * Seeds all demo data in the correct order.
@@ -87,6 +88,9 @@ export async function seedDemoData(): Promise<SeedResult> {
 
   // 7. Email imports (email ingestion audit trail)
   await seedEmailImports(ctx);
+
+  // 8. Email responses (outbound replies, email-sourced tasks)
+  await seedEmailResponses(ctx);
 
   console.log("\n✅ Demo data seeding complete!\n");
   console.log("Summary:");

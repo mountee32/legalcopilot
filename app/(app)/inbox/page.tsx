@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, AlertCircle, Clock, TrendingUp, Sparkles, RefreshCw } from "lucide-react";
+import { Mail, AlertCircle, Clock, TrendingUp, Sparkles, RefreshCw, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/hooks/use-toast";
+import { DeliveryStatus } from "@/components/email/delivery-status";
 
 interface EmailMessage {
   id: string;
@@ -62,7 +63,9 @@ export default function InboxPage() {
   const { toast } = useToast();
   const [emails, setEmails] = useState<EmailMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "needs_review" | "processed">("needs_review");
+  const [filter, setFilter] = useState<"all" | "needs_review" | "processed" | "drafts">(
+    "needs_review"
+  );
 
   useEffect(() => {
     fetchEmails();
@@ -77,6 +80,8 @@ export default function InboxPage() {
         params.set("status", "received");
       } else if (filter === "processed") {
         params.set("status", "sent");
+      } else if (filter === "drafts") {
+        params.set("status", "draft");
       }
 
       const res = await fetch(`/api/emails?${params.toString()}`, {
@@ -204,6 +209,20 @@ export default function InboxPage() {
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
               )}
             </button>
+            <button
+              onClick={() => setFilter("drafts")}
+              className={`px-4 py-3 font-medium transition-all relative ${
+                filter === "drafts" ? "text-blue-600" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Pencil className="h-3.5 w-3.5" />
+                Drafts
+              </span>
+              {filter === "drafts" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -321,6 +340,9 @@ export default function InboxPage() {
                         >
                           Draft Ready
                         </Badge>
+                      )}
+                      {email.status !== "received" && email.status !== "archived" && (
+                        <DeliveryStatus status={email.status} />
                       )}
                     </div>
                   </div>

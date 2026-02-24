@@ -15,6 +15,7 @@ import {
 import type { db } from "@/lib/db";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
 import { randomUUID } from "crypto";
+import { emailSendQueue } from "@/lib/queue/email-send";
 
 type ApprovalRow = {
   id: string;
@@ -660,6 +661,13 @@ export async function executeApprovalIfSupported(
       .where(
         and(eq(approvalRequests.id, approval.id), eq(approvalRequests.firmId, approval.firmId))
       );
+
+    // Enqueue actual Graph API send as a background job
+    await emailSendQueue.add("email:send", {
+      emailId,
+      firmId: approval.firmId,
+      approvalRequestId: approval.id,
+    });
 
     return { executionStatus: "executed" };
   }

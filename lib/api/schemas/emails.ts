@@ -174,3 +174,38 @@ export const AttachDocumentsResponseSchema = z
     email: EmailMessageSchema,
   })
   .openapi("AttachDocumentsResponse");
+
+// ---------------------------------------------------------------------------
+// Sprint 9: Response generation, task creation, thread
+// ---------------------------------------------------------------------------
+
+export const CreateEmailTasksSchema = z
+  .object({
+    tasks: z
+      .array(
+        z.object({
+          title: z.string().min(1).max(500),
+          description: z.string().max(2000).optional(),
+          priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+          dueInDays: z.number().int().min(0).max(365).optional(),
+          assigneeId: UuidSchema.optional(),
+        })
+      )
+      .min(1)
+      .max(20),
+  })
+  .openapi("CreateEmailTasksRequest");
+
+export const GenerateResponseResponseSchema = z
+  .object({
+    response: z.string(),
+    tokensUsed: z.number().int(),
+  })
+  .openapi("GenerateResponseResponse");
+
+export const EmailThreadSchema = z
+  .object({
+    thread: z.array(EmailMessageSchema),
+    currentEmailId: UuidSchema,
+  })
+  .openapi("EmailThread");
