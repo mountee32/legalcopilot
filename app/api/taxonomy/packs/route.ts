@@ -57,14 +57,14 @@ export const GET = withErrorHandler(
             updatedAt: taxonomyPacks.updatedAt,
             categoryCount: sql<number>`(
               select count(*)::int
-              from taxonomy_categories c
-              where c.pack_id = ${taxonomyPacks.id}
+              from taxonomy_categories tc
+              where tc.pack_id = taxonomy_packs.id
             )`,
             fieldCount: sql<number>`(
               select count(*)::int
-              from taxonomy_fields f
-              inner join taxonomy_categories c on c.id = f.category_id
-              where c.pack_id = ${taxonomyPacks.id}
+              from taxonomy_fields tf
+              inner join taxonomy_categories tc2 on tc2.id = tf.category_id
+              where tc2.pack_id = taxonomy_packs.id
             )`,
           })
           .from(taxonomyPacks)

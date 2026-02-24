@@ -23,9 +23,12 @@ import {
   Upload,
   Workflow,
   Zap,
+  Brain,
 } from "lucide-react";
 import { UnifiedTimeline } from "./_components/timeline";
 import { WorkflowSummaryCard, WorkflowProgressPanel } from "./_components/workflow";
+import { RiskGauge } from "@/components/matter/risk-gauge";
+import { FindingsTab } from "@/components/matter/findings-tab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -175,12 +178,11 @@ function OverviewTab({ matter, onNavigateToWorkflow }: OverviewTabProps) {
           <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-4">
             Risk Assessment
           </h3>
-          <RiskIndicator score={matter.riskScore} />
-          {matter.riskAssessedAt && (
-            <p className="text-xs text-slate-500 mt-3">
-              Last assessed {format(new Date(matter.riskAssessedAt), "d MMM yyyy")}
-            </p>
-          )}
+          <RiskGauge
+            score={matter.riskScore}
+            factors={matter.riskFactors as any}
+            assessedAt={matter.riskAssessedAt}
+          />
         </Card>
 
         <Card className="p-6">
@@ -1050,6 +1052,10 @@ export default function MatterDetailPage() {
               <Workflow className="w-4 h-4" />
               Workflow
             </TabsTrigger>
+            <TabsTrigger value="findings" className="gap-2">
+              <Brain className="w-4 h-4" />
+              Findings
+            </TabsTrigger>
             <TabsTrigger value="pipeline" className="gap-2">
               <Zap className="w-4 h-4" />
               Pipeline
@@ -1082,6 +1088,10 @@ export default function MatterDetailPage() {
 
           <TabsContent value="workflow">
             <WorkflowProgressPanel matterId={matterId} />
+          </TabsContent>
+
+          <TabsContent value="findings">
+            <FindingsTab matterId={matterId} />
           </TabsContent>
 
           <TabsContent value="pipeline">

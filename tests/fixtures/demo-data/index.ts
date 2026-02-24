@@ -43,6 +43,7 @@ import { seedWorkflows, seedMatterWorkflows } from "./seeders/workflows";
 import { seedPipeline } from "./seeders/pipeline";
 import { seedEmailImports } from "./seeders/email-imports";
 import { seedEmailResponses } from "./seeders/email-responses";
+import { seedTaxonomy } from "./seeders/taxonomy";
 
 /**
  * Seeds all demo data in the correct order.
@@ -91,6 +92,9 @@ export async function seedDemoData(): Promise<SeedResult> {
 
   // 8. Email responses (outbound replies, email-sourced tasks)
   await seedEmailResponses(ctx);
+
+  // 9. Taxonomy (firm pack fork + matter risk scores)
+  await seedTaxonomy(ctx);
 
   console.log("\n✅ Demo data seeding complete!\n");
   console.log("Summary:");

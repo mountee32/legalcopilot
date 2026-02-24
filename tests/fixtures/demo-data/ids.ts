@@ -660,6 +660,11 @@ export const DEMO_IDS = {
     et3: "de000000-0000-4000-a032-000000000003", // Prepare plea hearing bundle
   },
 
+  // Taxonomy Packs (b001)
+  taxonomyPacks: {
+    piCustom: "de000000-0000-4000-b001-000000000001",
+  },
+
   workflowTaskTemplates: {
     // Residential Purchase - Stage 1 (Onboarding)
     rp1_1: "de000000-0000-4000-a020-000000000001",

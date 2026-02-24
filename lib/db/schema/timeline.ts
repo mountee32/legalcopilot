@@ -107,6 +107,9 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "email_response_generated",
   "email_tasks_created",
   "email_delivery_failed",
+
+  // Risk assessment events
+  "risk_assessed",
 ]);
 
 export const timelineEvents = pgTable(

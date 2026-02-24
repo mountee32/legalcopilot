@@ -4,10 +4,11 @@
  * Shared utilities for updating pipeline run state from within workers.
  */
 
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { pipelineRuns } from "@/lib/db/schema";
+import { pipelineRuns, pipelineFindings, matters } from "@/lib/db/schema";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
+import { calculateRiskScore } from "@/lib/pipeline/risk-score";
 import type { PipelineStageName } from "../pipeline";
 
 /**
@@ -134,7 +135,45 @@ export async function markPipelineCompleted(runId: string) {
       occurredAt: new Date(),
       metadata: { runId },
     });
+
+    // Auto-recalculate risk score — non-fatal on error
+    try {
+      await recalculateMatterRisk(run.matterId, run.firmId);
+    } catch (err) {
+      console.error(
+        `[pipeline-helpers] Risk recalculation failed for matter ${run.matterId}:`,
+        err
+      );
+    }
   }
+}
+
+/**
+ * Recalculate and persist the risk score for a matter from its findings.
+ */
+export async function recalculateMatterRisk(matterId: string, firmId: string) {
+  const allFindings = await db
+    .select({
+      status: pipelineFindings.status,
+      impact: pipelineFindings.impact,
+      confidence: pipelineFindings.confidence,
+    })
+    .from(pipelineFindings)
+    .where(and(eq(pipelineFindings.matterId, matterId), eq(pipelineFindings.firmId, firmId)));
+
+  const { score, factors } = calculateRiskScore(allFindings);
+
+  await db
+    .update(matters)
+    .set({
+      riskScore: score,
+      riskFactors: factors,
+      riskAssessedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(matters.id, matterId));
+
+  return { score, factors };
 }
 
 /**
