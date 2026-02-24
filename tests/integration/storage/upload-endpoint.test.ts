@@ -5,14 +5,15 @@
  * Tests the /api/storage/upload endpoint and MinIO storage operations
  * with multi-tenancy isolation and file validation.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import { db } from "@/lib/db";
 import { uploads } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { setupIntegrationSuite, setupFreshFirmPerTest } from "@tests/integration/setup";
 import { createFirm } from "@tests/fixtures/factories/firm";
-import { POST as uploadHandler } from "@/app/api/storage/upload/route";
+import { createUser } from "@tests/fixtures/factories/user";
 import {
   initializeBucket,
   uploadFile,
@@ -22,9 +23,50 @@ import {
   getMinioClient,
 } from "@/lib/storage/minio";
 
+// Test context for auth mocking
+let testUserId: string = "";
+let testFirmId: string = "";
+
+// Mock the auth module to return our test user
+vi.mock("@/lib/auth", () => ({
+  auth: {
+    api: {
+      getSession: vi.fn(async () => {
+        if (!testUserId) return null;
+        return { user: { id: testUserId } };
+      }),
+    },
+  },
+}));
+
+// Mock tenancy to return our test firm
+vi.mock("@/lib/tenancy", () => ({
+  getOrCreateFirmIdForUser: vi.fn(async () => testFirmId),
+}));
+
 describe("Storage Integration - Upload Endpoint", () => {
   const ctx = setupIntegrationSuite();
   const bucketName = process.env.MINIO_BUCKET_NAME || "uploads";
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    // Create a test user and set up auth context
+    const user = await createUser({ firmId: ctx.firmId });
+    testUserId = user.id;
+    testFirmId = ctx.firmId;
+  });
+
+  /**
+   * Helper to create a NextRequest with FormData for the upload endpoint.
+   * Builds a proper multipart/form-data request so the route handler
+   * can call req.formData() on it.
+   */
+  function createUploadRequest(formData: FormData): NextRequest {
+    return new NextRequest("http://localhost/api/storage/upload", {
+      method: "POST",
+      body: formData,
+    });
+  }
 
   describe("POST /api/storage/upload", () => {
     it("uploads small file successfully", async () => {
@@ -38,9 +80,9 @@ describe("Storage Integration - Upload Endpoint", () => {
       // Create form data
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("firmId", ctx.firmId);
 
-      const response = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const response = await uploadHandler(createUploadRequest(formData));
 
       expect(response.ok).toBe(true);
       const data = await response.json();
@@ -71,11 +113,11 @@ describe("Storage Integration - Upload Endpoint", () => {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("firmId", ctx.firmId);
       formData.append("description", "Test file with metadata");
       formData.append("tags", "test, integration, storage");
 
-      const response = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const response = await uploadHandler(createUploadRequest(formData));
 
       expect(response.ok).toBe(true);
       const data = await response.json();
@@ -100,9 +142,9 @@ describe("Storage Integration - Upload Endpoint", () => {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("firmId", ctx.firmId);
 
-      const response = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const response = await uploadHandler(createUploadRequest(formData));
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -119,9 +161,9 @@ describe("Storage Integration - Upload Endpoint", () => {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("firmId", ctx.firmId);
 
-      const response = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const response = await uploadHandler(createUploadRequest(formData));
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -131,9 +173,9 @@ describe("Storage Integration - Upload Endpoint", () => {
 
     it("rejects request with no file provided", async () => {
       const formData = new FormData();
-      formData.append("firmId", ctx.firmId);
 
-      const response = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const response = await uploadHandler(createUploadRequest(formData));
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(400);
@@ -141,7 +183,10 @@ describe("Storage Integration - Upload Endpoint", () => {
       expect(data.error).toBe("No file provided");
     });
 
-    it("rejects request with no firmId", async () => {
+    it("rejects unauthenticated request", async () => {
+      // Clear the test user so auth returns null
+      testUserId = "";
+
       const fileContent = "Test content";
       const blob = new Blob([fileContent], { type: "text/plain" });
       const file = new File([blob], "test.txt", { type: "text/plain" });
@@ -149,12 +194,13 @@ describe("Storage Integration - Upload Endpoint", () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const response = await uploadHandler(createUploadRequest(formData));
 
       expect(response.ok).toBe(false);
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(401);
       const data = await response.json();
-      expect(data.error).toBe("firmId is required");
+      expect(data.error).toBe("Unauthorized");
     });
 
     it("allows file to be accessed via presigned URL", async () => {
@@ -166,9 +212,9 @@ describe("Storage Integration - Upload Endpoint", () => {
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("firmId", ctx.firmId);
 
-      const uploadResponse = await uploadHandler({ formData: async () => formData } as any);
+      const { POST: uploadHandler } = await import("@/app/api/storage/upload/route");
+      const uploadResponse = await uploadHandler(createUploadRequest(formData));
 
       expect(uploadResponse.ok).toBe(true);
       const uploadData = await uploadResponse.json();

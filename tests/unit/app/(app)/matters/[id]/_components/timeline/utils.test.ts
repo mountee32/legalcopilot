@@ -105,6 +105,17 @@ describe("Timeline Utils", () => {
   describe("formatRelativeTime", () => {
     const fixedNow = new Date("2025-12-18T12:00:00Z");
 
+    // date-fns isToday/isYesterday/isTomorrow compare against Date.now(),
+    // so we must use fake timers to control the current time
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(fixedNow);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it('formats "Today" for same day', () => {
       const today = new Date("2025-12-18T08:00:00Z");
       expect(formatRelativeTime(today, fixedNow)).toBe("Today");

@@ -14,9 +14,6 @@ const mockDb = {
   returning: vi.fn(),
 };
 
-// Make where() return this so it can chain to limit()
-mockDb.where.mockReturnValue(mockDb);
-
 vi.mock("@/lib/db", () => ({
   db: mockDb,
 }));
@@ -26,6 +23,7 @@ vi.mock("@/lib/db/schema", () => ({
     id: "id",
     token: "token",
     status: "status",
+    expiresAt: "expiresAt",
   },
   clientPortalSessions: {
     id: "id",
@@ -50,10 +48,16 @@ vi.mock("crypto", async () => {
 
 describe("Portal Auth Verify API", () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
-    // Reset the mock db to ensure clean state
-    const { db } = vi.importActual("@/lib/db") as any;
+    // Re-establish the chain mocks after clearAllMocks
+    mockDb.select.mockReturnThis();
+    mockDb.from.mockReturnThis();
     mockDb.where.mockReturnValue(mockDb);
+    mockDb.update.mockReturnThis();
+    mockDb.set.mockReturnThis();
+    mockDb.insert.mockReturnThis();
+    mockDb.values.mockReturnThis();
   });
 
   describe("POST /api/portal/auth/verify", () => {
@@ -76,19 +80,17 @@ describe("Portal Auth Verify API", () => {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       };
 
-      // Clear mocks first
-      vi.mocked(mockDb.limit).mockClear();
-      vi.mocked(mockDb.where).mockClear();
-      vi.mocked(mockDb.returning).mockClear();
+      // SELECT chain: db.select().from().where().limit(1)
+      // where() #1 must return mockDb so .limit() is chainable
+      // UPDATE chain: await db.update().set().where()
+      // where() #2 is terminal and awaited, must resolve
+      // INSERT chain: await db.insert().values().returning()
+      mockDb.where
+        .mockReturnValueOnce(mockDb) // SELECT chain - returns mockDb for .limit()
+        .mockResolvedValueOnce(undefined); // UPDATE chain - terminal, awaited
 
-      // First query: select token with where().limit() chain
-      vi.mocked(mockDb.limit).mockResolvedValueOnce([mockToken]);
-
-      // Second query: update token - update().set().where() chain
-      vi.mocked(mockDb.where).mockResolvedValueOnce(undefined as any);
-
-      // Third query: insert session - insert().values().returning()
-      vi.mocked(mockDb.returning).mockResolvedValueOnce([mockSession]);
+      mockDb.limit.mockResolvedValueOnce([mockToken]);
+      mockDb.returning.mockResolvedValueOnce([mockSession]);
 
       const { POST } = await import("@/app/api/portal/auth/verify/route");
 
@@ -109,8 +111,8 @@ describe("Portal Auth Verify API", () => {
       expect(data.expiresAt).toBeDefined();
 
       // Should mark token as used
-      expect(db.update).toHaveBeenCalled();
-      expect(db.set).toHaveBeenCalledWith(
+      expect(mockDb.update).toHaveBeenCalled();
+      expect(mockDb.set).toHaveBeenCalledWith(
         expect.objectContaining({
           status: "used",
           usedAt: expect.any(Date),
@@ -118,8 +120,8 @@ describe("Portal Auth Verify API", () => {
       );
 
       // Should create session
-      expect(db.insert).toHaveBeenCalled();
-      expect(db.values).toHaveBeenCalledWith(
+      expect(mockDb.insert).toHaveBeenCalled();
+      expect(mockDb.values).toHaveBeenCalledWith(
         expect.objectContaining({
           firmId: "firm-123",
           clientId: "client-123",
@@ -143,10 +145,8 @@ describe("Portal Auth Verify API", () => {
     });
 
     it("should return 401 for invalid token", async () => {
-      // Clear and reset mocks
-      vi.mocked(mockDb.limit).mockClear();
       // Mock limit to return empty array (token not found)
-      vi.mocked(mockDb.limit).mockResolvedValueOnce([]);
+      mockDb.limit.mockResolvedValueOnce([]);
 
       const { POST } = await import("@/app/api/portal/auth/verify/route");
 
@@ -167,8 +167,7 @@ describe("Portal Auth Verify API", () => {
     it("should return 401 for expired token", async () => {
       // Expired tokens are filtered by the WHERE clause in the query,
       // so they won't be returned from the database
-      vi.mocked(mockDb.limit).mockClear();
-      vi.mocked(mockDb.limit).mockResolvedValueOnce([]);
+      mockDb.limit.mockResolvedValueOnce([]);
 
       const { POST } = await import("@/app/api/portal/auth/verify/route");
 
@@ -187,7 +186,7 @@ describe("Portal Auth Verify API", () => {
     });
 
     it("should handle database errors gracefully", async () => {
-      vi.mocked(mockDb.limit).mockRejectedValueOnce(new Error("Database connection failed"));
+      mockDb.limit.mockRejectedValueOnce(new Error("Database connection failed"));
 
       const { POST } = await import("@/app/api/portal/auth/verify/route");
 

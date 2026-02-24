@@ -27,11 +27,13 @@ vi.mock("lucide-react", () => {
     Calendar: createMockIcon("Calendar"),
     Clock: createMockIcon("Clock"),
     BarChart3: createMockIcon("BarChart3"),
-    Funnel: createMockIcon("Funnel"),
+    Filter: createMockIcon("Filter"),
     UsersRound: createMockIcon("UsersRound"),
     Settings: createMockIcon("Settings"),
     HelpCircle: createMockIcon("HelpCircle"),
     Scale: createMockIcon("Scale"),
+    Shield: createMockIcon("Shield"),
+    GitBranch: createMockIcon("GitBranch"),
     ChevronUp: createMockIcon("ChevronUp"),
     User: createMockIcon("User"),
     LogOut: createMockIcon("LogOut"),
@@ -100,6 +102,8 @@ describe("Sidebar", () => {
 
     expect(screen.getByTestId("nav-item-time-&-billing")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-reports")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-compliance")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-workflows")).toBeInTheDocument();
   });
 
   it("renders tertiary navigation items", () => {

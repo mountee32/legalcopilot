@@ -6,6 +6,22 @@ import {
   type WorkflowTask,
 } from "@/app/(app)/matters/[id]/_components/workflow/workflow-task-row";
 
+// Mock the TaskDetailPanel to avoid complex sub-component rendering
+vi.mock("@/app/(app)/matters/[id]/_components/workflow/task-detail-panel", () => ({
+  TaskDetailPanel: ({ isExpanded }: { isExpanded: boolean }) =>
+    isExpanded ? <div data-testid="task-detail-panel">Panel</div> : null,
+}));
+
+// Mock the AddEvidenceDialog
+vi.mock("@/app/(app)/matters/[id]/_components/workflow/add-evidence-dialog", () => ({
+  AddEvidenceDialog: () => null,
+}));
+
+// Mock the TABLE_GRID_CLASSES
+vi.mock("@/app/(app)/matters/[id]/_components/workflow/workflow-table", () => ({
+  TABLE_GRID_CLASSES: "grid grid-cols-5 gap-2",
+}));
+
 // Mock fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -84,25 +100,42 @@ describe("WorkflowTaskRow", () => {
 
   describe("Rendering", () => {
     it("renders task title", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      renderWithClient(
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
+      );
 
       expect(screen.getByText("Review mortgage offer")).toBeInTheDocument();
     });
 
     it("renders mandatory indicator for mandatory tasks", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      renderWithClient(
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
+      );
 
       expect(screen.getByText("*")).toBeInTheDocument();
     });
 
     it("renders due date", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      // Due date shows in remarks only when there's no latestNote and no blocking reasons
+      const taskWithDueDate: WorkflowTask = {
+        ...mockTask,
+        latestNote: null,
+      };
+      renderWithClient(
+        <WorkflowTaskRow
+          task={taskWithDueDate}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
+      );
 
       expect(screen.getByText(/Due 20 Dec/)).toBeInTheDocument();
     });
 
     it("renders status badge", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      renderWithClient(
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
+      );
 
       expect(screen.getByText("Pending")).toBeInTheDocument();
     });
@@ -110,20 +143,37 @@ describe("WorkflowTaskRow", () => {
 
   describe("Count badges", () => {
     it("shows notes count badge when notesCount > 0", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      renderWithClient(
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
+      );
 
       expect(screen.getByTitle("3 notes")).toBeInTheDocument();
     });
 
     it("shows attachments count badge when evidenceCount > 0", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      // Attachments badge only shows when requiresEvidence is false
+      const taskWithAttachments: WorkflowTask = {
+        ...mockTask,
+        requiresEvidence: false,
+      };
+      renderWithClient(
+        <WorkflowTaskRow
+          task={taskWithAttachments}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
+      );
 
       expect(screen.getByTitle("2 attachments")).toBeInTheDocument();
     });
 
     it("hides notes count badge when notesCount is 0", () => {
       renderWithClient(
-        <WorkflowTaskRow task={mockTaskWithZeroCounts} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow
+          task={mockTaskWithZeroCounts}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
       );
 
       expect(screen.queryByTitle(/note/)).not.toBeInTheDocument();
@@ -131,7 +181,11 @@ describe("WorkflowTaskRow", () => {
 
     it("hides attachments count badge when evidenceCount is 0", () => {
       renderWithClient(
-        <WorkflowTaskRow task={mockTaskWithZeroCounts} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow
+          task={mockTaskWithZeroCounts}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
       );
 
       expect(screen.queryByTitle(/attachment/)).not.toBeInTheDocument();
@@ -141,7 +195,7 @@ describe("WorkflowTaskRow", () => {
   describe("Expand/Collapse", () => {
     it("expands on row click", async () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       // Get the main row wrapper (first div with role="button")
@@ -156,7 +210,7 @@ describe("WorkflowTaskRow", () => {
 
     it("collapses on second click", async () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       const row = container.querySelector("[role='button'][aria-expanded]");
@@ -177,7 +231,7 @@ describe("WorkflowTaskRow", () => {
 
     it("has aria-expanded attribute", () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       const row = container.querySelector("[role='button'][aria-expanded]");
@@ -186,7 +240,7 @@ describe("WorkflowTaskRow", () => {
 
     it("updates aria-expanded when expanded", async () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       const row = container.querySelector("[role='button'][aria-expanded]");
@@ -200,7 +254,7 @@ describe("WorkflowTaskRow", () => {
 
     it("expands on Enter key press", async () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       const row = container.querySelector("[role='button'][aria-expanded]");
@@ -214,7 +268,7 @@ describe("WorkflowTaskRow", () => {
 
     it("expands on Space key press", async () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       const row = container.querySelector("[role='button'][aria-expanded]");
@@ -229,14 +283,16 @@ describe("WorkflowTaskRow", () => {
 
   describe("Collapsed content", () => {
     it("shows latest note when collapsed and not blocked", () => {
-      renderWithClient(<WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />);
+      renderWithClient(
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
+      );
 
       expect(screen.getByText("Client confirmed funds available")).toBeInTheDocument();
     });
 
     it("hides latest note when expanded", async () => {
       const { container } = renderWithClient(
-        <WorkflowTaskRow task={mockTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow task={mockTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
       );
 
       const row = container.querySelector("[role='button'][aria-expanded]");
@@ -257,7 +313,9 @@ describe("WorkflowTaskRow", () => {
         blockingReasons: ["Awaiting evidence"],
       };
 
-      renderWithClient(<WorkflowTaskRow task={blockedTask} onTaskUpdated={mockOnTaskUpdated} />);
+      renderWithClient(
+        <WorkflowTaskRow task={blockedTask} matterId="matter-1" onTaskUpdated={mockOnTaskUpdated} />
+      );
 
       expect(screen.getByText("Awaiting evidence")).toBeInTheDocument();
     });
@@ -265,26 +323,43 @@ describe("WorkflowTaskRow", () => {
 
   describe("Completed tasks", () => {
     it("shows completed date instead of due date", () => {
+      // Completed date shows in remarks when there's no latestNote and no blocking reasons
+      const completedTaskNoNote: WorkflowTask = {
+        ...mockCompletedTask,
+        latestNote: null,
+      };
       renderWithClient(
-        <WorkflowTaskRow task={mockCompletedTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow
+          task={completedTaskNoNote}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
       );
 
       expect(screen.getByText("18 Dec 2024")).toBeInTheDocument();
       expect(screen.queryByText(/Due/)).not.toBeInTheDocument();
     });
 
-    it("applies strikethrough styling", () => {
+    it("applies muted styling for completed tasks", () => {
       renderWithClient(
-        <WorkflowTaskRow task={mockCompletedTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow
+          task={mockCompletedTask}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
       );
 
       const title = screen.getByText("Review mortgage offer");
-      expect(title.className).toContain("line-through");
+      expect(title.className).toContain("text-slate-400");
     });
 
     it("hides actions menu", () => {
       renderWithClient(
-        <WorkflowTaskRow task={mockCompletedTask} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow
+          task={mockCompletedTask}
+          matterId="matter-1"
+          onTaskUpdated={mockOnTaskUpdated}
+        />
       );
 
       // The MoreVertical button should not be visible for completed tasks
@@ -298,7 +373,12 @@ describe("WorkflowTaskRow", () => {
   describe("Disabled state", () => {
     it("hides actions menu when disabled", () => {
       renderWithClient(
-        <WorkflowTaskRow task={mockTask} disabled={true} onTaskUpdated={mockOnTaskUpdated} />
+        <WorkflowTaskRow
+          task={mockTask}
+          matterId="matter-1"
+          disabled={true}
+          onTaskUpdated={mockOnTaskUpdated}
+        />
       );
 
       // Actions menu trigger should not be present

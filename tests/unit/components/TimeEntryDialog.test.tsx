@@ -125,8 +125,10 @@ describe("TimeEntryDialog", () => {
     const descriptionInput = screen.getByLabelText(/Description/);
     fireEvent.change(descriptionInput, { target: { value: "Test description" } });
 
-    const submitButton = screen.getByText("Create Time Entry");
-    fireEvent.click(submitButton);
+    // Use fireEvent.submit on the form to bypass HTML5 native validation
+    // (the step="6" attribute on the number input prevents normal click submission)
+    const form = durationInput.closest("form")!;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       // Check that some error message appears (validation is working)
@@ -146,8 +148,10 @@ describe("TimeEntryDialog", () => {
 
     // Test below minimum
     fireEvent.change(durationInput, { target: { value: "5" } });
-    const submitButton = screen.getByText("Create Time Entry");
-    fireEvent.click(submitButton);
+
+    // Use fireEvent.submit on the form to bypass HTML5 native validation
+    const form = durationInput.closest("form")!;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       // Check that some error message appears (validation is working)

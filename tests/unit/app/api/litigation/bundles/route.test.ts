@@ -1,28 +1,41 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "@/app/api/litigation/bundles/route";
-import * as tenantModule from "@/lib/db/tenant";
-import * as tenancyModule from "@/lib/tenancy";
 
-// Mock dependencies
-vi.mock("@/lib/db/tenant");
-vi.mock("@/lib/tenancy");
-vi.mock("@/lib/timeline/createEvent");
+// Mock middleware and dependencies
+vi.mock("@/middleware/withAuth", () => ({
+  withAuth: (handler: any) => (request: any, ctx: any) =>
+    handler(request, {
+      ...ctx,
+      user: { user: { id: "user-123" }, session: { id: "session-123" } },
+    }),
+}));
 
-const mockUser = {
-  user: { id: "user-123", email: "test@example.com" },
-  session: { id: "session-123" },
-};
+vi.mock("@/middleware/withPermission", () => ({
+  withPermission: () => (handler: any) => handler,
+}));
+
+vi.mock("@/lib/tenancy", () => ({
+  getOrCreateFirmIdForUser: vi.fn(async () => "firm-123"),
+}));
+
+vi.mock("@/lib/db/tenant", () => ({
+  withFirmDb: vi.fn(),
+}));
+
+vi.mock("@/lib/timeline/createEvent", () => ({
+  createTimelineEvent: vi.fn(),
+}));
 
 const mockFirmId = "firm-123";
-const mockMatterId = "matter-123";
+const mockMatterId = "123e4567-e89b-12d3-a456-426614174000";
 
 describe("POST /api/litigation/bundles", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(tenancyModule.getOrCreateFirmIdForUser).mockResolvedValue(mockFirmId);
   });
 
   it("should create a bundle successfully", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -30,9 +43,13 @@ describe("POST /api/litigation/bundles", () => {
       practiceData: {},
     };
 
-    const documentIds = ["doc-1", "doc-2", "doc-3"];
+    const documentIds = [
+      "223e4567-e89b-12d3-a456-426614174001",
+      "223e4567-e89b-12d3-a456-426614174002",
+      "223e4567-e89b-12d3-a456-426614174003",
+    ];
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -50,6 +67,8 @@ describe("POST /api/litigation/bundles", () => {
       return callback(mockTx as any);
     });
 
+    const { POST } = await import("@/app/api/litigation/bundles/route");
+
     const request = new Request("http://localhost:3000/api/litigation/bundles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -60,7 +79,7 @@ describe("POST /api/litigation/bundles", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -70,7 +89,9 @@ describe("POST /api/litigation/bundles", () => {
   });
 
   it("should return 404 if matter not found", async () => {
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -80,23 +101,27 @@ describe("POST /api/litigation/bundles", () => {
       return callback(mockTx as any);
     });
 
+    const { POST } = await import("@/app/api/litigation/bundles/route");
+
     const request = new Request("http://localhost:3000/api/litigation/bundles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        matterId: "non-existent",
-        documentIds: ["doc-1"],
+        matterId: mockMatterId,
+        documentIds: ["223e4567-e89b-12d3-a456-426614174001"],
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(404);
-    expect(data.error).toContain("Matter not found");
+    expect(data.message).toContain("Matter not found");
   });
 
   it("should return 400 if matter is not a litigation matter", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -104,7 +129,7 @@ describe("POST /api/litigation/bundles", () => {
       practiceData: {},
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -114,23 +139,27 @@ describe("POST /api/litigation/bundles", () => {
       return callback(mockTx as any);
     });
 
+    const { POST } = await import("@/app/api/litigation/bundles/route");
+
     const request = new Request("http://localhost:3000/api/litigation/bundles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         matterId: mockMatterId,
-        documentIds: ["doc-1"],
+        documentIds: ["223e4567-e89b-12d3-a456-426614174001"],
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toContain("not a litigation matter");
+    expect(data.message).toContain("not a litigation matter");
   });
 
   it("should return 400 if documentIds is empty", async () => {
+    const { POST } = await import("@/app/api/litigation/bundles/route");
+
     const request = new Request("http://localhost:3000/api/litigation/bundles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -140,7 +169,7 @@ describe("POST /api/litigation/bundles", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(400);
@@ -148,6 +177,8 @@ describe("POST /api/litigation/bundles", () => {
   });
 
   it("should work without title", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -155,7 +186,7 @@ describe("POST /api/litigation/bundles", () => {
       practiceData: {},
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -166,24 +197,26 @@ describe("POST /api/litigation/bundles", () => {
         returning: vi.fn().mockResolvedValue([
           {
             ...mockMatter,
-            practiceData: { bundleDocumentIds: ["doc-1"] },
+            practiceData: { bundleDocumentIds: ["223e4567-e89b-12d3-a456-426614174001"] },
           },
         ]),
       };
       return callback(mockTx as any);
     });
 
+    const { POST } = await import("@/app/api/litigation/bundles/route");
+
     const request = new Request("http://localhost:3000/api/litigation/bundles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         matterId: mockMatterId,
-        documentIds: ["doc-1"],
+        documentIds: ["223e4567-e89b-12d3-a456-426614174001"],
         // No title provided
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(200);

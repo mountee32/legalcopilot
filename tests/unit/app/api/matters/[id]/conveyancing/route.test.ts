@@ -1,40 +1,45 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PATCH } from "@/app/api/matters/[id]/conveyancing/route";
-import * as tenantModule from "@/lib/db/tenant";
-import * as tenancyModule from "@/lib/tenancy";
 
-// Mock dependencies
-vi.mock("@/lib/db/tenant");
-vi.mock("@/lib/tenancy");
-vi.mock("@/lib/timeline/createEvent");
+// Mock middleware and dependencies
+vi.mock("@/middleware/withAuth", () => ({
+  withAuth: (handler: any) => (request: any, ctx: any) =>
+    handler(request, {
+      ...ctx,
+      user: { user: { id: "user-123" }, session: { id: "session-123" } },
+    }),
+}));
 
-const mockUser = {
-  user: { id: "user-123", email: "test@example.com" },
-  session: { id: "session-123" },
-};
+vi.mock("@/middleware/withPermission", () => ({
+  withPermission: () => (handler: any) => handler,
+}));
+
+vi.mock("@/lib/tenancy", () => ({
+  getOrCreateFirmIdForUser: vi.fn(async () => "firm-123"),
+}));
+
+vi.mock("@/lib/db/tenant", () => ({
+  withFirmDb: vi.fn(),
+}));
+
+vi.mock("@/lib/timeline/createEvent", () => ({
+  createTimelineEvent: vi.fn(),
+}));
 
 const mockFirmId = "firm-123";
-const mockMatterId = "matter-123";
+const mockMatterId = "123e4567-e89b-12d3-a456-426614174000";
 
 describe("PATCH /api/matters/[id]/conveyancing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(tenancyModule.getOrCreateFirmIdForUser).mockResolvedValue(mockFirmId);
   });
 
   it("should update conveyancing data successfully", async () => {
-    const mockMatter = {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
+    const mockUpdatedMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
       practiceArea: "conveyancing",
-      practiceData: {
-        transactionType: "purchase",
-        propertyType: "freehold",
-      },
-    };
-
-    const mockUpdated = {
-      ...mockMatter,
       practiceData: {
         transactionType: "purchase",
         propertyType: "freehold",
@@ -43,20 +48,32 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       },
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([mockMatter]),
+        limit: vi.fn().mockResolvedValue([
+          {
+            id: mockMatterId,
+            firmId: mockFirmId,
+            practiceArea: "conveyancing",
+            practiceData: {
+              transactionType: "purchase",
+              propertyType: "freehold",
+            },
+          },
+        ]),
         update: vi.fn().mockReturnThis(),
         set: vi.fn().mockReturnThis(),
-        returning: vi.fn().mockResolvedValue([mockUpdated]),
+        returning: vi.fn().mockResolvedValue([mockUpdatedMatter]),
       };
       return callback(mockTx as any);
     });
 
-    const request = new Request("http://localhost:3000/api/matters/matter-123/conveyancing", {
+    const { PATCH } = await import("@/app/api/matters/[id]/conveyancing/route");
+
+    const request = new Request(`http://localhost:3000/api/matters/${mockMatterId}/conveyancing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -65,10 +82,12 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       }),
     });
 
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: mockMatterId }),
-      user: mockUser,
-    } as any);
+    const response = await PATCH(
+      request as any,
+      {
+        params: Promise.resolve({ id: mockMatterId }),
+      } as any
+    );
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -78,6 +97,8 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
   });
 
   it("should merge with existing practiceData", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const existingData = {
       transactionType: "purchase",
       propertyType: "freehold",
@@ -91,7 +112,7 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       practiceData: existingData,
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -121,7 +142,9 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       return callback(mockTx as any);
     });
 
-    const request = new Request("http://localhost:3000/api/matters/matter-123/conveyancing", {
+    const { PATCH } = await import("@/app/api/matters/[id]/conveyancing/route");
+
+    const request = new Request(`http://localhost:3000/api/matters/${mockMatterId}/conveyancing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -129,16 +152,21 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       }),
     });
 
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: mockMatterId }),
-      user: mockUser,
-    } as any);
+    const response = await PATCH(
+      request as any,
+      {
+        params: Promise.resolve({ id: mockMatterId }),
+      } as any
+    );
 
     expect(response.status).toBe(200);
   });
 
   it("should return 404 if matter not found", async () => {
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
+    // When matter is not found, withFirmDb callback returns null, then route throws NotFoundError
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -148,7 +176,9 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       return callback(mockTx as any);
     });
 
-    const request = new Request("http://localhost:3000/api/matters/non-existent/conveyancing", {
+    const { PATCH } = await import("@/app/api/matters/[id]/conveyancing/route");
+
+    const request = new Request(`http://localhost:3000/api/matters/${mockMatterId}/conveyancing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -156,17 +186,21 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       }),
     });
 
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: "non-existent" }),
-      user: mockUser,
-    } as any);
+    const response = await PATCH(
+      request as any,
+      {
+        params: Promise.resolve({ id: mockMatterId }),
+      } as any
+    );
     const data = await response.json();
 
     expect(response.status).toBe(404);
-    expect(data.error).toContain("Matter not found");
+    expect(data.message).toContain("Matter not found");
   });
 
   it("should return 400 if matter is not a conveyancing matter", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -174,7 +208,7 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       practiceData: {},
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -184,7 +218,9 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       return callback(mockTx as any);
     });
 
-    const request = new Request("http://localhost:3000/api/matters/matter-123/conveyancing", {
+    const { PATCH } = await import("@/app/api/matters/[id]/conveyancing/route");
+
+    const request = new Request(`http://localhost:3000/api/matters/${mockMatterId}/conveyancing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -192,18 +228,22 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       }),
     });
 
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: mockMatterId }),
-      user: mockUser,
-    } as any);
+    const response = await PATCH(
+      request as any,
+      {
+        params: Promise.resolve({ id: mockMatterId }),
+      } as any
+    );
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toContain("not a conveyancing matter");
+    expect(data.message).toContain("not a conveyancing matter");
   });
 
   it("should return 400 for invalid schema", async () => {
-    const request = new Request("http://localhost:3000/api/matters/matter-123/conveyancing", {
+    const { PATCH } = await import("@/app/api/matters/[id]/conveyancing/route");
+
+    const request = new Request(`http://localhost:3000/api/matters/${mockMatterId}/conveyancing`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -211,10 +251,12 @@ describe("PATCH /api/matters/[id]/conveyancing", () => {
       }),
     });
 
-    const response = await PATCH(request, {
-      params: Promise.resolve({ id: mockMatterId }),
-      user: mockUser,
-    } as any);
+    const response = await PATCH(
+      request as any,
+      {
+        params: Promise.resolve({ id: mockMatterId }),
+      } as any
+    );
     const data = await response.json();
 
     expect(response.status).toBe(400);

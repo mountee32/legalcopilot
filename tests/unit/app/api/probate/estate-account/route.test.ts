@@ -1,27 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST } from "@/app/api/probate/estate-account/route";
-import * as tenantModule from "@/lib/db/tenant";
-import * as tenancyModule from "@/lib/tenancy";
 
-// Mock dependencies
-vi.mock("@/lib/db/tenant");
-vi.mock("@/lib/tenancy");
+// Mock middleware and dependencies
+vi.mock("@/middleware/withAuth", () => ({
+  withAuth: (handler: any) => (request: any, ctx: any) =>
+    handler(request, {
+      ...ctx,
+      user: { user: { id: "user-123" }, session: { id: "session-123" } },
+    }),
+}));
 
-const mockUser = {
-  user: { id: "user-123", email: "test@example.com" },
-  session: { id: "session-123" },
-};
+vi.mock("@/middleware/withPermission", () => ({
+  withPermission: () => (handler: any) => handler,
+}));
+
+vi.mock("@/lib/tenancy", () => ({
+  getOrCreateFirmIdForUser: vi.fn(async () => "firm-123"),
+}));
+
+vi.mock("@/lib/db/tenant", () => ({
+  withFirmDb: vi.fn(),
+}));
 
 const mockFirmId = "firm-123";
-const mockMatterId = "matter-123";
+const mockMatterId = "123e4567-e89b-12d3-a456-426614174000";
 
 describe("POST /api/probate/estate-account", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(tenancyModule.getOrCreateFirmIdForUser).mockResolvedValue(mockFirmId);
   });
 
   it("should generate estate account with all components", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -44,7 +54,7 @@ describe("POST /api/probate/estate-account", () => {
       },
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -53,6 +63,8 @@ describe("POST /api/probate/estate-account", () => {
       };
       return callback(mockTx as any);
     });
+
+    const { POST } = await import("@/app/api/probate/estate-account/route");
 
     const request = new Request("http://localhost:3000/api/probate/estate-account", {
       method: "POST",
@@ -65,18 +77,18 @@ describe("POST /api/probate/estate-account", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    // £500,000 + £50,000 = £550,000
+    // 500,000 + 50,000 = 550,000
     expect(data.estateGrossValue).toBe("550000.00");
-    // £550,000 - £210,000 = £340,000
+    // 550,000 - 210,000 = 340,000
     expect(data.estateNetValue).toBe("340000.00");
-    // £100,000
+    // 100,000
     expect(data.totalDistributions).toBe("100000.00");
-    // £340,000 - £100,000 = £240,000
+    // 340,000 - 100,000 = 240,000
     expect(data.remainingBalance).toBe("240000.00");
     expect(data.summary).toContain("2 asset(s)");
     expect(data.summary).toContain("2 liability(ies)");
@@ -84,6 +96,8 @@ describe("POST /api/probate/estate-account", () => {
   });
 
   it("should handle estate with no data", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -91,7 +105,7 @@ describe("POST /api/probate/estate-account", () => {
       practiceData: {},
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -101,6 +115,8 @@ describe("POST /api/probate/estate-account", () => {
       return callback(mockTx as any);
     });
 
+    const { POST } = await import("@/app/api/probate/estate-account/route");
+
     const request = new Request("http://localhost:3000/api/probate/estate-account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,7 +125,7 @@ describe("POST /api/probate/estate-account", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -120,6 +136,8 @@ describe("POST /api/probate/estate-account", () => {
   });
 
   it("should exclude components based on flags", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -135,7 +153,7 @@ describe("POST /api/probate/estate-account", () => {
       },
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -144,6 +162,8 @@ describe("POST /api/probate/estate-account", () => {
       };
       return callback(mockTx as any);
     });
+
+    const { POST } = await import("@/app/api/probate/estate-account/route");
 
     const request = new Request("http://localhost:3000/api/probate/estate-account", {
       method: "POST",
@@ -156,7 +176,7 @@ describe("POST /api/probate/estate-account", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -170,7 +190,9 @@ describe("POST /api/probate/estate-account", () => {
   });
 
   it("should return 404 if matter not found", async () => {
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -180,38 +202,7 @@ describe("POST /api/probate/estate-account", () => {
       return callback(mockTx as any);
     });
 
-    const request = new Request("http://localhost:3000/api/probate/estate-account", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        matterId: "non-existent",
-      }),
-    });
-
-    const response = await POST(request, { params: {}, user: mockUser } as any);
-    const data = await response.json();
-
-    expect(response.status).toBe(404);
-    expect(data.error).toContain("Matter not found");
-  });
-
-  it("should return 400 if matter is not a probate matter", async () => {
-    const mockMatter = {
-      id: mockMatterId,
-      firmId: mockFirmId,
-      practiceArea: "conveyancing",
-      practiceData: {},
-    };
-
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
-      const mockTx = {
-        select: vi.fn().mockReturnThis(),
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([mockMatter]),
-      };
-      return callback(mockTx as any);
-    });
+    const { POST } = await import("@/app/api/probate/estate-account/route");
 
     const request = new Request("http://localhost:3000/api/probate/estate-account", {
       method: "POST",
@@ -221,14 +212,53 @@ describe("POST /api/probate/estate-account", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
+    const data = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(data.message).toContain("Matter not found");
+  });
+
+  it("should return 400 if matter is not a probate matter", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
+    const mockMatter = {
+      id: mockMatterId,
+      firmId: mockFirmId,
+      practiceArea: "conveyancing",
+      practiceData: {},
+    };
+
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
+      const mockTx = {
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([mockMatter]),
+      };
+      return callback(mockTx as any);
+    });
+
+    const { POST } = await import("@/app/api/probate/estate-account/route");
+
+    const request = new Request("http://localhost:3000/api/probate/estate-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        matterId: mockMatterId,
+      }),
+    });
+
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toContain("not a probate matter");
+    expect(data.message).toContain("not a probate matter");
   });
 
   it("should handle numeric values as numbers", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+
     const mockMatter = {
       id: mockMatterId,
       firmId: mockFirmId,
@@ -243,7 +273,7 @@ describe("POST /api/probate/estate-account", () => {
       },
     };
 
-    vi.mocked(tenantModule.withFirmDb).mockImplementation(async (firmId, callback) => {
+    vi.mocked(withFirmDb).mockImplementation(async (firmId, callback) => {
       const mockTx = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
@@ -253,6 +283,8 @@ describe("POST /api/probate/estate-account", () => {
       return callback(mockTx as any);
     });
 
+    const { POST } = await import("@/app/api/probate/estate-account/route");
+
     const request = new Request("http://localhost:3000/api/probate/estate-account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -261,7 +293,7 @@ describe("POST /api/probate/estate-account", () => {
       }),
     });
 
-    const response = await POST(request, { params: {}, user: mockUser } as any);
+    const response = await POST(request as any, { params: {} } as any);
     const data = await response.json();
 
     expect(response.status).toBe(200);

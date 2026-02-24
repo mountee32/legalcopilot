@@ -1,9 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-// Mock withClientPortalAuth middleware to bypass authentication
+// Mock withClientPortalAuth middleware - check for auth header
 vi.mock("@/middleware/withClientPortalAuth", () => ({
   withClientPortalAuth: (handler: any) => (request: any, ctx: any) => {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json(
+        { error: "Unauthorized", message: "Missing or invalid authorization header" },
+        { status: 401 }
+      );
+    }
+
     const mockPortalSession = {
       sessionId: "session-123",
       clientId: "client-123",
@@ -24,15 +32,12 @@ const mockDb = {
   select: vi.fn().mockReturnThis(),
   from: vi.fn().mockReturnThis(),
   where: vi.fn().mockReturnThis(),
-  orderBy: vi.fn().mockReturnThis(),
+  orderBy: vi.fn(),
   limit: vi.fn(),
   update: vi.fn().mockReturnThis(),
   set: vi.fn().mockReturnThis(),
   innerJoin: vi.fn().mockReturnThis(),
 };
-
-// Make where() return this so it can chain properly
-mockDb.where.mockReturnValue(mockDb);
 
 vi.mock("@/lib/db", () => ({
   db: mockDb,
@@ -42,6 +47,17 @@ vi.mock("@/lib/db/schema", () => ({
   matters: {
     id: "id",
     clientId: "clientId",
+    reference: "reference",
+    title: "title",
+    description: "description",
+    status: "status",
+    practiceArea: "practiceArea",
+    billingType: "billingType",
+    openedAt: "openedAt",
+    closedAt: "closedAt",
+    keyDeadline: "keyDeadline",
+    createdAt: "createdAt",
+    updatedAt: "updatedAt",
   },
   clients: {
     id: "id",
@@ -61,26 +77,19 @@ vi.mock("drizzle-orm", () => ({
 
 describe("Portal Matters API", () => {
   beforeEach(() => {
+    vi.resetModules();
     vi.clearAllMocks();
+    // Re-establish chain mocks after clearAllMocks
+    mockDb.select.mockReturnThis();
+    mockDb.from.mockReturnThis();
+    mockDb.where.mockReturnValue(mockDb);
+    mockDb.update.mockReturnThis();
+    mockDb.set.mockReturnThis();
+    mockDb.innerJoin.mockReturnThis();
   });
 
   describe("GET /api/portal/matters", () => {
     it("should return client's matters when authenticated", async () => {
-      const mockSession = {
-        id: "session-123",
-        clientId: "client-123",
-        firmId: "firm-123",
-        token: "valid-session-token",
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      };
-
-      const mockClient = {
-        id: "client-123",
-        email: "client@example.com",
-        firstName: "John",
-        lastName: "Doe",
-      };
-
       const mockMatters = [
         {
           id: "matter-1",
@@ -112,15 +121,8 @@ describe("Portal Matters API", () => {
         },
       ];
 
-      const { db } = await import("@/lib/db");
-
-      // First call for auth middleware (innerJoin chain)
-      vi.mocked(db.limit)
-        .mockResolvedValueOnce([{ session: mockSession, client: mockClient }])
-        .mockResolvedValueOnce(undefined); // For update query
-
-      // Second call for matters query
-      vi.mocked(db.orderBy).mockResolvedValue(mockMatters);
+      // The route does: db.select({...}).from(matters).where(eq(...)).orderBy(desc(...))
+      mockDb.orderBy.mockResolvedValueOnce(mockMatters);
 
       const { GET } = await import("@/app/api/portal/matters/route");
 
@@ -156,29 +158,8 @@ describe("Portal Matters API", () => {
     });
 
     it("should return empty array if client has no matters", async () => {
-      const mockSession = {
-        id: "session-123",
-        clientId: "client-123",
-        firmId: "firm-123",
-        token: "valid-session-token",
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      };
-
-      const mockClient = {
-        id: "client-123",
-        email: "client@example.com",
-      };
-
-      const { db } = await import("@/lib/db");
-
-      // Reset all mocks first
-      vi.mocked(db.limit).mockClear();
-      vi.mocked(db.orderBy).mockClear();
-      vi.mocked(db.where).mockClear();
-
-      vi.mocked(db.limit).mockResolvedValueOnce([{ session: mockSession, client: mockClient }]);
-      vi.mocked(db.where).mockReturnValueOnce(Promise.resolve(undefined) as any);
-      vi.mocked(db.orderBy).mockResolvedValue([]);
+      // The route does: db.select({...}).from(matters).where(eq(...)).orderBy(desc(...))
+      mockDb.orderBy.mockResolvedValueOnce([]);
 
       const { GET } = await import("@/app/api/portal/matters/route");
 
@@ -198,29 +179,8 @@ describe("Portal Matters API", () => {
     });
 
     it("should handle database errors gracefully", async () => {
-      const mockSession = {
-        id: "session-123",
-        clientId: "client-123",
-        firmId: "firm-123",
-        token: "valid-session-token",
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      };
-
-      const mockClient = {
-        id: "client-123",
-        email: "client@example.com",
-      };
-
-      const { db } = await import("@/lib/db");
-
-      // Reset all mocks first
-      vi.mocked(db.limit).mockClear();
-      vi.mocked(db.orderBy).mockClear();
-      vi.mocked(db.where).mockClear();
-
-      vi.mocked(db.limit).mockResolvedValueOnce([{ session: mockSession, client: mockClient }]);
-      vi.mocked(db.where).mockReturnValueOnce(Promise.resolve(undefined) as any);
-      vi.mocked(db.orderBy).mockRejectedValue(new Error("Database error"));
+      // Make orderBy throw to simulate DB error
+      mockDb.orderBy.mockRejectedValueOnce(new Error("Database error"));
 
       const { GET } = await import("@/app/api/portal/matters/route");
 
