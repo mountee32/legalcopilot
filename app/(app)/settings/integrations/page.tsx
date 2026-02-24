@@ -13,7 +13,9 @@ import {
   RefreshCw,
   Plug,
   PlugZap,
+  FileText,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -203,13 +205,25 @@ export default function IntegrationsSettingsPage() {
                     Connect your email to enable AI inbox processing and automated responses
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30"
-                >
-                  <Plug className="h-4 w-4 mr-2" />
-                  Connect Email
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link href="/settings/integrations/email-import-log">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-slate-700/50 bg-slate-900/30 hover:bg-slate-800/50 text-slate-300"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      View Import Log
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    className="bg-amber-900/30 hover:bg-amber-900/50 text-amber-50 border border-amber-800/30"
+                  >
+                    <Plug className="h-4 w-4 mr-2" />
+                    Connect Email
+                  </Button>
+                </div>
               </div>
 
               {emailLoading ? (

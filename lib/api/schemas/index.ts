@@ -45,6 +45,7 @@ export * from "./reports";
 export * from "./practice-modules";
 export * from "./taxonomy";
 export * from "./pipeline";
+export * from "./email-imports";
 
 // TODO: Add as implemented:
 // export * from "./users";

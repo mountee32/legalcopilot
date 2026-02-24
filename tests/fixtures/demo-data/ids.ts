@@ -29,6 +29,8 @@
  *   a026 = Pipeline Runs
  *   a027 = Pipeline Findings
  *   a028 = Pipeline Actions
+ *   a029 = Email Imports
+ *   a030 = Email Accounts (Demo)
  *   b000 = Uploads (MinIO)
  */
 
@@ -627,6 +629,20 @@ export const DEMO_IDS = {
     ms1_5: "de000000-0000-4000-a025-000000000005", // Exchange
     ms1_6: "de000000-0000-4000-a025-000000000006", // Completion
     ms1_7: "de000000-0000-4000-a025-000000000007", // Post-Completion
+  },
+
+  // Email Imports (a029)
+  emailImports: {
+    imp1: "de000000-0000-4000-a029-000000000001", // completed - subject_reference
+    imp2: "de000000-0000-4000-a029-000000000002", // completed - sender_domain
+    imp3: "de000000-0000-4000-a029-000000000003", // unmatched
+    imp4: "de000000-0000-4000-a029-000000000004", // failed
+    imp5: "de000000-0000-4000-a029-000000000005", // matched - no attachments
+  },
+
+  // Email Accounts - Demo (a030)
+  emailAccountsDemo: {
+    jamesClarke: "de000000-0000-4000-a030-000000000001",
   },
 
   workflowTaskTemplates: {
