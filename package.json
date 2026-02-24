@@ -29,6 +29,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:seed": "node --import tsx tests/fixtures/seed.ts",
     "test:all": "npm run test && npm run test:e2e",
+    "eval:pipeline": "node --import tsx tests/eval/runner.ts",
     "demo:seed": "node --import tsx tests/fixtures/demo-data/index.ts seed",
     "demo:reset": "node --import tsx tests/fixtures/demo-data/index.ts reset",
     "demo:clear": "node --import tsx tests/fixtures/demo-data/index.ts clear",

@@ -36,22 +36,30 @@ export const DateSchema = z.string().date().openapi({
 });
 
 /**
- * UK postcode format.
+ * Postal code format.
+ *
+ * Accepts common alphanumeric postal code formats used across regions,
+ * including US ZIP and ZIP+4 formats.
  */
-export const PostcodeSchema = z
+export const PostalCodeSchema = z
   .string()
-  .regex(/^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9 -]{1,11}$/)
   .openapi({
-    example: "SW1A 1AA",
-    description: "UK postcode",
+    example: "94105",
+    description: "Postal code (ZIP, ZIP+4, or equivalent)",
   });
 
 /**
- * UK phone number.
+ * Backward-compatible alias used by legacy schema fields.
+ */
+export const PostcodeSchema = PostalCodeSchema;
+
+/**
+ * Phone number.
  */
 export const PhoneSchema = z.string().openapi({
-  example: "+44 20 7946 0958",
-  description: "Phone number in E.164 or UK format",
+  example: "+1 415 555 0100",
+  description: "Phone number in E.164 or local format",
 });
 
 /**

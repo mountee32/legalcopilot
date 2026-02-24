@@ -228,14 +228,14 @@ describe("Clients API - POST /api/clients", () => {
     expect([400, 500]).toContain(response.status);
   });
 
-  it("sets default country to United Kingdom", async () => {
+  it("sets default country to United States", async () => {
     const { withFirmDb } = await import("@/lib/db/tenant");
     const mockClient = {
       id: "new-c3",
       type: "individual",
       firstName: "Jane",
       lastName: "Doe",
-      country: "United Kingdom",
+      country: "United States",
     };
     vi.mocked(withFirmDb).mockResolvedValueOnce(mockClient as any);
 
@@ -254,6 +254,35 @@ describe("Clients API - POST /api/clients", () => {
     expect(response.status).toBe(201);
 
     const json = await response.json();
-    expect(json.country).toBe("United Kingdom");
+    expect(json.country).toBe("United States");
+  });
+
+  it("returns postalCode alias in the response", async () => {
+    const { withFirmDb } = await import("@/lib/db/tenant");
+    vi.mocked(withFirmDb).mockResolvedValueOnce({
+      id: "new-c4",
+      type: "individual",
+      firstName: "Alex",
+      lastName: "Rivera",
+      postcode: "94105",
+    } as any);
+
+    const { POST } = await import("@/app/api/clients/route");
+    const request = new NextRequest("http://localhost/api/clients", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "individual",
+        firstName: "Alex",
+        lastName: "Rivera",
+        email: "alex@example.com",
+        postalCode: "94105",
+      }),
+    });
+
+    const response = await POST(request as any, {} as any);
+    expect(response.status).toBe(201);
+    const json = await response.json();
+    expect(json.postcode).toBe("94105");
+    expect(json.postalCode).toBe("94105");
   });
 });

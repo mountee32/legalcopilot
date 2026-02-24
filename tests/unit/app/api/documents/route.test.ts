@@ -23,6 +23,10 @@ vi.mock("@/lib/timeline/createEvent", () => ({
   createTimelineEvent: vi.fn(),
 }));
 
+vi.mock("@/lib/queue/pipeline", () => ({
+  startPipeline: vi.fn().mockResolvedValue(undefined),
+}));
+
 describe("Documents API - GET /api/documents", () => {
   beforeEach(() => {
     vi.clearAllMocks();

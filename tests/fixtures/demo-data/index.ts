@@ -40,6 +40,7 @@ import { seedTimelineEvents } from "./seeders/timeline-events";
 import { seedEmails } from "./seeders/emails";
 import { seedApprovals } from "./seeders/approvals";
 import { seedWorkflows, seedMatterWorkflows } from "./seeders/workflows";
+import { seedPipeline } from "./seeders/pipeline";
 
 /**
  * Seeds all demo data in the correct order.
@@ -79,6 +80,9 @@ export async function seedDemoData(): Promise<SeedResult> {
   // 5. AI & compliance
   await seedCompliance(ctx);
   await seedApprovals(ctx);
+
+  // 6. Pipeline (AI document processing)
+  await seedPipeline(ctx);
 
   console.log("\n✅ Demo data seeding complete!\n");
   console.log("Summary:");

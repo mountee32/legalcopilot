@@ -45,8 +45,8 @@ async function testAPIs() {
   const [user] = await db
     .insert(users)
     .values({
-      name: "Test Solicitor",
-      email: `test-solicitor-${Date.now()}@example.com`,
+      name: "Test Attorney",
+      email: `test-attorney-${Date.now()}@example.com`,
     })
     .returning();
 
@@ -68,9 +68,9 @@ async function testAPIs() {
         firstName: "Jane",
         lastName: "Prospect",
         email: "jane@example.com",
-        phone: "07700900111",
+        phone: "+1 415 555 0111",
         enquiryType: "conveyancing", // NEW: Practice area for routing
-        message: "I need help with purchasing a property in London", // NEW: Enquiry details
+        message: "I need help with purchasing a property in California", // NEW: Enquiry details
         status: "new",
         score: 80,
         assignedTo: user.id, // NEW: Lead assignment
@@ -98,7 +98,7 @@ async function testAPIs() {
         ],
         disbursements: [
           // NEW: Third-party costs
-          { description: "Land Registry fee", amount: 300 },
+          { description: "County recording fee", amount: 300 },
           { description: "Search fees", amount: 240 },
         ],
         subtotal: "1200.00",
@@ -125,10 +125,10 @@ async function testAPIs() {
         firstName: "John",
         lastName: "Smith",
         email: "john.smith@example.com",
-        phone: "07700900123",
-        addressLine1: "45 High Street",
-        city: "London",
-        postcode: "SW1A 1AA",
+        phone: "+1 415 555 0123",
+        addressLine1: "45 Market St",
+        city: "San Francisco",
+        postcode: "94105",
         status: "active",
         source: "lead_conversion", // NEW: Client acquisition source
         sourceId: lead.id, // NEW: Link to originating lead
@@ -152,10 +152,10 @@ async function testAPIs() {
         firmId: firm.id,
         clientId: client.id,
         title: "Property Purchase - 123 Test Lane",
-        reference: "CONV-2024-001",
+        reference: "REA-2024-001",
         practiceArea: "conveyancing",
         status: "active",
-        description: "Residential freehold purchase",
+        description: "Residential purchase",
         feeEarnerId: user.id,
         estimatedValue: "350000.00",
         riskScore: 25, // NEW: AI risk assessment score (0-100)
@@ -167,7 +167,7 @@ async function testAPIs() {
         ],
         riskAssessedAt: new Date(), // NEW: When risk was calculated
         practiceData: {
-          propertyAddress: "123 Test Lane, London",
+          propertyAddress: "123 Test Lane, San Francisco",
           propertyType: "freehold",
           mortgageRequired: true,
         },
@@ -218,7 +218,7 @@ async function testAPIs() {
         documentId: doc.id,
         matterId: matter.id,
         chunkIndex: 1,
-        text: "The purchase price is £350,000 payable on completion",
+        text: "The purchase price is $350,000 payable on closing",
         charStart: 58,
         charEnd: 110,
       },
@@ -268,14 +268,14 @@ async function testAPIs() {
         invoiceDate: invoiceDateStr,
         dueDate: dueDateStr,
         subtotal: "250.00",
-        vatRate: "20.00", // NEW: VAT rate as percentage
+        vatRate: "8.75", // NEW: Tax rate as percentage (legacy vatRate field)
         vatAmount: "50.00",
         total: "300.00",
         balanceDue: "300.00",
       })
       .returning();
     console.log(`   ✓ Invoice created: ${invoice.id}`);
-    console.log(`   ✓ Invoice has vatRate: ${invoice.vatRate}%`);
+    console.log(`   ✓ Invoice has tax rate: ${invoice.vatRate}%`);
 
     // ============================================
     // EPIC 12: AI Task Orchestration
@@ -352,7 +352,7 @@ async function testAPIs() {
         sourceType: "ai",
         sourceId: user.id,
         action: "invoice.send",
-        summary: `Approve invoice ${invoice.invoiceNumber} for £${invoice.total}`,
+        summary: `Approve invoice ${invoice.invoiceNumber} for $${invoice.total}`,
         entityType: "invoice",
         entityId: invoice.id,
         matterId: matter.id, // NEW: Direct matter reference
@@ -434,7 +434,7 @@ async function testAPIs() {
         matterId: matter.id,
         direction: "inbound",
         fromAddress: { email: "opponent@lawfirm.com", name: "Jane Opponent" },
-        toAddresses: [{ email: "solicitor@ourfirm.com", name: "Test Solicitor" }],
+        toAddresses: [{ email: "attorney@ourfirm.com", name: "Test Attorney" }],
         subject: "Re: Property Purchase - 123 Test Lane",
         bodyText: "Please find attached the draft contract for review.",
         status: "received",
@@ -445,7 +445,7 @@ async function testAPIs() {
         aiIntent: "provide_information",
         aiSentiment: "neutral",
         aiUrgency: 3,
-        aiSummary: "Opponent solicitor providing draft contract for review",
+        aiSummary: "Opposing counsel providing draft contract for review",
         aiMatchedMatterId: matter.id,
         aiMatchConfidence: 95,
       })
@@ -490,7 +490,7 @@ async function testAPIs() {
         matterId: matter.id,
         type: "document_uploaded",
         title: "Draft contract uploaded",
-        description: "Draft contract received from opponent solicitor",
+        description: "Draft contract received from opposing counsel",
         actorType: "user",
         actorId: user.id,
         entityType: "document",

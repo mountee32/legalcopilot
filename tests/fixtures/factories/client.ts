@@ -90,7 +90,7 @@ export async function createClient(options: ClientFactoryOptions): Promise<TestC
     city: options.city ?? null,
     county: options.county ?? null,
     postcode: options.postcode ?? null,
-    country: options.country ?? "United Kingdom",
+    country: options.country ?? "United States",
     // Other
     notes: options.notes ?? null,
     createdAt: new Date(),
@@ -141,7 +141,7 @@ export function buildClientData(
     companyName: type === "company" ? options.companyName || `Test Company ${suffix}` : undefined,
     email: options.email || `client-${suffix}@test.example.com`,
     phone: options.phone,
-    country: options.country || "United Kingdom",
+    country: options.country || "United States",
   };
 }
 

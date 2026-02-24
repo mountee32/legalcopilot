@@ -8,6 +8,14 @@ import { withAuth } from "@/middleware/withAuth";
 import { withPermission } from "@/middleware/withPermission";
 import { withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
 
+function withPostalCodeAlias<T extends { postcode: string | null } | null | undefined>(client: T) {
+  if (!client) return client;
+  return {
+    ...client,
+    postalCode: client.postcode,
+  };
+}
+
 export const GET = withErrorHandler(
   withAuth(
     withPermission("clients:read")(async (_request, { params, user }) => {
@@ -26,7 +34,7 @@ export const GET = withErrorHandler(
       });
 
       if (!client) throw new NotFoundError("Client not found");
-      return NextResponse.json(client);
+      return NextResponse.json(withPostalCodeAlias(client));
     })
   )
 );
@@ -59,7 +67,7 @@ export const PATCH = withErrorHandler(
             addressLine2: data.addressLine2 ?? undefined,
             city: data.city ?? undefined,
             county: data.county ?? undefined,
-            postcode: data.postcode ?? undefined,
+            postcode: data.postalCode ?? data.postcode ?? undefined,
             country: data.country ?? undefined,
             notes: data.notes ?? undefined,
             updatedAt: new Date(),
@@ -70,7 +78,7 @@ export const PATCH = withErrorHandler(
       });
 
       if (!client) throw new NotFoundError("Client not found");
-      return NextResponse.json(client);
+      return NextResponse.json(withPostalCodeAlias(client));
     })
   )
 );

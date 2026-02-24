@@ -7,7 +7,15 @@
  * @see lib/db/schema/clients.ts for database schema
  */
 
-import { z, UuidSchema, EmailSchema, PhoneSchema, PostcodeSchema, DateTimeSchema } from "./common";
+import {
+  z,
+  UuidSchema,
+  EmailSchema,
+  PhoneSchema,
+  PostalCodeSchema,
+  PostcodeSchema,
+  DateTimeSchema,
+} from "./common";
 
 /**
  * Client type values.
@@ -82,10 +90,15 @@ export const ClientSchema = z
     // Address
     addressLine1: z.string().nullable(),
     addressLine2: z.string().nullable(),
-    city: z.string().nullable().openapi({ example: "London" }),
-    county: z.string().nullable().openapi({ example: "Greater London" }),
-    postcode: PostcodeSchema.nullable(),
-    country: z.string().nullable().openapi({ example: "United Kingdom" }),
+    city: z.string().nullable().openapi({ example: "San Francisco" }),
+    county: z.string().nullable().openapi({ example: "San Francisco County" }),
+    postcode: PostcodeSchema.nullable().openapi({
+      description: "Legacy field name for postal code",
+    }),
+    postalCode: PostalCodeSchema.nullable().optional().openapi({
+      description: "Preferred postal code field (mirrors postcode)",
+    }),
+    country: z.string().nullable().openapi({ example: "United States" }),
 
     // KYC
     idVerified: z.boolean(),
@@ -126,7 +139,8 @@ const ClientInputSchema = z.object({
   city: z.string().optional(),
   county: z.string().optional(),
   postcode: z.string().optional(),
-  country: z.string().default("United Kingdom"),
+  postalCode: z.string().optional(),
+  country: z.string().default("United States"),
 
   notes: z.string().optional(),
 });

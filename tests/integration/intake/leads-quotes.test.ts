@@ -343,7 +343,7 @@ describe("Leads Integration - Lead Conversion", () => {
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
-        country: "United Kingdom",
+        country: "United States",
       })
       .returning();
 
@@ -386,7 +386,7 @@ describe("Leads Integration - Lead Conversion", () => {
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
-        country: "United Kingdom",
+        country: "United States",
       })
       .returning();
 
@@ -653,7 +653,7 @@ describe("Quotes Integration - Workflow", () => {
         status: "active",
         firstName: lead.firstName,
         lastName: lead.lastName,
-        country: "United Kingdom",
+        country: "United States",
       })
       .returning();
 

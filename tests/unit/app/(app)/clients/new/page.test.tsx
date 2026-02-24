@@ -320,16 +320,16 @@ describe("NewClientPage", () => {
 
     // Fill in optional fields
     fireEvent.change(screen.getByLabelText(/Phone/), {
-      target: { value: "020 1234 5678" },
+      target: { value: "+1 415 555 0100" },
     });
     fireEvent.change(screen.getByLabelText(/Address Line 1/), {
-      target: { value: "123 High Street" },
+      target: { value: "123 Market St" },
     });
     fireEvent.change(screen.getByLabelText(/City/), {
-      target: { value: "London" },
+      target: { value: "San Francisco" },
     });
-    fireEvent.change(screen.getByLabelText(/Postcode/), {
-      target: { value: "SW1A 1AA" },
+    fireEvent.change(screen.getByLabelText(/Postal Code/), {
+      target: { value: "94105" },
     });
 
     const submitButton = screen.getByRole("button", { name: /Create Client/ });
@@ -340,10 +340,11 @@ describe("NewClientPage", () => {
       const callArgs = vi.mocked(global.fetch).mock.calls[0];
       const body = JSON.parse(callArgs[1]?.body as string);
 
-      expect(body.phone).toBe("020 1234 5678");
-      expect(body.addressLine1).toBe("123 High Street");
-      expect(body.city).toBe("London");
-      expect(body.postcode).toBe("SW1A 1AA");
+      expect(body.phone).toBe("+1 415 555 0100");
+      expect(body.addressLine1).toBe("123 Market St");
+      expect(body.city).toBe("San Francisco");
+      expect(body.postalCode).toBe("94105");
+      expect(body.postcode).toBeUndefined();
     });
   });
 });

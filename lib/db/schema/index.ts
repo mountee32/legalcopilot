@@ -39,6 +39,8 @@ export * from "./templates";
 export * from "./intake";
 export * from "./conflicts";
 export * from "./integrations";
+export * from "./taxonomy";
+export * from "./pipeline";
 
 // Compliance & Audit
 export * from "./approvals";

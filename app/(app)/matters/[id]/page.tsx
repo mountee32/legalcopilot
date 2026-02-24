@@ -22,6 +22,7 @@ import {
   Trash2,
   Upload,
   Workflow,
+  Zap,
 } from "lucide-react";
 import { UnifiedTimeline } from "./_components/timeline";
 import { WorkflowSummaryCard, WorkflowProgressPanel } from "./_components/workflow";
@@ -724,6 +725,224 @@ function EmailsTab({ matterId }: { matterId: string }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Pipeline Tab
+// ---------------------------------------------------------------------------
+
+async function fetchPipelineRuns(matterId: string) {
+  const res = await fetch(`/api/matters/${matterId}/pipeline`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch pipeline runs");
+  return res.json();
+}
+
+async function fetchPipelineRunDetail(runId: string) {
+  const res = await fetch(`/api/pipeline/${runId}`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch pipeline run detail");
+  return res.json();
+}
+
+function PipelineTab({ matterId }: { matterId: string }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+
+  const { data: runsData, isLoading: runsLoading } = useQuery({
+    queryKey: ["pipeline-runs", matterId],
+    queryFn: () => fetchPipelineRuns(matterId),
+    staleTime: 10_000, // Refresh more often for real-time feel
+    refetchInterval: 15_000, // Auto-poll
+  });
+
+  const { data: runDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ["pipeline-run", selectedRunId],
+    queryFn: () => fetchPipelineRunDetail(selectedRunId!),
+    enabled: !!selectedRunId,
+    staleTime: 5_000,
+    refetchInterval: selectedRunId ? 10_000 : false,
+  });
+
+  const resolveFinding = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/pipeline/findings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to resolve finding");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline-run", selectedRunId] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-runs", matterId] });
+      toast({ title: "Finding resolved" });
+    },
+  });
+
+  const resolveAction = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await fetch(`/api/pipeline/actions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to resolve action");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline-run", selectedRunId] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-runs", matterId] });
+      toast({ title: "Action resolved" });
+    },
+  });
+
+  const retryRun = useMutation({
+    mutationFn: async (runId: string) => {
+      const res = await fetch(`/api/pipeline/${runId}/retry`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to retry pipeline run");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline-runs", matterId] });
+      queryClient.invalidateQueries({ queryKey: ["pipeline-run", selectedRunId] });
+      toast({ title: "Pipeline run retried" });
+    },
+    onError: () => {
+      toast({ title: "Failed to retry", variant: "destructive" });
+    },
+  });
+
+  const handleUploadComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ["pipeline-runs", matterId] });
+    queryClient.invalidateQueries({ queryKey: ["matter-documents", matterId] });
+    toast({ title: "Document uploaded — pipeline started" });
+  };
+
+  // Lazy imports for pipeline components
+  const { DropZone } = require("@/components/pipeline/drop-zone");
+  const { PipelineRunCard } = require("@/components/pipeline/pipeline-run-card");
+  const { FindingsPanel } = require("@/components/pipeline/findings-panel");
+  const { ActionsPanel } = require("@/components/pipeline/action-card");
+  const { StageViz } = require("@/components/pipeline/stage-viz");
+
+  const runs = runsData?.runs || [];
+
+  // Auto-select first run if none selected
+  if (!selectedRunId && runs.length > 0) {
+    setSelectedRunId(runs[0].id);
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Drop Zone */}
+      <DropZone matterId={matterId} onUploadComplete={handleUploadComplete} />
+
+      {/* Pipeline Runs */}
+      {runsLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      ) : runs.length === 0 ? (
+        <EmptyState
+          title="No pipeline runs yet"
+          description="Upload a document above to start the AI analysis pipeline"
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left — Run list */}
+          <div className="lg:col-span-4 space-y-3">
+            <h3 className="text-sm font-semibold text-slate-700">Pipeline Runs ({runs.length})</h3>
+            {runs.map((run: any) => (
+              <PipelineRunCard
+                key={run.id}
+                run={run}
+                isSelected={run.id === selectedRunId}
+                onClick={() => setSelectedRunId(run.id)}
+              />
+            ))}
+          </div>
+
+          {/* Right — Run detail */}
+          <div className="lg:col-span-8 space-y-6">
+            {detailLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-64 w-full" />
+              </div>
+            ) : runDetail?.run ? (
+              <>
+                {/* Run header with stage viz */}
+                <Card className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-semibold text-slate-700">
+                        Pipeline Run
+                        {runDetail.run.classifiedDocType && (
+                          <span className="font-normal text-slate-500 ml-1">
+                            — {runDetail.run.classifiedDocType.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        {new Date(runDetail.run.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    {runDetail.run.status === "failed" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => retryRun.mutate(runDetail.run.id)}
+                        disabled={retryRun.isPending}
+                      >
+                        {retryRun.isPending ? "Retrying..." : "Retry"}
+                      </Button>
+                    )}
+                  </div>
+                  <StageViz
+                    currentStage={runDetail.run.currentStage}
+                    stageStatuses={runDetail.run.stageStatuses || {}}
+                    runStatus={runDetail.run.status}
+                  />
+                  {runDetail.run.error && (
+                    <div className="text-xs text-red-600 bg-red-50 rounded p-2 mt-2">
+                      <span className="font-medium">Error:</span> {runDetail.run.error}
+                    </div>
+                  )}
+                </Card>
+
+                <FindingsPanel
+                  findings={runDetail.findings || []}
+                  onResolve={(id: string, status: "accepted" | "rejected") =>
+                    resolveFinding.mutate({ id, status })
+                  }
+                  isResolving={resolveFinding.isPending}
+                />
+                <ActionsPanel
+                  actions={runDetail.actions || []}
+                  onResolve={(id: string, status: "accepted" | "dismissed") =>
+                    resolveAction.mutate({ id, status })
+                  }
+                  isResolving={resolveAction.isPending}
+                />
+              </>
+            ) : (
+              <EmptyState
+                title="Select a pipeline run"
+                description="Choose a run from the left to view its findings and actions"
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MatterDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -831,6 +1050,10 @@ export default function MatterDetailPage() {
               <Workflow className="w-4 h-4" />
               Workflow
             </TabsTrigger>
+            <TabsTrigger value="pipeline" className="gap-2">
+              <Zap className="w-4 h-4" />
+              Pipeline
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -859,6 +1082,10 @@ export default function MatterDetailPage() {
 
           <TabsContent value="workflow">
             <WorkflowProgressPanel matterId={matterId} />
+          </TabsContent>
+
+          <TabsContent value="pipeline">
+            <PipelineTab matterId={matterId} />
           </TabsContent>
         </Tabs>
       </div>

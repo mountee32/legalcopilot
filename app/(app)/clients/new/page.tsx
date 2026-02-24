@@ -17,7 +17,7 @@ export default function NewClientPage() {
   const [formData, setFormData] = useState<CreateClient>({
     type: "individual",
     email: "",
-    country: "United Kingdom",
+    country: "United States",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,7 +152,7 @@ export default function NewClientPage() {
                     <Label htmlFor="companyName">Company Name *</Label>
                     <Input
                       id="companyName"
-                      placeholder="Acme Ltd"
+                      placeholder="Acme LLC"
                       value={formData.companyName || ""}
                       onChange={(e) => handleChange("companyName", e.target.value)}
                       required
@@ -204,7 +204,7 @@ export default function NewClientPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="020 1234 5678"
+                      placeholder="+1 415 555 0100"
                       value={formData.phone || ""}
                       onChange={(e) => handleChange("phone", e.target.value)}
                     />
@@ -214,7 +214,7 @@ export default function NewClientPage() {
                     <Input
                       id="mobile"
                       type="tel"
-                      placeholder="07123 456789"
+                      placeholder="+1 628 555 0101"
                       value={formData.mobile || ""}
                       onChange={(e) => handleChange("mobile", e.target.value)}
                     />
@@ -229,7 +229,7 @@ export default function NewClientPage() {
                   <Label htmlFor="addressLine1">Address Line 1</Label>
                   <Input
                     id="addressLine1"
-                    placeholder="123 High Street"
+                    placeholder="123 Market St"
                     value={formData.addressLine1 || ""}
                     onChange={(e) => handleChange("addressLine1", e.target.value)}
                   />
@@ -248,28 +248,28 @@ export default function NewClientPage() {
                     <Label htmlFor="city">City</Label>
                     <Input
                       id="city"
-                      placeholder="London"
+                      placeholder="San Francisco"
                       value={formData.city || ""}
                       onChange={(e) => handleChange("city", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="county">County</Label>
+                    <Label htmlFor="county">State / County</Label>
                     <Input
                       id="county"
-                      placeholder="Greater London"
+                      placeholder="California"
                       value={formData.county || ""}
                       onChange={(e) => handleChange("county", e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="postcode">Postcode</Label>
+                  <Label htmlFor="postalCode">Postal Code</Label>
                   <Input
-                    id="postcode"
-                    placeholder="SW1A 1AA"
-                    value={formData.postcode || ""}
-                    onChange={(e) => handleChange("postcode", e.target.value)}
+                    id="postalCode"
+                    placeholder="94105"
+                    value={formData.postalCode || formData.postcode || ""}
+                    onChange={(e) => handleChange("postalCode", e.target.value)}
                   />
                 </div>
               </div>

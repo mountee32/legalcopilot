@@ -6,6 +6,114 @@
  */
 
 export const practiceAreaSubTypes = {
+  workers_compensation: [
+    "workplace_injury",
+    "occupational_disease",
+    "temporary_disability",
+    "permanent_disability",
+    "death_benefits",
+    "claim_denial_appeal",
+  ],
+
+  insurance_defense: [
+    "auto_liability_defense",
+    "premises_liability_defense",
+    "professional_liability_defense",
+    "coverage_dispute",
+    "bad_faith_defense",
+    "subrogation_recovery",
+  ],
+
+  personal_injury: [
+    "motor_vehicle_collision",
+    "slip_and_fall",
+    "medical_malpractice",
+    "product_liability",
+    "wrongful_death",
+    "premises_liability",
+  ],
+
+  litigation: [
+    "contract_dispute",
+    "debt_recovery",
+    "professional_negligence",
+    "property_dispute",
+    "inheritance_dispute",
+    "judicial_review",
+    "defamation",
+    "injunction",
+  ],
+
+  employment: [
+    "unlawful_termination",
+    "workplace_discrimination",
+    "wage_and_hour",
+    "retaliation",
+    "severance_agreement",
+    "employment_contract_dispute",
+    "whistleblower_claim",
+  ],
+
+  immigration: [
+    "employment_based_visa",
+    "family_based_visa",
+    "student_visa",
+    "adjustment_of_status",
+    "naturalization",
+    "asylum",
+    "removal_defense",
+    "business_immigration_compliance",
+  ],
+
+  family: [
+    "divorce_petition",
+    "property_division",
+    "child_custody",
+    "domestic_violence_protection",
+    "prenuptial_agreement",
+    "cohabitation_dispute",
+    "adoption",
+    "child_support_modification",
+  ],
+
+  commercial: [
+    "entity_formation",
+    "shareholder_agreement",
+    "asset_purchase",
+    "share_purchase",
+    "joint_venture",
+    "commercial_contract",
+    "terms_and_conditions",
+    "privacy_compliance",
+  ],
+
+  criminal: [
+    "misdemeanor_defense",
+    "felony_defense",
+    "dui_defense",
+    "fraud_defense",
+    "regulatory_prosecution",
+    "appeal",
+  ],
+
+  ip: [
+    "trademark_registration",
+    "trademark_dispute",
+    "patent_application",
+    "copyright_infringement",
+    "licensing_agreement",
+  ],
+
+  insolvency: [
+    "chapter_7",
+    "chapter_11",
+    "chapter_13",
+    "receivership",
+    "debt_restructuring",
+    "creditor_rights",
+  ],
+
+  // Legacy UK-oriented values retained for compatibility:
   conveyancing: [
     "freehold_purchase",
     "freehold_sale",
@@ -20,28 +128,6 @@ export const practiceAreaSubTypes = {
     "commercial_lease",
   ],
 
-  litigation: [
-    "contract_dispute",
-    "debt_recovery",
-    "professional_negligence",
-    "property_dispute",
-    "inheritance_dispute",
-    "judicial_review",
-    "defamation",
-    "injunction",
-  ],
-
-  family: [
-    "divorce_petition",
-    "financial_settlement",
-    "child_arrangements",
-    "domestic_abuse",
-    "prenuptial_agreement",
-    "cohabitation_dispute",
-    "adoption",
-    "child_abduction",
-  ],
-
   probate: [
     "grant_of_probate",
     "letters_of_administration",
@@ -50,73 +136,6 @@ export const practiceAreaSubTypes = {
     "intestacy",
     "trust_administration",
     "estate_dispute",
-  ],
-
-  employment: [
-    "unfair_dismissal",
-    "discrimination",
-    "redundancy",
-    "settlement_agreement",
-    "tribunal_claim",
-    "contract_dispute",
-    "whistleblowing",
-  ],
-
-  immigration: [
-    "skilled_worker_visa",
-    "family_visa",
-    "student_visa",
-    "indefinite_leave",
-    "naturalisation",
-    "asylum",
-    "deportation_appeal",
-    "sponsor_licence",
-  ],
-
-  personal_injury: [
-    "road_traffic_accident",
-    "employer_liability",
-    "public_liability",
-    "clinical_negligence",
-    "industrial_disease",
-    "occupiers_liability",
-  ],
-
-  commercial: [
-    "company_formation",
-    "shareholder_agreement",
-    "asset_purchase",
-    "share_purchase",
-    "joint_venture",
-    "commercial_contract",
-    "terms_and_conditions",
-    "gdpr_compliance",
-  ],
-
-  criminal: [
-    "magistrates_court",
-    "crown_court",
-    "motoring_offence",
-    "fraud",
-    "regulatory_prosecution",
-    "appeal",
-  ],
-
-  ip: [
-    "trademark_registration",
-    "trademark_dispute",
-    "patent_application",
-    "copyright_infringement",
-    "licensing_agreement",
-  ],
-
-  insolvency: [
-    "creditor_voluntary_liquidation",
-    "compulsory_liquidation",
-    "administration",
-    "individual_voluntary_arrangement",
-    "bankruptcy",
-    "debt_restructuring",
   ],
 
   other: ["general"],

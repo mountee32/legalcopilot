@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 import type { Client } from "@/lib/api/schemas/clients";
+import { formatPracticeArea } from "@/lib/constants/practice-areas";
 
 interface Matter {
   id: string;
@@ -72,7 +73,7 @@ function MatterCard({ matter }: { matter: Matter }) {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono text-slate-500">{matter.reference}</span>
             <Badge variant="secondary" className="text-xs">
-              {matter.practiceArea.replace("_", " ")}
+              {formatPracticeArea(matter.practiceArea)}
             </Badge>
           </div>
           <h4 className="font-semibold text-slate-900 group-hover:text-slate-700 transition-colors">
@@ -219,7 +220,9 @@ export default function ClientDetailPage() {
                       {client.addressLine1 && <div>{client.addressLine1}</div>}
                       {client.addressLine2 && <div>{client.addressLine2}</div>}
                       {client.city && <div>{client.city}</div>}
-                      {client.postcode && <div>{client.postcode}</div>}
+                      {(client.postalCode || client.postcode) && (
+                        <div>{client.postalCode || client.postcode}</div>
+                      )}
                     </div>
                   </div>
                 )}

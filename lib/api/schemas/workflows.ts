@@ -28,17 +28,20 @@ export const CompletionCriteriaSchema = z
 
 export const PracticeAreaSchema = z
   .enum([
-    "conveyancing",
+    "workers_compensation",
+    "insurance_defense",
+    "personal_injury",
     "litigation",
-    "family",
-    "probate",
     "employment",
     "immigration",
-    "personal_injury",
+    "family",
     "commercial",
     "criminal",
     "ip",
     "insolvency",
+    // Legacy UK-oriented values retained for compatibility:
+    "conveyancing",
+    "probate",
     "other",
   ])
   .openapi("PracticeArea");

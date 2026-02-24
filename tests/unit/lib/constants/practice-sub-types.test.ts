@@ -11,17 +11,20 @@ import {
 describe("Practice Area Sub-Types", () => {
   it("has sub-types for all practice areas", () => {
     const practiceAreas = [
-      "conveyancing",
+      "workers_compensation",
+      "insurance_defense",
+      "personal_injury",
       "litigation",
-      "family",
-      "probate",
       "employment",
       "immigration",
-      "personal_injury",
+      "family",
       "commercial",
       "criminal",
       "ip",
       "insolvency",
+      // Legacy keys retained:
+      "conveyancing",
+      "probate",
       "other",
     ];
 

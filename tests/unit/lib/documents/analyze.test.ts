@@ -30,7 +30,7 @@ describe("buildAnalyzePrompt", () => {
     const prompt = buildAnalyzePrompt();
 
     expect(prompt).toContain("legal document analyzer");
-    expect(prompt).toContain("UK law firm");
+    expect(prompt).toContain("US law firm");
     expect(prompt).toContain("suggestedTitle");
     expect(prompt).toContain("documentType");
     expect(prompt).toContain("parties");

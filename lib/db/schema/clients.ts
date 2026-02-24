@@ -96,7 +96,7 @@ export const clients = pgTable(
     // Company fields
     /** Company/organisation name (if type is company/trust/etc.) */
     companyName: text("company_name"),
-    /** Companies House number (UK) */
+    /** Company registration number */
     companyNumber: text("company_number"),
 
     // Contact details
@@ -104,13 +104,13 @@ export const clients = pgTable(
     phone: text("phone"),
     mobile: text("mobile"),
 
-    // Address (UK format)
+    // Address
     addressLine1: text("address_line_1"),
     addressLine2: text("address_line_2"),
     city: text("city"),
     county: text("county"),
     postcode: text("postcode"),
-    country: text("country").default("United Kingdom"),
+    country: text("country").default("United States"),
 
     // KYC/AML
     /** Whether ID verification completed */

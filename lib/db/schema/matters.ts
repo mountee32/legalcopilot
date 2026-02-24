@@ -1,7 +1,7 @@
 /**
  * Matter/Case Schema
  *
- * A "matter" is the UK legal term for a case or legal engagement.
+ * A "matter" is the legal term for a case or legal engagement.
  * Each matter belongs to a client and tracks the legal work being done.
  *
  * @see docs/backend-design.md Section 2.5 for full Matter specification
@@ -39,17 +39,20 @@ export const matterStatusEnum = pgEnum("matter_status", [
  * Determines workflows, templates, and reporting.
  */
 export const practiceAreaEnum = pgEnum("practice_area", [
-  "conveyancing",
+  "workers_compensation",
+  "insurance_defense",
+  "personal_injury",
   "litigation",
-  "family",
-  "probate",
   "employment",
   "immigration",
-  "personal_injury",
+  "family",
   "commercial",
   "criminal",
   "ip",
   "insolvency",
+  // Legacy UK-oriented values retained for compatibility:
+  "conveyancing",
+  "probate",
   "other",
 ]);
 

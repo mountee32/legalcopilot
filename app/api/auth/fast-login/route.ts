@@ -209,8 +209,8 @@ export async function POST(request: Request) {
         .insert(firms)
         .values({
           id: DEMO_FIRM_ID,
-          name: "Harrison & Clarke Solicitors",
-          sraNumber: "DEMO123456",
+          name: "Harrison & Clarke Law Group",
+          sraNumber: "DEMO-BAR-001",
           status: "active",
           plan: "enterprise",
           email: "info@harrisonandclarke.demo",

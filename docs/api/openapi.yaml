@@ -3,7 +3,7 @@ info:
   title: Legal Copilot API
   version: 1.0.0
   description: |-
-    AI-first practice management API for UK law firms.
+    AI-first practice management API for US law firms.
 
     ## Authentication
     All endpoints require authentication via Bearer token.
@@ -383,13 +383,13 @@ components:
         phone:
           type: string
           nullable: true
-          description: Phone number in E.164 or UK format
-          example: +44 20 7946 0958
+          description: Phone number in E.164 or local format
+          example: +1 415 555 0100
         mobile:
           type: string
           nullable: true
-          description: Phone number in E.164 or UK format
-          example: +44 20 7946 0958
+          description: Phone number in E.164 or local format
+          example: +1 415 555 0100
         addressLine1:
           type: string
           nullable: true
@@ -399,21 +399,27 @@ components:
         city:
           type: string
           nullable: true
-          example: London
+          example: San Francisco
         county:
           type: string
           nullable: true
-          example: Greater London
+          example: San Francisco County
         postcode:
           type: string
           nullable: true
-          pattern: ^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$
-          description: UK postcode
-          example: SW1A 1AA
+          pattern: ^[A-Za-z0-9][A-Za-z0-9 -]{1,11}$
+          description: Legacy field name for postal code
+          example: "94105"
+        postalCode:
+          type: string
+          nullable: true
+          pattern: ^[A-Za-z0-9][A-Za-z0-9 -]{1,11}$
+          description: Preferred postal code field (mirrors postcode)
+          example: "94105"
         country:
           type: string
           nullable: true
-          example: United Kingdom
+          example: United States
         idVerified:
           type: boolean
         idVerifiedAt:
@@ -519,9 +525,11 @@ components:
           type: string
         postcode:
           type: string
+        postalCode:
+          type: string
         country:
           type: string
-          default: United Kingdom
+          default: United States
         notes:
           type: string
       required:
@@ -568,9 +576,11 @@ components:
           type: string
         postcode:
           type: string
+        postalCode:
+          type: string
         country:
           type: string
-          default: United Kingdom
+          default: United States
         notes:
           type: string
     ClientListResponse:
@@ -671,20 +681,27 @@ components:
         practiceArea:
           type: string
           enum: &a5
-            - conveyancing
+            - workers_compensation
+            - insurance_defense
+            - personal_injury
             - litigation
-            - family
-            - probate
             - employment
             - immigration
-            - personal_injury
+            - family
             - commercial
             - criminal
             - ip
             - insolvency
+            - conveyancing
+            - probate
             - other
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
+        subType:
+          type: string
+          nullable: true
+          description: Sub-type within practice area e.g. freehold_purchase
+          example: freehold_purchase
         billingType:
           type: string
           enum: &a6
@@ -778,6 +795,7 @@ components:
         - supervisorId
         - status
         - practiceArea
+        - subType
         - billingType
         - hourlyRate
         - fixedFee
@@ -819,7 +837,12 @@ components:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
+        subType:
+          type: string
+          maxLength: 100
+          description: Sub-type within practice area
+          example: freehold_purchase
         billingType:
           type: string
           enum: *a6
@@ -868,6 +891,10 @@ components:
           enum: *a7
           description: Current status in matter lifecycle
           example: active
+        subType:
+          type: string
+          nullable: true
+          maxLength: 100
         billingType:
           type: string
           enum: *a6
@@ -950,7 +977,7 @@ components:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         clientId:
           type: string
           format: uuid
@@ -1154,7 +1181,6 @@ components:
           additionalProperties:
             nullable: true
       required:
-        - matterId
         - title
         - type
     AskMatterRequest:
@@ -1965,6 +1991,8 @@ components:
         - in_progress
         - completed
         - cancelled
+        - skipped
+        - not_applicable
     TaskAiSource:
       type: string
       nullable: true
@@ -3712,14 +3740,14 @@ components:
         phone:
           type: string
           nullable: true
-          description: Phone number in E.164 or UK format
-          example: +44 20 7946 0958
+          description: Phone number in E.164 or local format
+          example: +1 415 555 0100
         enquiryType:
           type: string
           nullable: true
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         message:
           type: string
           nullable: true
@@ -3817,13 +3845,13 @@ components:
           example: john.smith@example.com
         phone:
           type: string
-          description: Phone number in E.164 or UK format
-          example: +44 20 7946 0958
+          description: Phone number in E.164 or local format
+          example: +1 415 555 0100
         enquiryType:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         message:
           type: string
         source:
@@ -3855,13 +3883,13 @@ components:
           example: john.smith@example.com
         phone:
           type: string
-          description: Phone number in E.164 or UK format
-          example: +44 20 7946 0958
+          description: Phone number in E.164 or local format
+          example: +1 415 555 0100
         enquiryType:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         message:
           type: string
         source:
@@ -3897,7 +3925,7 @@ components:
           enum: *a5
           default: other
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
       required:
         - matterTitle
     ConvertLeadResponse:
@@ -3947,7 +3975,7 @@ components:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         status:
           $ref: "#/components/schemas/QuoteStatus"
         items:
@@ -4080,7 +4108,7 @@ components:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         items:
           type: array
           items:
@@ -4141,7 +4169,7 @@ components:
           type: string
           enum: *a5
           description: Legal practice area
-          example: conveyancing
+          example: personal_injury
         status:
           $ref: "#/components/schemas/QuoteStatus"
         items:
@@ -4920,6 +4948,790 @@ components:
           maximum: 50
       required:
         - q
+    TaxonomyPack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        firmId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        key:
+          type: string
+        version:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        practiceArea:
+          type: string
+          enum: *a5
+          description: Legal practice area
+          example: personal_injury
+        isSystem:
+          type: boolean
+        isActive:
+          type: boolean
+        parentPackId:
+          type: string
+          nullable: true
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - firmId
+        - key
+        - version
+        - name
+        - description
+        - practiceArea
+        - isSystem
+        - isActive
+        - parentPackId
+        - createdAt
+        - updatedAt
+    TaxonomyPackListItem:
+      allOf:
+        - $ref: "#/components/schemas/TaxonomyPack"
+        - type: object
+          properties:
+            categoryCount:
+              type: integer
+            fieldCount:
+              type: integer
+          required:
+            - categoryCount
+            - fieldCount
+    TaxonomyPackListResponse:
+      type: object
+      properties:
+        packs:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyPackListItem"
+        pagination:
+          $ref: "#/components/schemas/PaginationMeta"
+      required:
+        - packs
+        - pagination
+    TaxonomyPackQuery:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            practiceArea:
+              type: string
+              enum: *a5
+              description: Legal practice area
+              example: personal_injury
+            isActive:
+              type: string
+            includeSystem:
+              type: string
+              default: "true"
+    TaxonomyFieldDataType:
+      type: string
+      enum:
+        - text
+        - number
+        - date
+        - boolean
+        - currency
+        - percentage
+        - json
+    TaxonomyField:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        categoryId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+          nullable: true
+        dataType:
+          $ref: "#/components/schemas/TaxonomyFieldDataType"
+        examples:
+          type: array
+          nullable: true
+          items:
+            nullable: true
+        confidenceThreshold:
+          type: string
+        requiresHumanReview:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - categoryId
+        - key
+        - label
+        - description
+        - dataType
+        - examples
+        - confidenceThreshold
+        - requiresHumanReview
+        - sortOrder
+        - createdAt
+    TaxonomyCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        packId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyField"
+      required:
+        - id
+        - packId
+        - key
+        - label
+        - description
+        - icon
+        - color
+        - sortOrder
+        - createdAt
+    TaxonomyDocumentType:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        packId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+          nullable: true
+        activatedCategories:
+          type: array
+          items:
+            type: string
+        classificationHints:
+          type: string
+          nullable: true
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - packId
+        - key
+        - label
+        - description
+        - activatedCategories
+        - classificationHints
+        - sortOrder
+        - createdAt
+    TaxonomyTriggerType:
+      type: string
+      enum:
+        - deadline
+        - recommendation
+        - alert
+        - status_change
+    TaxonomyActionTrigger:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        packId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        triggerType:
+          $ref: "#/components/schemas/TaxonomyTriggerType"
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        triggerCondition:
+          type: object
+          additionalProperties:
+            nullable: true
+        actionTemplate:
+          type: object
+          additionalProperties:
+            nullable: true
+        jurisdictionSpecific:
+          type: boolean
+        jurisdictionRules:
+          type: object
+          nullable: true
+          additionalProperties:
+            nullable: true
+        isDeterministic:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - packId
+        - triggerType
+        - name
+        - description
+        - triggerCondition
+        - actionTemplate
+        - jurisdictionSpecific
+        - jurisdictionRules
+        - isDeterministic
+        - createdAt
+    TaxonomyConflictDetectionMode:
+      type: string
+      enum:
+        - exact
+        - fuzzy_text
+        - fuzzy_number
+        - date_range
+        - semantic
+    TaxonomyReconciliationRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        packId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        fieldKey:
+          type: string
+        caseFieldMapping:
+          type: string
+        conflictDetectionMode:
+          $ref: "#/components/schemas/TaxonomyConflictDetectionMode"
+        autoApplyThreshold:
+          type: string
+        requiresHumanReview:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - packId
+        - fieldKey
+        - caseFieldMapping
+        - conflictDetectionMode
+        - autoApplyThreshold
+        - requiresHumanReview
+        - createdAt
+    TaxonomyPromptTemplateType:
+      type: string
+      enum:
+        - extraction
+        - classification
+        - action_generation
+        - summarization
+    TaxonomyPromptTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        packId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        templateType:
+          $ref: "#/components/schemas/TaxonomyPromptTemplateType"
+        systemPrompt:
+          type: string
+        userPromptTemplate:
+          type: string
+        modelPreference:
+          type: string
+          nullable: true
+        temperature:
+          type: string
+          nullable: true
+        maxTokens:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+      required:
+        - id
+        - packId
+        - templateType
+        - systemPrompt
+        - userPromptTemplate
+        - modelPreference
+        - temperature
+        - maxTokens
+        - createdAt
+    TaxonomyPackDetailResponse:
+      type: object
+      properties:
+        pack:
+          $ref: "#/components/schemas/TaxonomyPack"
+        categories:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/TaxonomyCategory"
+              - type: object
+                properties: {}
+                required:
+                  - fields
+        documentTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyDocumentType"
+        actionTriggers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyActionTrigger"
+        reconciliationRules:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyReconciliationRule"
+        promptTemplates:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaxonomyPromptTemplate"
+      required:
+        - pack
+        - categories
+        - documentTypes
+        - actionTriggers
+        - reconciliationRules
+        - promptTemplates
+    CreateTaxonomyFieldRequest:
+      type: object
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        key:
+          type: string
+          pattern: ^[a-z0-9_]{2,64}$
+          description: Stable machine key for the field
+          example: mmi_date
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        dataType:
+          $ref: "#/components/schemas/TaxonomyFieldDataType"
+        examples:
+          type: array
+          items:
+            nullable: true
+        confidenceThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        requiresHumanReview:
+          type: boolean
+        sortOrder:
+          type: integer
+          minimum: 0
+      required:
+        - categoryId
+        - key
+        - label
+        - dataType
+    UpdateTaxonomyFieldRequest:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 5000
+        confidenceThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+        requiresHumanReview:
+          type: boolean
+    ForkTaxonomyPackRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          pattern: ^[a-z0-9-]{3,64}$
+          description: Optional new key for the forked pack
+          example: workers-comp-custom
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 5000
+        version:
+          type: string
+          maxLength: 50
+    ForkTaxonomyPackResponse:
+      type: object
+      properties:
+        pack:
+          $ref: "#/components/schemas/TaxonomyPack"
+        copied:
+          type: object
+          properties:
+            categories:
+              type: integer
+            fields:
+              type: integer
+            documentTypes:
+              type: integer
+            actionTriggers:
+              type: integer
+            reconciliationRules:
+              type: integer
+            promptTemplates:
+              type: integer
+          required:
+            - categories
+            - fields
+            - documentTypes
+            - actionTriggers
+            - reconciliationRules
+            - promptTemplates
+      required:
+        - pack
+        - copied
+    CalculateUsTransferTaxRequest:
+      type: object
+      properties:
+        salePrice:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        state:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+          description: US state code (2 letters)
+          example: CA
+        transferType:
+          type: string
+          enum: &a9
+            - sale
+            - refinance
+            - gift
+            - other
+          default: sale
+          description: Property transfer type
+          example: sale
+        countyRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0
+          description: Rate as decimal fraction (0.004 = 0.4%)
+          example: 0.004
+        cityRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0
+          description: Rate as decimal fraction (0.004 = 0.4%)
+          example: 0.004
+        overrideStateRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Rate as decimal fraction (0.004 = 0.4%)
+          example: 0.004
+      required:
+        - salePrice
+        - state
+    CalculateUsTransferTaxResponse:
+      type: object
+      properties:
+        salePrice:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        state:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+          description: US state code (2 letters)
+          example: CA
+        transferType:
+          type: string
+          enum: *a9
+          description: Property transfer type
+          example: sale
+        stateRate:
+          type: string
+          example: 0.11%
+        countyRate:
+          type: string
+          example: 0.00%
+        cityRate:
+          type: string
+          example: 0.00%
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              jurisdiction:
+                type: string
+              rate:
+                type: string
+              amount:
+                type: string
+                pattern: ^\d+\.\d{2}$
+                description: Monetary amount with 2 decimal places
+                example: "1250.00"
+            required:
+              - jurisdiction
+              - rate
+              - amount
+        totalTransferTax:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        effectiveRate:
+          type: string
+          description: Effective transfer tax rate as percentage
+          example: 0.11%
+        assumptions:
+          type: array
+          items:
+            type: string
+        disclaimer:
+          type: string
+      required:
+        - salePrice
+        - state
+        - transferType
+        - stateRate
+        - countyRate
+        - cityRate
+        - breakdown
+        - totalTransferTax
+        - effectiveRate
+        - assumptions
+        - disclaimer
+    CalculateUsEstateTaxRequest:
+      type: object
+      properties:
+        estateGrossValue:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        liabilities:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          default: "0.00"
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        deductions:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          default: "0.00"
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        taxableLifetimeGifts:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          default: "0.00"
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        federalExemption:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        federalRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.4
+          description: Rate as decimal fraction (0.004 = 0.4%)
+          example: 0.004
+        state:
+          type: string
+          pattern: ^[A-Za-z]{2}$
+          description: US state code (2 letters)
+          example: CA
+        stateExemption:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          default: "0.00"
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        stateRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0
+          description: Rate as decimal fraction (0.004 = 0.4%)
+          example: 0.004
+      required:
+        - estateGrossValue
+    CalculateUsEstateTaxResponse:
+      type: object
+      properties:
+        estateNetValue:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        adjustedTaxBase:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        federalTaxableAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        federalEstateTax:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        stateTaxableAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        stateEstateTax:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        totalEstimatedTax:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        effectiveRate:
+          type: string
+          description: Effective tax rate as percentage
+          example: 6.4%
+        assumptions:
+          type: array
+          items:
+            type: string
+        disclaimer:
+          type: string
+      required:
+        - estateNetValue
+        - adjustedTaxBase
+        - federalTaxableAmount
+        - federalEstateTax
+        - stateTaxableAmount
+        - stateEstateTax
+        - totalEstimatedTax
+        - effectiveRate
+        - assumptions
+        - disclaimer
     ApprovalIdParam:
       type: object
       properties:
@@ -5512,6 +6324,52 @@ components:
           example: 123e4567-e89b-12d3-a456-426614174000
       required:
         - id
+    TaxonomyPackIdParam:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+      required:
+        - packId
+    TaxonomyPackForkIdParam:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+      required:
+        - packId
+    TaxonomyPackFieldCreateIdParam:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+      required:
+        - packId
+    TaxonomyPackFieldUpdateIdParam:
+      type: object
+      properties:
+        packId:
+          type: string
+          format: uuid
+        fieldId:
+          type: string
+          format: uuid
+      required:
+        - packId
+        - fieldId
+    MatterRealEstateIdParam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+      required:
+        - id
     ConflictMatterIdParam:
       type: object
       properties:
@@ -6051,6 +6909,261 @@ components:
       required:
         - success
         - job
+    OrderSearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        searchId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        message:
+          type: string
+      required:
+        - success
+        - searchId
+    OrderSearchRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        searchType:
+          type: string
+          description: Type of search to order (e.g., local, drainage, environmental)
+          example: local
+        provider:
+          type: string
+          description: Search provider name
+          example: TM Group
+      required:
+        - matterId
+        - searchType
+        - provider
+    UpdateConveyancingDataRequest:
+      type: object
+      properties:
+        transactionType:
+          type: string
+          enum:
+            - sale
+            - purchase
+            - remortgage
+            - transfer
+          description: Type of conveyancing transaction
+          example: purchase
+        propertyAddress:
+          type: object
+          properties:
+            line1:
+              type: string
+            line2:
+              type: string
+            city:
+              type: string
+            county:
+              type: string
+            postcode:
+              type: string
+            country:
+              type: string
+              default: GB
+          required:
+            - line1
+            - city
+            - postcode
+        propertyType:
+          type: string
+          enum:
+            - freehold
+            - leasehold
+            - commonhold
+          description: Property tenure type
+          example: freehold
+        titleNumber:
+          type: string
+        purchasePrice:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        salePrice:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        mortgageAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        lenderId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        lenderReference:
+          type: string
+        chainPosition:
+          type: integer
+        linkedCaseIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+        exchangeDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        completionDate:
+          type: string
+          format: date
+          description: ISO 8601 date string
+          example: 2024-12-17
+        searches:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Unique identifier in UUID v4 format
+                example: 123e4567-e89b-12d3-a456-426614174000
+              type:
+                type: string
+                description: Search type (e.g., local, drainage, environmental)
+                example: local
+              provider:
+                type: string
+              status:
+                type: string
+                enum:
+                  - ordered
+                  - received
+                  - reviewed
+              orderedAt:
+                type: string
+                format: date-time
+                description: ISO 8601 date-time string
+                example: 2024-12-17T10:30:00Z
+              receivedAt:
+                type: string
+                format: date-time
+                description: ISO 8601 date-time string
+                example: 2024-12-17T10:30:00Z
+              documentId:
+                type: string
+                format: uuid
+                description: Unique identifier in UUID v4 format
+                example: 123e4567-e89b-12d3-a456-426614174000
+              aiSummary:
+                type: string
+              aiConcerns:
+                type: array
+                items:
+                  type: string
+            required:
+              - type
+              - provider
+              - status
+              - orderedAt
+          default: []
+        transferTaxAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        transferTaxJurisdiction:
+          type: string
+        transferTaxAssessedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        sdltAmount:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        sdltSubmittedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        sdltReference:
+          type: string
+        landRegistrySubmittedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time string
+          example: 2024-12-17T10:30:00Z
+        landRegistryReference:
+          type: string
+    GenerateEstateAccountResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        estateGrossValue:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        estateNetValue:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        totalDistributions:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        remainingBalance:
+          type: string
+          pattern: ^\d+\.\d{2}$
+          description: Monetary amount with 2 decimal places
+          example: "1250.00"
+        summary:
+          type: string
+      required:
+        - success
+        - estateGrossValue
+        - estateNetValue
+        - totalDistributions
+        - remainingBalance
+        - summary
+    GenerateEstateAccountRequest:
+      type: object
+      properties:
+        matterId:
+          type: string
+          format: uuid
+          description: Unique identifier in UUID v4 format
+          example: 123e4567-e89b-12d3-a456-426614174000
+        includeAssets:
+          type: boolean
+          default: true
+        includeLiabilities:
+          type: boolean
+          default: true
+        includeDistributions:
+          type: boolean
+          default: true
+      required:
+        - matterId
   parameters: {}
 paths:
   /api/approvals:
@@ -6473,7 +7586,7 @@ paths:
             type: string
             enum: *a5
             description: Legal practice area
-            example: conveyancing
+            example: personal_injury
           required: false
           name: practiceArea
           in: query
@@ -9435,6 +10548,430 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/taxonomy/packs:
+    get:
+      summary: List taxonomy packs
+      description: List system and firm taxonomy packs with category/field counts.
+      tags:
+        - Taxonomy
+      parameters:
+        - schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Page number (1-indexed)
+            example: 1
+          required: false
+          name: page
+          in: query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Items per page (max 100)
+            example: 20
+          required: false
+          name: limit
+          in: query
+        - schema:
+            type: string
+            enum: *a5
+            description: Legal practice area
+            example: personal_injury
+          required: false
+          name: practiceArea
+          in: query
+        - schema:
+            type: string
+          required: false
+          name: isActive
+          in: query
+        - schema:
+            type: string
+            default: "true"
+          required: false
+          name: includeSystem
+          in: query
+      responses:
+        "200":
+          description: Taxonomy packs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyPackListResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/taxonomy/packs/{packId}:
+    get:
+      summary: Get taxonomy pack detail
+      description: Retrieve full taxonomy pack detail with categories, fields, and
+        rule definitions.
+      tags:
+        - Taxonomy
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: packId
+          in: path
+      responses:
+        "200":
+          description: Taxonomy pack detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyPackDetailResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Taxonomy pack not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/taxonomy/packs/{packId}/fork:
+    post:
+      summary: Fork taxonomy pack
+      description: Create a firm-owned fork of a readable taxonomy pack.
+      tags:
+        - Taxonomy
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: packId
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForkTaxonomyPackRequest"
+      responses:
+        "201":
+          description: Fork created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForkTaxonomyPackResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Taxonomy pack not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/taxonomy/packs/{packId}/fields:
+    post:
+      summary: Create taxonomy field
+      description: Create a field in a firm-owned taxonomy pack category.
+      tags:
+        - Taxonomy
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: packId
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaxonomyFieldRequest"
+      responses:
+        "201":
+          description: Field created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyField"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Taxonomy pack not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/taxonomy/packs/{packId}/fields/{fieldId}:
+    put:
+      summary: Update taxonomy field
+      description: Update editable attributes for a taxonomy field in a firm-owned pack.
+      tags:
+        - Taxonomy
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: packId
+          in: path
+        - schema:
+            type: string
+            format: uuid
+          required: true
+          name: fieldId
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaxonomyFieldRequest"
+      responses:
+        "200":
+          description: Field updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxonomyField"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Taxonomy field or pack not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/real-estate/transfer-tax/calculate:
+    post:
+      summary: Estimate transfer tax (US)
+      description: Estimate real-estate transfer taxes using state baseline rates and
+        optional local rate overrides.
+      tags:
+        - US Tax
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateUsTransferTaxRequest"
+      responses:
+        "200":
+          description: Transfer tax estimate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateUsTransferTaxResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/real-estate/searches/order:
+    post:
+      summary: Order property search
+      description: Order a property search for a real-estate matter (US-first alias,
+        backed by legacy conveyancing data model).
+      tags:
+        - Practice Modules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderSearchRequest"
+      responses:
+        "200":
+          description: Search ordered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderSearchResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Matter not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/matters/{id}/real-estate:
+    patch:
+      summary: Update real-estate matter data
+      description: Update real-estate-specific fields for a matter (US-first alias,
+        backed by legacy conveyancing data model).
+      tags:
+        - Practice Modules
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+            description: Unique identifier in UUID v4 format
+            example: 123e4567-e89b-12d3-a456-426614174000
+          required: true
+          name: id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConveyancingDataRequest"
+      responses:
+        "200":
+          description: Matter practice data updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  practiceData:
+                    type: object
+                    additionalProperties:
+                      nullable: true
+                required:
+                  - success
+                  - practiceData
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Matter not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/estate/account:
+    post:
+      summary: Generate estate account
+      description: Generate estate account totals and summary for an estate matter
+        (US-first alias, backed by probate implementation).
+      tags:
+        - Practice Modules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateEstateAccountRequest"
+      responses:
+        "200":
+          description: Estate account generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateEstateAccountResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Matter not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/probate/estate-tax/calculate:
+    post:
+      summary: Estimate estate tax (US)
+      description: Estimate federal and optional state estate tax exposure for probate
+        planning workflows.
+      tags:
+        - US Tax
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateUsEstateTaxRequest"
+      responses:
+        "200":
+          description: Estate tax estimate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateUsEstateTaxResponse"
+        "400":
+          description: Validation error
           content:
             application/json:
               schema:

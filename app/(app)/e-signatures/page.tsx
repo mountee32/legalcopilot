@@ -113,7 +113,7 @@ export default function ESignaturesPage() {
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
   };
 
   const getSignerStatus = (request: SignatureRequest) => {

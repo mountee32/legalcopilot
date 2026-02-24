@@ -2,15 +2,15 @@
  * GET /api/litigation/limitation/calculate
  *
  * Calculate limitation dates for litigation cases.
- * Uses UK limitation periods based on case type.
+ * Uses legacy baseline periods retained during the US pivot.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { CalculateLimitationRequestSchema } from "@/lib/api/schemas/practice-modules";
 
 /**
- * UK limitation periods by case type.
- * https://www.legislation.gov.uk/ukpga/1980/58
+ * Baseline limitation periods by case type.
+ * Note: these are legacy defaults and should be overridden by jurisdiction packs.
  */
 const LIMITATION_PERIODS: Record<string, { years: number; description: string }> = {
   civil: {

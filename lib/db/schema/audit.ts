@@ -2,7 +2,7 @@
  * Audit Schema
  *
  * Comprehensive audit logging for compliance and debugging.
- * Every significant action is logged for SRA compliance.
+ * Every significant action is logged for legal/compliance auditability.
  *
  * @see docs/backend-design.md Section 2.16 for Audit Log specification
  */

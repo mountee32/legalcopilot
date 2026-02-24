@@ -58,7 +58,7 @@ export const POST = withErrorHandler(
             companyName: lead.companyName ?? null,
             email: lead.email ?? null,
             phone: lead.phone ?? null,
-            country: "United Kingdom",
+            country: "United States",
             notes: lead.notes ?? null,
           })
           .returning({ id: clients.id });

@@ -35,7 +35,7 @@ describe("Clients Integration - CRUD", () => {
       expect(client.lastName).toBe("Smith");
       expect(client.email).toBe("john.smith@example.com");
       expect(client.status).toBe("prospect");
-      expect(client.country).toBe("United Kingdom");
+      expect(client.country).toBe("United States");
     });
 
     it("creates a company client with companyName", async () => {

@@ -26,6 +26,9 @@
  *   a015 = Task Templates
  *   a016 = Task Template Items
  *   a017 = Timeline Events
+ *   a026 = Pipeline Runs
+ *   a027 = Pipeline Findings
+ *   a028 = Pipeline Actions
  *   b000 = Uploads (MinIO)
  */
 
@@ -569,6 +572,43 @@ export const DEMO_IDS = {
     // MAT-DEMO-001 exceptions
     exc1: "de000000-0000-4000-a023-000000000001", // Task 41 skipped
     exc2: "de000000-0000-4000-a023-000000000002", // Task 42 not applicable
+  },
+
+  // Pipeline Runs (a026)
+  pipelineRuns: {
+    // MAT-DEMO-008 (PI RTA) - completed run with findings
+    piRun1: "de000000-0000-4000-a026-000000000001",
+    // MAT-DEMO-008 - second run (completed)
+    piRun2: "de000000-0000-4000-a026-000000000002",
+    // MAT-DEMO-001 (conveyancing) - completed run
+    convRun1: "de000000-0000-4000-a026-000000000003",
+  },
+
+  // Pipeline Findings (a027)
+  pipelineFindings: {
+    // piRun1 findings
+    pf1: "de000000-0000-4000-a027-000000000001",
+    pf2: "de000000-0000-4000-a027-000000000002",
+    pf3: "de000000-0000-4000-a027-000000000003",
+    pf4: "de000000-0000-4000-a027-000000000004",
+    pf5: "de000000-0000-4000-a027-000000000005",
+    pf6: "de000000-0000-4000-a027-000000000006",
+    pf7: "de000000-0000-4000-a027-000000000007",
+    // piRun2 findings
+    pf8: "de000000-0000-4000-a027-000000000008",
+    pf9: "de000000-0000-4000-a027-000000000009",
+    pf10: "de000000-0000-4000-a027-000000000010",
+    // convRun1 findings
+    pf11: "de000000-0000-4000-a027-000000000011",
+    pf12: "de000000-0000-4000-a027-000000000012",
+  },
+
+  // Pipeline Actions (a028)
+  pipelineActions: {
+    pa1: "de000000-0000-4000-a028-000000000001",
+    pa2: "de000000-0000-4000-a028-000000000002",
+    pa3: "de000000-0000-4000-a028-000000000003",
+    pa4: "de000000-0000-4000-a028-000000000004",
   },
 
   // Matter Workflows (a024 = matter workflows)

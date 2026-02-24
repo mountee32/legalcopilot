@@ -171,6 +171,32 @@ import {
   SemanticSearchRequestSchema,
   SemanticSearchResponseSchema,
   MatterSemanticSearchQuerySchema,
+  // Taxonomy
+  TaxonomyPackSchema,
+  TaxonomyPackListSchema,
+  TaxonomyPackQuerySchema,
+  TaxonomyPackDetailSchema,
+  TaxonomyCategorySchema,
+  TaxonomyFieldSchema,
+  CreateTaxonomyFieldSchema,
+  UpdateTaxonomyFieldSchema,
+  TaxonomyDocumentTypeSchema,
+  TaxonomyActionTriggerSchema,
+  TaxonomyReconciliationRuleSchema,
+  TaxonomyPromptTemplateSchema,
+  ForkTaxonomyPackSchema,
+  ForkTaxonomyPackResponseSchema,
+  // US tax estimators
+  CalculateUsTransferTaxRequestSchema,
+  CalculateUsTransferTaxResponseSchema,
+  CalculateUsEstateTaxRequestSchema,
+  CalculateUsEstateTaxResponseSchema,
+  // US-first real-estate alias endpoints
+  UpdateConveyancingDataSchema,
+  OrderSearchRequestSchema,
+  OrderSearchResponseSchema,
+  GenerateEstateAccountRequestSchema,
+  GenerateEstateAccountResponseSchema,
 } from "../lib/api/schemas";
 
 // Create registry
@@ -326,6 +352,24 @@ registry.register("CreateSignatureRequestResponse", CreateSignatureRequestRespon
 registry.register("SemanticSearchRequest", SemanticSearchRequestSchema);
 registry.register("SemanticSearchResponse", SemanticSearchResponseSchema);
 registry.register("MatterSemanticSearchQuery", MatterSemanticSearchQuerySchema);
+registry.register("TaxonomyPack", TaxonomyPackSchema);
+registry.register("TaxonomyPackListResponse", TaxonomyPackListSchema);
+registry.register("TaxonomyPackQuery", TaxonomyPackQuerySchema);
+registry.register("TaxonomyPackDetailResponse", TaxonomyPackDetailSchema);
+registry.register("TaxonomyCategory", TaxonomyCategorySchema);
+registry.register("TaxonomyField", TaxonomyFieldSchema);
+registry.register("CreateTaxonomyFieldRequest", CreateTaxonomyFieldSchema);
+registry.register("UpdateTaxonomyFieldRequest", UpdateTaxonomyFieldSchema);
+registry.register("TaxonomyDocumentType", TaxonomyDocumentTypeSchema);
+registry.register("TaxonomyActionTrigger", TaxonomyActionTriggerSchema);
+registry.register("TaxonomyReconciliationRule", TaxonomyReconciliationRuleSchema);
+registry.register("TaxonomyPromptTemplate", TaxonomyPromptTemplateSchema);
+registry.register("ForkTaxonomyPackRequest", ForkTaxonomyPackSchema);
+registry.register("ForkTaxonomyPackResponse", ForkTaxonomyPackResponseSchema);
+registry.register("CalculateUsTransferTaxRequest", CalculateUsTransferTaxRequestSchema);
+registry.register("CalculateUsTransferTaxResponse", CalculateUsTransferTaxResponseSchema);
+registry.register("CalculateUsEstateTaxRequest", CalculateUsEstateTaxRequestSchema);
+registry.register("CalculateUsEstateTaxResponse", CalculateUsEstateTaxResponseSchema);
 
 // Define API paths
 
@@ -2495,6 +2539,343 @@ registry.registerPath({
   },
 });
 
+// US tax estimators
+registry.registerPath({
+  method: "get",
+  path: "/api/taxonomy/packs",
+  summary: "List taxonomy packs",
+  description: "List system and firm taxonomy packs with category/field counts.",
+  tags: ["Taxonomy"],
+  request: {
+    query: TaxonomyPackQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Taxonomy packs",
+      content: { "application/json": { schema: TaxonomyPackListSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/api/taxonomy/packs/{packId}",
+  summary: "Get taxonomy pack detail",
+  description: "Retrieve full taxonomy pack detail with categories, fields, and rule definitions.",
+  tags: ["Taxonomy"],
+  request: {
+    params: registry.register(
+      "TaxonomyPackIdParam",
+      z.object({
+        packId: z.string().uuid(),
+      })
+    ),
+  },
+  responses: {
+    200: {
+      description: "Taxonomy pack detail",
+      content: { "application/json": { schema: TaxonomyPackDetailSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Taxonomy pack not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/taxonomy/packs/{packId}/fork",
+  summary: "Fork taxonomy pack",
+  description: "Create a firm-owned fork of a readable taxonomy pack.",
+  tags: ["Taxonomy"],
+  request: {
+    params: registry.register(
+      "TaxonomyPackForkIdParam",
+      z.object({
+        packId: z.string().uuid(),
+      })
+    ),
+    body: {
+      content: {
+        "application/json": {
+          schema: ForkTaxonomyPackSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "Fork created",
+      content: { "application/json": { schema: ForkTaxonomyPackResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Taxonomy pack not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/taxonomy/packs/{packId}/fields",
+  summary: "Create taxonomy field",
+  description: "Create a field in a firm-owned taxonomy pack category.",
+  tags: ["Taxonomy"],
+  request: {
+    params: registry.register(
+      "TaxonomyPackFieldCreateIdParam",
+      z.object({
+        packId: z.string().uuid(),
+      })
+    ),
+    body: {
+      content: {
+        "application/json": {
+          schema: CreateTaxonomyFieldSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "Field created",
+      content: { "application/json": { schema: TaxonomyFieldSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Taxonomy pack not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "put",
+  path: "/api/taxonomy/packs/{packId}/fields/{fieldId}",
+  summary: "Update taxonomy field",
+  description: "Update editable attributes for a taxonomy field in a firm-owned pack.",
+  tags: ["Taxonomy"],
+  request: {
+    params: registry.register(
+      "TaxonomyPackFieldUpdateIdParam",
+      z.object({
+        packId: z.string().uuid(),
+        fieldId: z.string().uuid(),
+      })
+    ),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateTaxonomyFieldSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Field updated",
+      content: { "application/json": { schema: TaxonomyFieldSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: "Forbidden",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Taxonomy field or pack not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// US tax estimators
+registry.registerPath({
+  method: "post",
+  path: "/api/real-estate/transfer-tax/calculate",
+  summary: "Estimate transfer tax (US)",
+  description:
+    "Estimate real-estate transfer taxes using state baseline rates and optional local rate overrides.",
+  tags: ["US Tax"],
+  request: {
+    body: { content: { "application/json": { schema: CalculateUsTransferTaxRequestSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Transfer tax estimate",
+      content: { "application/json": { schema: CalculateUsTransferTaxResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/real-estate/searches/order",
+  summary: "Order property search",
+  description:
+    "Order a property search for a real-estate matter (US-first alias, backed by legacy conveyancing data model).",
+  tags: ["Practice Modules"],
+  request: {
+    body: { content: { "application/json": { schema: OrderSearchRequestSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Search ordered",
+      content: { "application/json": { schema: OrderSearchResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Matter not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/api/matters/{id}/real-estate",
+  summary: "Update real-estate matter data",
+  description:
+    "Update real-estate-specific fields for a matter (US-first alias, backed by legacy conveyancing data model).",
+  tags: ["Practice Modules"],
+  request: {
+    params: registry.register("MatterRealEstateIdParam", MatterSchema.pick({ id: true })),
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateConveyancingDataSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Matter practice data updated",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean(),
+            practiceData: z.record(z.unknown()),
+          }),
+        },
+      },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Matter not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/estate/account",
+  summary: "Generate estate account",
+  description:
+    "Generate estate account totals and summary for an estate matter (US-first alias, backed by probate implementation).",
+  tags: ["Practice Modules"],
+  request: {
+    body: { content: { "application/json": { schema: GenerateEstateAccountRequestSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Estate account generated",
+      content: { "application/json": { schema: GenerateEstateAccountResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    401: {
+      description: "Unauthorized",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+    404: {
+      description: "Matter not found",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/probate/estate-tax/calculate",
+  summary: "Estimate estate tax (US)",
+  description:
+    "Estimate federal and optional state estate tax exposure for probate planning workflows.",
+  tags: ["US Tax"],
+  request: {
+    body: { content: { "application/json": { schema: CalculateUsEstateTaxRequestSchema } } },
+  },
+  responses: {
+    200: {
+      description: "Estate tax estimate",
+      content: { "application/json": { schema: CalculateUsEstateTaxResponseSchema } },
+    },
+    400: {
+      description: "Validation error",
+      content: { "application/json": { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
 // Conflicts
 registry.registerPath({
   method: "post",
@@ -3799,7 +4180,7 @@ const openApiDoc = generator.generateDocument({
     title: "Legal Copilot API",
     version: "1.0.0",
     description: `
-AI-first practice management API for UK law firms.
+AI-first practice management API for US law firms.
 
 ## Authentication
 All endpoints require authentication via Bearer token.

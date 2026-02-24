@@ -43,6 +43,8 @@ export * from "./search";
 export * from "./team";
 export * from "./reports";
 export * from "./practice-modules";
+export * from "./taxonomy";
+export * from "./pipeline";
 
 // TODO: Add as implemented:
 // export * from "./users";

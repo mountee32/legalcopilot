@@ -65,7 +65,7 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
  * Payment method types.
  */
 export const paymentMethodEnum = pgEnum("payment_method", [
-  "bank_transfer", // BACS/Faster Payments
+  "bank_transfer", // ACH/wire transfer
   "card", // Credit/debit card
   "cheque", // Cheque payment
   "cash", // Cash (rare)
@@ -156,16 +156,16 @@ export const invoices = pgTable(
     /** Payment due date */
     dueDate: date("due_date").notNull(),
 
-    /** Subtotal before VAT */
+    /** Subtotal before tax */
     subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
 
-    /** VAT amount (UK standard 20%) */
+    /** Tax amount (legacy column name: vat_amount) */
     vatAmount: numeric("vat_amount", { precision: 10, scale: 2 }).notNull(),
 
-    /** VAT rate as percentage (20.00 = 20%, 5.00 = 5%, 0.00 = zero-rated) */
+    /** Tax rate percentage (legacy column name: vat_rate) */
     vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).notNull().default("20.00"),
 
-    /** Total including VAT */
+    /** Total including tax */
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
 
     /** Amount paid so far */

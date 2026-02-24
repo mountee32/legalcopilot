@@ -64,7 +64,7 @@ export const POST = withErrorHandler(
 
           const prompt = [
             "You are Legal Copilot.",
-            "Extract actionable calendar events/deadlines from the provided text for a UK legal matter.",
+            "Extract actionable calendar events/deadlines from the provided text for a US legal matter.",
             "Return JSON only with shape:",
             `{"events":[{"title":"...","description":"...","eventType":"deadline","startAt":"2024-12-17T10:30:00Z","endAt":"...","allDay":false,"priority":"high"}]}`,
             "Rules:",

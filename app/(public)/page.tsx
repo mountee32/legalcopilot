@@ -17,7 +17,7 @@ export default function LandingPage() {
           <h1 className="text-4xl md:text-5xl font-light text-slate-900 leading-tight">
             AI-powered practice management
             <br />
-            <span className="text-slate-500">for UK law firms</span>
+            <span className="text-slate-500">for US law firms</span>
           </h1>
           <p className="text-lg text-slate-600 max-w-lg mx-auto font-light">
             We handle 80% of your administrative work autonomously. You review and approve, not
@@ -54,9 +54,9 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="p-4">
-            <h3 className="font-medium text-slate-900 mb-1">SRA Compliant</h3>
+            <h3 className="font-medium text-slate-900 mb-1">Audit Ready</h3>
             <p className="text-sm text-slate-500">
-              Built for UK law firms with full audit trails and compliance
+              Built for US law firms with full audit trails and controls
             </p>
           </div>
         </div>

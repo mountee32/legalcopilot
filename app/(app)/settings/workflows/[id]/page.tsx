@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkflowStageView } from "@/components/workflows/workflow-stage-view";
+import { formatPracticeArea, getPracticeAreaColor } from "@/lib/constants/practice-areas";
 
 interface TaskTemplate {
   id: string;
@@ -60,27 +61,6 @@ async function fetchWorkflow(id: string): Promise<{ workflow: WorkflowDetail }> 
   const res = await fetch(`/api/workflows/${id}`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch workflow");
   return res.json();
-}
-
-function getPracticeAreaColor(practiceArea: string): string {
-  const colors: Record<string, string> = {
-    conveyancing: "bg-blue-100 border-blue-200 text-blue-700",
-    litigation: "bg-red-100 border-red-200 text-red-700",
-    family: "bg-pink-100 border-pink-200 text-pink-700",
-    corporate: "bg-purple-100 border-purple-200 text-purple-700",
-    probate: "bg-amber-100 border-amber-200 text-amber-700",
-    employment: "bg-green-100 border-green-200 text-green-700",
-    immigration: "bg-teal-100 border-teal-200 text-teal-700",
-    commercial: "bg-indigo-100 border-indigo-200 text-indigo-700",
-  };
-  return colors[practiceArea] || "bg-slate-100 border-slate-200 text-slate-700";
-}
-
-function formatPracticeArea(practiceArea: string): string {
-  return practiceArea
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }
 
 export default function WorkflowDetailPage() {

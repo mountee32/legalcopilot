@@ -55,9 +55,7 @@ export default function HelpPage() {
             <CardDescription>Get help via email</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Contact us at support@legalcopilot.co.uk
-            </p>
+            <p className="text-sm text-muted-foreground">Contact us at support@legalcopilot.com</p>
           </CardContent>
         </Card>
       </div>

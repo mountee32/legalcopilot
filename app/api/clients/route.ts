@@ -9,6 +9,14 @@ import { withAuth } from "@/middleware/withAuth";
 import { withPermission } from "@/middleware/withPermission";
 import { withErrorHandler } from "@/middleware/withErrorHandler";
 
+function withPostalCodeAlias<T extends { postcode: string | null } | null | undefined>(client: T) {
+  if (!client) return client;
+  return {
+    ...client,
+    postalCode: client.postcode,
+  };
+}
+
 export const GET = withErrorHandler(
   withAuth(
     withPermission("clients:read")(async (request, { user }) => {
@@ -57,7 +65,7 @@ export const GET = withErrorHandler(
       const totalPages = Math.max(1, Math.ceil(total / query.limit));
 
       return NextResponse.json({
-        clients: rows,
+        clients: rows.map(withPostalCodeAlias),
         pagination: { page: query.page, limit: query.limit, total, totalPages },
       });
     })
@@ -95,15 +103,15 @@ export const POST = withErrorHandler(
             addressLine2: data.addressLine2 ?? null,
             city: data.city ?? null,
             county: data.county ?? null,
-            postcode: data.postcode ?? null,
-            country: data.country ?? "United Kingdom",
+            postcode: data.postalCode ?? data.postcode ?? null,
+            country: data.country ?? "United States",
             notes: data.notes ?? null,
           })
           .returning();
         return client;
       });
 
-      return NextResponse.json(client, { status: 201 });
+      return NextResponse.json(withPostalCodeAlias(client), { status: 201 });
     })
   )
 );

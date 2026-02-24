@@ -54,9 +54,9 @@ async function fetchInvoices(): Promise<{ invoices: Invoice[] }> {
 
 function formatCurrency(amount: string | number): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat("en-GB", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "GBP",
+    currency: "USD",
   }).format(num);
 }
 

@@ -100,7 +100,7 @@ export const ComplianceRuleSchema = z
     id: UuidSchema,
     firmId: UuidSchema,
     name: z.string().openapi({
-      example: "Conveyancing Deadline Warning",
+      example: "Personal Injury Deadline Warning",
     }),
     description: z.string().nullable(),
     type: RuleTypeSchema,
@@ -109,7 +109,7 @@ export const ComplianceRuleSchema = z
       example: {
         warningDays: 7,
         criticalDays: 2,
-        practiceAreas: ["conveyancing"],
+        practiceAreas: ["personal_injury"],
       },
     }),
     alertPriority: AlertPrioritySchema,

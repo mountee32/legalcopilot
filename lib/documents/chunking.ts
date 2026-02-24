@@ -52,3 +52,60 @@ export function chunkText(text: string, maxChars: number = 1200): Chunk[] {
   flush();
   return chunks;
 }
+
+/**
+ * Overlapping chunking for extraction pipelines.
+ *
+ * Produces fixed-size windows with overlap so that findings near chunk
+ * boundaries are captured by at least one window fully.
+ */
+export function chunkTextOverlapping(
+  text: string,
+  maxChars: number = 2000,
+  overlapChars: number = 400
+): Chunk[] {
+  const normalized = text.replace(/\r\n/g, "\n").trim();
+  if (!normalized) return [];
+
+  if (normalized.length <= maxChars) {
+    return [{ text: normalized, charStart: 0, charEnd: normalized.length }];
+  }
+
+  const chunks: Chunk[] = [];
+  let start = 0;
+
+  while (start < normalized.length) {
+    let end = Math.min(start + maxChars, normalized.length);
+
+    // Try to break at a paragraph or sentence boundary
+    if (end < normalized.length) {
+      const window = normalized.slice(start, end);
+      const lastParagraph = window.lastIndexOf("\n\n");
+      const lastSentence = window.lastIndexOf(". ");
+
+      if (lastParagraph > maxChars * 0.5) {
+        end = start + lastParagraph + 2;
+      } else if (lastSentence > maxChars * 0.5) {
+        end = start + lastSentence + 2;
+      }
+    }
+
+    const chunkText = normalized.slice(start, end).trim();
+    if (chunkText.length > 0) {
+      const leadingWhitespace =
+        normalized.slice(start, end).length - normalized.slice(start, end).trimStart().length;
+      chunks.push({
+        text: chunkText,
+        charStart: start + leadingWhitespace,
+        charEnd: start + leadingWhitespace + chunkText.length,
+      });
+    }
+
+    // Advance by maxChars minus overlap
+    const advance = Math.max(maxChars - overlapChars, 1);
+    if (start + advance >= normalized.length) break;
+    start += advance;
+  }
+
+  return chunks;
+}

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkflowCard } from "@/components/workflows/workflow-card";
+import { PRACTICE_AREA_OPTIONS } from "@/lib/constants/practice-areas";
 
 interface WorkflowTemplate {
   id: string;
@@ -38,14 +39,7 @@ async function fetchWorkflows(practiceArea?: string): Promise<WorkflowListRespon
 
 const PRACTICE_AREAS = [
   { value: "all", label: "All Areas" },
-  { value: "conveyancing", label: "Conveyancing" },
-  { value: "litigation", label: "Litigation" },
-  { value: "family", label: "Family" },
-  { value: "corporate", label: "Corporate" },
-  { value: "probate", label: "Probate" },
-  { value: "employment", label: "Employment" },
-  { value: "immigration", label: "Immigration" },
-  { value: "commercial", label: "Commercial" },
+  ...PRACTICE_AREA_OPTIONS.filter((area) => area.value !== "other"),
 ];
 
 export default function WorkflowsSettingsPage() {

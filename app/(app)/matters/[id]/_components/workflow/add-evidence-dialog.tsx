@@ -39,7 +39,7 @@ const EVIDENCE_TYPES = [
   { value: "title_document", label: "Title Document" },
   { value: "contract", label: "Contract" },
   { value: "completion_statement", label: "Completion Statement" },
-  { value: "land_registry", label: "Land Registry" },
+  { value: "land_registry", label: "Property Records" },
   { value: "other", label: "Other" },
 ] as const;
 
@@ -339,7 +339,7 @@ export function AddEvidenceDialog({
                             {formatDocumentType(doc.type)}
                           </Badge>
                           <span>
-                            {new Date(doc.createdAt).toLocaleDateString("en-GB", {
+                            {new Date(doc.createdAt).toLocaleDateString("en-US", {
                               day: "numeric",
                               month: "short",
                               year: "numeric",

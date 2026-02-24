@@ -14,20 +14,20 @@ import { documents } from "./documents";
 
 /**
  * Type of evidence for compliance tracking.
- * These map to regulatory requirements (SRA, AML, Land Registry).
+ * These map to regulatory and procedural requirements.
  */
 export const evidenceTypeEnum = pgEnum("evidence_type", [
   "id_document", // Passport, driving licence
   "proof_of_address", // Utility bill, bank statement
   "proof_of_funds", // Bank statement, mortgage offer
   "source_of_wealth", // Documentation of wealth origin
-  "search_result", // Property searches, Land Registry
+  "search_result", // Property/public record searches
   "signed_authority", // Client authority to act
   "client_instruction", // Written instructions from client
-  "title_document", // Title deeds, Land Registry entries
+  "title_document", // Title deeds, recorder/county entries
   "contract", // Exchange contracts
   "completion_statement", // Financial completion statement
-  "land_registry", // Land Registry forms (AP1, TR1, etc.)
+  "land_registry", // Legacy key for property record filing forms
   "other", // Catch-all for non-standard evidence
 ]);
 

@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { format, isAfter, isBefore, addDays } from "date-fns";
+import { PRACTICE_AREA_OPTIONS, formatPracticeArea } from "@/lib/constants/practice-areas";
 import type { Matter } from "@/lib/api/schemas/matters";
 
 interface MatterListResponse {
@@ -104,7 +105,7 @@ function MatterCard({ matter }: { matter: Matter }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 flex-wrap">
           <Badge variant="secondary" className="text-xs">
-            {matter.practiceArea.replace("_", " ").toUpperCase()}
+            {formatPracticeArea(matter.practiceArea).toUpperCase()}
           </Badge>
           <Badge variant={matter.status === "active" ? "default" : "secondary"} className="text-xs">
             {matter.status.replace("_", " ").toUpperCase()}
@@ -191,13 +192,11 @@ export default function MattersPage() {
               className="px-3 py-2 border border-slate-300 rounded-md bg-white text-sm"
             >
               <option value="">All Practice Areas</option>
-              <option value="conveyancing">Conveyancing</option>
-              <option value="litigation">Litigation</option>
-              <option value="family">Family</option>
-              <option value="probate">Probate</option>
-              <option value="employment">Employment</option>
-              <option value="immigration">Immigration</option>
-              <option value="commercial">Commercial</option>
+              {PRACTICE_AREA_OPTIONS.filter((area) => area.value !== "other").map((area) => (
+                <option key={area.value} value={area.value}>
+                  {area.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>

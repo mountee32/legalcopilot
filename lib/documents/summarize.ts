@@ -15,7 +15,7 @@ export async function summarizeDocument(options: {
 }): Promise<DocumentSummary> {
   const prompt = [
     "You are Legal Copilot.",
-    "Summarize the document for a UK law firm user.",
+    "Summarize the document for a US law firm user.",
     "Return JSON only (no markdown) with shape:",
     `{"summary":"...","keyPoints":["..."]}`,
     "Keep the summary factual and avoid inventing details.",

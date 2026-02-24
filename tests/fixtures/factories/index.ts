@@ -57,6 +57,9 @@ export * from "./signature-request";
 // Notifications
 export * from "./notification";
 
+// Pipeline
+export * from "./pipeline";
+
 // Re-export all factories as a namespace for convenience
 import * as firmFactory from "./firm";
 import * as userFactory from "./user";
@@ -77,6 +80,7 @@ import * as conflictFactory from "./conflict";
 import * as integrationAccountsFactory from "./integration-accounts";
 import * as signatureRequestFactory from "./signature-request";
 import * as notificationFactory from "./notification";
+import * as pipelineFactory from "./pipeline";
 
 export const factories = {
   ...firmFactory,
@@ -98,4 +102,5 @@ export const factories = {
   ...integrationAccountsFactory,
   ...signatureRequestFactory,
   ...notificationFactory,
+  ...pipelineFactory,
 };

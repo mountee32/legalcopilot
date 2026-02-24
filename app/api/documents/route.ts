@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
-import { documents, matters } from "@/lib/db/schema";
+import { documents, matters, pipelineRuns } from "@/lib/db/schema";
 import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { CreateDocumentSchema } from "@/lib/api/schemas";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
+import { startPipeline } from "@/lib/queue/pipeline";
 import { withAuth } from "@/middleware/withAuth";
 import { withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
 
@@ -79,6 +80,44 @@ export const POST = withErrorHandler(
           entityId: doc.id,
           occurredAt: new Date(),
           metadata: { title: doc.title, mimeType: doc.mimeType, filename: doc.filename },
+        });
+      }
+
+      // Trigger document processing pipeline if document has a matter
+      if (doc.matterId) {
+        const [run] = await tx
+          .insert(pipelineRuns)
+          .values({
+            firmId,
+            matterId: doc.matterId,
+            documentId: doc.id,
+            status: "queued",
+            triggeredBy: user.user.id,
+          })
+          .returning();
+
+        await createTimelineEvent(tx, {
+          firmId,
+          matterId: doc.matterId,
+          type: "pipeline_started",
+          title: "Document pipeline started",
+          actorType: "system",
+          entityType: "pipeline_run",
+          entityId: run.id,
+          occurredAt: new Date(),
+          metadata: { documentId: doc.id, documentTitle: doc.title },
+        });
+
+        // Enqueue outside the transaction to avoid holding it open
+        // The pipeline run exists in DB so even if enqueue fails the run is retryable
+        startPipeline({
+          pipelineRunId: run.id,
+          firmId,
+          matterId: doc.matterId,
+          documentId: doc.id,
+          triggeredBy: user.user.id,
+        }).catch((err) => {
+          console.error("Failed to enqueue pipeline job:", err);
         });
       }
 

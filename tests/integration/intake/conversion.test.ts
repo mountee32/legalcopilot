@@ -43,7 +43,7 @@ describe("Lead Conversion Integration", () => {
           lastName: lead.lastName,
           email: lead.email,
           phone: lead.phone,
-          country: "United Kingdom",
+          country: "United States",
           notes: lead.notes,
         })
         .returning();
@@ -121,7 +121,7 @@ describe("Lead Conversion Integration", () => {
           companyName: lead.companyName,
           email: lead.email,
           phone: lead.phone,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 
@@ -185,7 +185,7 @@ describe("Lead Conversion Integration", () => {
           firstName: lead.firstName,
           lastName: lead.lastName,
           email: lead.email,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 
@@ -251,7 +251,7 @@ describe("Lead Conversion Integration", () => {
           firstName: lead.firstName,
           lastName: lead.lastName,
           email: lead.email,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 
@@ -377,7 +377,7 @@ describe("Lead Conversion Integration", () => {
           lastName: lead.lastName,
           email: lead.email,
           phone: lead.phone,
-          country: "United Kingdom",
+          country: "United States",
           notes: lead.notes,
         })
         .returning();
@@ -390,7 +390,7 @@ describe("Lead Conversion Integration", () => {
       expect(client.notes).toBe(lead.notes);
       expect(client.type).toBe("individual");
       expect(client.status).toBe("active");
-      expect(client.country).toBe("United Kingdom");
+      expect(client.country).toBe("United States");
     });
 
     it("copies company data when converting company lead", async () => {
@@ -411,7 +411,7 @@ describe("Lead Conversion Integration", () => {
           companyName: lead.companyName,
           email: lead.email,
           phone: lead.phone,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 
@@ -444,7 +444,7 @@ describe("Lead Conversion Integration", () => {
           status: "active",
           firstName: lead.firstName,
           lastName: lead.lastName,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 
@@ -508,7 +508,7 @@ describe("Lead Conversion Integration", () => {
           firstName: lead.firstName,
           lastName: lead.lastName,
           email: lead.email,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 
@@ -600,7 +600,7 @@ describe("Lead Conversion Integration", () => {
           status: "active",
           firstName: lead.firstName,
           lastName: lead.lastName,
-          country: "United Kingdom",
+          country: "United States",
         })
         .returning();
 

@@ -143,7 +143,7 @@ export default function InboxPage() {
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
   };
 
   const needsReviewCount = emails.filter((e) => e.aiProcessed && e.status === "received").length;

@@ -87,6 +87,16 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
   "note_added",
   "note_deleted",
   "template_applied",
+
+  // Pipeline events
+  "pipeline_started",
+  "pipeline_completed",
+  "pipeline_failed",
+  "pipeline_stage_completed",
+  "pipeline_finding_extracted",
+  "pipeline_action_generated",
+  "pipeline_finding_resolved",
+  "pipeline_action_resolved",
 ]);
 
 export const timelineEvents = pgTable(

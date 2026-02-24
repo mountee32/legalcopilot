@@ -81,14 +81,14 @@ export function getConfidenceLevel(confidence: number): ConfidenceLevel {
  * Build the analysis prompt for Gemini Flash
  */
 export function buildAnalyzePrompt(): string {
-  return `You are a legal document analyzer for a UK law firm. Analyze the provided PDF document and extract the following information. Return your response as valid JSON only, no markdown code blocks.
+  return `You are a legal document analyzer for a US law firm. Analyze the provided PDF document and extract the following information. Return your response as valid JSON only, no markdown code blocks.
 
 {
   "suggestedTitle": "A concise title for this document",
   "documentType": "one of: letter_in, letter_out, email_in, email_out, contract, court_form, evidence, note, id_document, financial, other",
   "documentDate": "YYYY-MM-DD format or null if not found",
   "parties": [
-    { "name": "Full name", "role": "Role in document (e.g., Buyer, Seller, Claimant, Defendant, Witness, Solicitor)" }
+    { "name": "Full name", "role": "Role in document (e.g., Buyer, Seller, Plaintiff, Defendant, Witness, Attorney)" }
   ],
   "keyDates": [
     { "label": "Description of date (e.g., Completion Date, Deadline, Hearing Date)", "date": "YYYY-MM-DD" }
@@ -97,7 +97,7 @@ export function buildAnalyzePrompt(): string {
   "confidence": 0-100
 }
 
-Focus on UK legal terminology and conventions. Extract all parties mentioned by name. Include important deadlines and dates. Be concise but accurate.`;
+Focus on US legal terminology and conventions. Extract all parties mentioned by name. Include important deadlines and dates. Be concise but accurate.`;
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   TemplateSelector,
   type TemplateSelection,
 } from "@/components/task-templates/template-selector";
+import { PRACTICE_AREA_OPTIONS } from "@/lib/constants/practice-areas";
 import type { CreateMatter } from "@/lib/api/schemas/matters";
 
 type Client = {
@@ -32,7 +33,7 @@ export default function NewMatterPage() {
   const [formData, setFormData] = useState<CreateMatter>({
     title: "",
     clientId: "",
-    practiceArea: "conveyancing",
+    practiceArea: "personal_injury",
     billingType: "hourly",
   });
   const [templateSelection, setTemplateSelection] = useState<TemplateSelection | null>(null);
@@ -218,7 +219,7 @@ export default function NewMatterPage() {
                 <Label htmlFor="title">Title *</Label>
                 <Input
                   id="title"
-                  placeholder="e.g., Property Purchase - 123 High Street"
+                  placeholder="e.g., Personal Injury Claim - Rear-end Collision"
                   value={formData.title}
                   onChange={(e) => handleChange("title", e.target.value)}
                   required
@@ -237,18 +238,11 @@ export default function NewMatterPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     required
                   >
-                    <option value="conveyancing">Conveyancing</option>
-                    <option value="litigation">Litigation</option>
-                    <option value="family">Family</option>
-                    <option value="probate">Probate</option>
-                    <option value="employment">Employment</option>
-                    <option value="immigration">Immigration</option>
-                    <option value="personal_injury">Personal Injury</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="criminal">Criminal</option>
-                    <option value="ip">IP</option>
-                    <option value="insolvency">Insolvency</option>
-                    <option value="other">Other</option>
+                    {PRACTICE_AREA_OPTIONS.map((area) => (
+                      <option key={area.value} value={area.value}>
+                        {area.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">

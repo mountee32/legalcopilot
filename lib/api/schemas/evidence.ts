@@ -8,7 +8,7 @@ import { z, UuidSchema, DateTimeSchema, PaginationSchema, PaginationMetaSchema }
 
 /**
  * Evidence types for compliance tracking.
- * Maps to regulatory requirements (SRA, AML, Land Registry).
+ * Maps to regulatory and procedural requirements.
  */
 export const EvidenceTypeSchema = z
   .enum([

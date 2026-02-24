@@ -26,7 +26,7 @@ import { taskPriorityEnum } from "./tasks";
 
 /**
  * Task template category.
- * - regulatory: SRA/legal requirements (AML, conflict checks) - system locked
+ * - regulatory: bar/regulatory requirements (AML, conflict checks) - system locked
  * - legal: Court/statutory requirements - system locked
  * - firm_policy: Firm's internal policies - firm editable
  * - best_practice: Recommended steps - firm editable

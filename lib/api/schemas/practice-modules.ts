@@ -65,6 +65,10 @@ export const ConveyancingDataSchema = z.object({
   exchangeDate: DateSchema.optional(),
   completionDate: DateSchema.optional(),
   searches: z.array(ConveyancingSearchSchema).optional().default([]),
+  transferTaxAmount: MoneySchema.optional(),
+  transferTaxJurisdiction: z.string().optional(),
+  transferTaxAssessedAt: DateTimeSchema.optional(),
+  // Legacy UK fields retained for compatibility during migration.
   sdltAmount: MoneySchema.optional(),
   sdltSubmittedAt: DateTimeSchema.optional(),
   sdltReference: z.string().optional(),
@@ -72,29 +76,57 @@ export const ConveyancingDataSchema = z.object({
   landRegistryReference: z.string().optional(),
 });
 
-export const CalculateSDLTRequestSchema = z
-  .object({
-    purchasePrice: MoneySchema,
-    propertyType: PropertyTypeSchema,
-    isFirstTimeBuyer: z.boolean().default(false),
-    isAdditionalProperty: z.boolean().default(false),
-  })
-  .openapi("CalculateSDLTRequest");
+const TransferTypeSchema = z.enum(["sale", "refinance", "gift", "other"]).openapi({
+  example: "sale",
+  description: "Property transfer type",
+});
 
-export const CalculateSDLTResponseSchema = z
+const UsStateCodeSchema = z
+  .string()
+  .regex(/^[A-Za-z]{2}$/)
+  .openapi({ example: "CA", description: "US state code (2 letters)" });
+
+const RateSchema = z
+  .number()
+  .min(0)
+  .max(1)
+  .openapi({ example: 0.004, description: "Rate as decimal fraction (0.004 = 0.4%)" });
+
+export const CalculateUsTransferTaxRequestSchema = z
   .object({
-    sdltAmount: MoneySchema,
+    salePrice: MoneySchema,
+    state: UsStateCodeSchema,
+    transferType: TransferTypeSchema.default("sale"),
+    countyRate: RateSchema.optional().default(0),
+    cityRate: RateSchema.optional().default(0),
+    overrideStateRate: RateSchema.optional(),
+  })
+  .openapi("CalculateUsTransferTaxRequest");
+
+export const CalculateUsTransferTaxResponseSchema = z
+  .object({
+    salePrice: MoneySchema,
+    state: UsStateCodeSchema,
+    transferType: TransferTypeSchema,
+    stateRate: z.string().openapi({ example: "0.11%" }),
+    countyRate: z.string().openapi({ example: "0.00%" }),
+    cityRate: z.string().openapi({ example: "0.00%" }),
     breakdown: z.array(
       z.object({
-        band: z.string(),
+        jurisdiction: z.string(),
         rate: z.string(),
-        taxableAmount: MoneySchema,
-        sdlt: MoneySchema,
+        amount: MoneySchema,
       })
     ),
-    notes: z.string().optional(),
+    totalTransferTax: MoneySchema,
+    effectiveRate: z.string().openapi({
+      description: "Effective transfer tax rate as percentage",
+      example: "0.11%",
+    }),
+    assumptions: z.array(z.string()),
+    disclaimer: z.string(),
   })
-  .openapi("CalculateSDLTResponse");
+  .openapi("CalculateUsTransferTaxResponse");
 
 export const UpdateConveyancingDataSchema = ConveyancingDataSchema.partial().openapi(
   "UpdateConveyancingDataRequest"
@@ -251,6 +283,10 @@ export const ProbateDataSchema = z.object({
   grantReference: z.string().optional(),
   estateGrossValue: MoneySchema.optional(),
   estateNetValue: MoneySchema.optional(),
+  estateTaxPayable: MoneySchema.optional(),
+  federalEstateTaxPayable: MoneySchema.optional(),
+  stateEstateTaxPayable: MoneySchema.optional(),
+  // Legacy UK field retained for compatibility during migration.
   ihtPayable: MoneySchema.optional(),
   beneficiaries: z.array(BeneficiarySchema).optional().default([]),
   assets: z.array(EstateAssetSchema).optional().default([]),
@@ -258,28 +294,37 @@ export const ProbateDataSchema = z.object({
   distributions: z.array(DistributionSchema).optional().default([]),
 });
 
-export const CalculateIHTRequestSchema = z
+export const CalculateUsEstateTaxRequestSchema = z
   .object({
     estateGrossValue: MoneySchema,
-    liabilities: MoneySchema,
-    exemptions: MoneySchema.optional().default("0.00"),
-    reliefs: MoneySchema.optional().default("0.00"),
+    liabilities: MoneySchema.optional().default("0.00"),
+    deductions: MoneySchema.optional().default("0.00"),
+    taxableLifetimeGifts: MoneySchema.optional().default("0.00"),
+    federalExemption: MoneySchema.optional(),
+    federalRate: RateSchema.optional().default(0.4),
+    state: UsStateCodeSchema.optional(),
+    stateExemption: MoneySchema.optional().default("0.00"),
+    stateRate: RateSchema.optional().default(0),
   })
-  .openapi("CalculateIHTRequest");
+  .openapi("CalculateUsEstateTaxRequest");
 
-export const CalculateIHTResponseSchema = z
+export const CalculateUsEstateTaxResponseSchema = z
   .object({
     estateNetValue: MoneySchema,
-    nilRateBand: MoneySchema,
-    taxableAmount: MoneySchema,
-    ihtPayable: MoneySchema,
+    adjustedTaxBase: MoneySchema,
+    federalTaxableAmount: MoneySchema,
+    federalEstateTax: MoneySchema,
+    stateTaxableAmount: MoneySchema,
+    stateEstateTax: MoneySchema,
+    totalEstimatedTax: MoneySchema,
     effectiveRate: z.string().openapi({
       description: "Effective tax rate as percentage",
-      example: "40.0",
+      example: "6.4%",
     }),
-    notes: z.string().optional(),
+    assumptions: z.array(z.string()),
+    disclaimer: z.string(),
   })
-  .openapi("CalculateIHTResponse");
+  .openapi("CalculateUsEstateTaxResponse");
 
 export const UpdateProbateDataSchema = ProbateDataSchema.partial().openapi(
   "UpdateProbateDataRequest"

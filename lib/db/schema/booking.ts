@@ -32,7 +32,7 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 
 /**
  * Appointment types define consultation offerings.
- * e.g., "Initial Consultation - Conveyancing (30 min)"
+ * e.g., "Initial Consultation - Personal Injury (30 min)"
  */
 export const appointmentTypes = pgTable(
   "appointment_types",
@@ -90,7 +90,7 @@ export const availabilityRules = pgTable(
       .notNull()
       .references(() => firms.id, { onDelete: "cascade" }),
 
-    /** Optional: availability for specific user/solicitor */
+    /** Optional: availability for specific user/attorney */
     userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
 
     /** Day of week (0 = Sunday, 6 = Saturday) */
@@ -142,7 +142,7 @@ export const bookings = pgTable(
       .notNull()
       .references(() => appointmentTypes.id, { onDelete: "restrict" }),
 
-    /** Assigned solicitor/user */
+    /** Assigned attorney/user */
     assignedTo: uuid("assigned_to").references(() => users.id, { onDelete: "set null" }),
 
     /** Optional: link to lead (for new business) */

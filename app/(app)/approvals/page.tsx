@@ -199,7 +199,7 @@ export default function ApprovalsPage() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
 
-    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
   };
 
   const getConfidence = (approval: ApprovalRequest): number => {

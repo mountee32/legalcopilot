@@ -91,7 +91,7 @@ export const riskEvaluations = pgTable("risk_evaluations", {
    * Risk factors with weights and evidence.
    * @example [
    *   { factor: "tight_deadline", weight: 0.4, evidence: "Completion due in 3 days" },
-   *   { factor: "high_value", weight: 0.3, evidence: "Matter value £500k+" }
+   *   { factor: "high_value", weight: 0.3, evidence: "Matter value $500k+" }
    * ]
    */
   factors: jsonb("factors").notNull(),
@@ -149,7 +149,7 @@ export const complianceRules = pgTable("compliance_rules", {
    *   "type": "deadline",
    *   "warningDays": 7,
    *   "criticalDays": 2,
-   *   "practiceAreas": ["conveyancing", "litigation"]
+   *   "practiceAreas": ["personal_injury", "litigation"]
    * }
    * @example Workload rule:
    * {

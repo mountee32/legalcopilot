@@ -35,8 +35,8 @@ describe("SubTypeSelect", () => {
     render(<SubTypeSelect practiceArea="family" value={undefined} onChange={mockOnChange} />);
 
     expect(screen.getByText("Divorce Petition")).toBeInTheDocument();
-    expect(screen.getByText("Financial Settlement")).toBeInTheDocument();
-    expect(screen.getByText("Child Arrangements")).toBeInTheDocument();
+    expect(screen.getByText("Property Division")).toBeInTheDocument();
+    expect(screen.getByText("Child Custody")).toBeInTheDocument();
   });
 
   it("renders sub-types for litigation practice area", () => {
@@ -155,8 +155,8 @@ describe("SubTypeSelect", () => {
       <SubTypeSelect practiceArea="personal_injury" value={undefined} onChange={mockOnChange} />
     );
 
-    expect(screen.getByText("Road Traffic Accident")).toBeInTheDocument();
-    expect(screen.getByText("Employer Liability")).toBeInTheDocument();
-    expect(screen.getByText("Clinical Negligence")).toBeInTheDocument();
+    expect(screen.getByText("Motor Vehicle Collision")).toBeInTheDocument();
+    expect(screen.getByText("Slip And Fall")).toBeInTheDocument();
+    expect(screen.getByText("Medical Malpractice")).toBeInTheDocument();
   });
 });

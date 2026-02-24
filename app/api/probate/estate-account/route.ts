@@ -84,20 +84,20 @@ export const POST = withErrorHandler(
         // Generate summary
         const summaryParts = [];
         if (data.includeAssets) {
-          summaryParts.push(`${assets.length} asset(s) totaling £${estateGrossValue.toFixed(2)}`);
+          summaryParts.push(`${assets.length} asset(s) totaling $${estateGrossValue.toFixed(2)}`);
         }
         if (data.includeLiabilities) {
           summaryParts.push(
-            `${liabilities.length} liability(ies) totaling £${totalLiabilities.toFixed(2)}`
+            `${liabilities.length} liability(ies) totaling $${totalLiabilities.toFixed(2)}`
           );
         }
-        summaryParts.push(`Net estate value: £${estateNetValue.toFixed(2)}`);
+        summaryParts.push(`Net estate value: $${estateNetValue.toFixed(2)}`);
         if (data.includeDistributions) {
           summaryParts.push(
-            `${distributions.length} distribution(s) totaling £${totalDistributions.toFixed(2)}`
+            `${distributions.length} distribution(s) totaling $${totalDistributions.toFixed(2)}`
           );
         }
-        summaryParts.push(`Remaining balance: £${remainingBalance.toFixed(2)}`);
+        summaryParts.push(`Remaining balance: $${remainingBalance.toFixed(2)}`);
 
         const summary = summaryParts.join(". ");
 
