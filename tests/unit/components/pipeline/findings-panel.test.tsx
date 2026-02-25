@@ -87,4 +87,48 @@ describe("FindingsPanel", () => {
 
     expect(onResolve).toHaveBeenCalledWith("f-1", "accepted");
   });
+
+  it("shows Correct button when onRevise is provided", () => {
+    const onRevise = vi.fn();
+    render(<FindingsPanel findings={mockFindings} onRevise={onRevise} />);
+
+    // Expand the pending finding
+    fireEvent.click(screen.getByText("Claimant Full Name"));
+
+    expect(screen.getByText("Correct")).toBeDefined();
+  });
+
+  it("shows conflict resolution radio buttons when onRevise is provided", () => {
+    const onRevise = vi.fn();
+    const onResolve = vi.fn();
+    render(<FindingsPanel findings={mockFindings} onResolve={onResolve} onRevise={onRevise} />);
+
+    // Expand the conflict finding
+    fireEvent.click(screen.getByText("Date of Injury"));
+
+    expect(screen.getByText(/Use new value:/)).toBeDefined();
+    expect(screen.getByText(/Keep existing:/)).toBeDefined();
+    expect(screen.getByText("Enter custom value")).toBeDefined();
+  });
+
+  it("shows revised icon for revised findings", () => {
+    const revisedFindings = [
+      {
+        id: "f-4",
+        categoryKey: "claimant_info",
+        fieldKey: "name",
+        label: "Name",
+        value: "Corrected Name",
+        sourceQuote: null,
+        confidence: "0.900",
+        impact: "high",
+        status: "revised",
+        existingValue: null,
+      },
+    ];
+    const { container } = render(<FindingsPanel findings={revisedFindings} />);
+    // The Pencil icon is rendered for revised status — check it exists
+    const pencilIcons = container.querySelectorAll(".text-violet-500");
+    expect(pencilIcons.length).toBeGreaterThan(0);
+  });
 });

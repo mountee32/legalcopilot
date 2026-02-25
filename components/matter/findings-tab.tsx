@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Download } from "lucide-react";
+import { RefreshCw, Download, CheckCircle2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +13,11 @@ import { useToast } from "@/lib/hooks/use-toast";
 
 interface FindingsTabProps {
   matterId: string;
+  onReviewSummary?: (summary: {
+    pendingCount: number;
+    conflictCount: number;
+    needsReview: number;
+  }) => void;
 }
 
 interface StatusCounts {
@@ -21,12 +26,20 @@ interface StatusCounts {
   rejected: number;
   auto_applied: number;
   conflict: number;
+  revised: number;
+}
+
+interface ReviewSummary {
+  pendingCount: number;
+  conflictCount: number;
+  needsReview: number;
 }
 
 interface FindingsResponse {
   matterId: string;
   total: number;
   statusCounts: StatusCounts;
+  reviewSummary: ReviewSummary;
   categories: {
     categoryKey: string;
     findings: any[];
@@ -40,6 +53,7 @@ const STATUS_FILTERS = [
   { key: "conflict", label: "Conflicts" },
   { key: "accepted", label: "Accepted" },
   { key: "rejected", label: "Rejected" },
+  { key: "revised", label: "Revised" },
   { key: "auto_applied", label: "Auto-applied" },
 ] as const;
 
@@ -72,6 +86,28 @@ async function resolveFinding(id: string, status: "accepted" | "rejected") {
   return res.json();
 }
 
+async function reviseFinding(id: string, correctedValue: string, correctionScope: "case" | "firm") {
+  const res = await fetch(`/api/pipeline/findings/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: "revised", correctedValue, correctionScope }),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to revise finding");
+  return res.json();
+}
+
+async function batchResolveFindings(findingIds: string[], status: "accepted" | "rejected") {
+  const res = await fetch("/api/pipeline/findings/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ findingIds, status }),
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to batch resolve findings");
+  return res.json();
+}
+
 async function recalculateRisk(matterId: string) {
   const res = await fetch(`/api/matters/${matterId}/risk/recalculate`, {
     method: "POST",
@@ -81,7 +117,7 @@ async function recalculateRisk(matterId: string) {
   return res.json();
 }
 
-export function FindingsTab({ matterId }: FindingsTabProps) {
+export function FindingsTab({ matterId, onReviewSummary }: FindingsTabProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const queryClient = useQueryClient();
@@ -98,6 +134,13 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
     staleTime: 15_000,
   });
 
+  // Propagate review summary to parent via callback
+  useEffect(() => {
+    if (data?.reviewSummary && onReviewSummary) {
+      onReviewSummary(data.reviewSummary);
+    }
+  }, [data?.reviewSummary, onReviewSummary]);
+
   const resolve = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "accepted" | "rejected" }) =>
       resolveFinding(id, status),
@@ -108,6 +151,39 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
     },
     onError: () => {
       toast({ title: "Failed to resolve finding", variant: "destructive" });
+    },
+  });
+
+  const revise = useMutation({
+    mutationFn: ({
+      id,
+      correctedValue,
+      scope,
+    }: {
+      id: string;
+      correctedValue: string;
+      scope: "case" | "firm";
+    }) => reviseFinding(id, correctedValue, scope),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matter-findings-all", matterId] });
+      queryClient.invalidateQueries({ queryKey: ["matter", matterId] });
+      toast({ title: "Finding corrected" });
+    },
+    onError: () => {
+      toast({ title: "Failed to correct finding", variant: "destructive" });
+    },
+  });
+
+  const batchResolve = useMutation({
+    mutationFn: ({ ids, status }: { ids: string[]; status: "accepted" | "rejected" }) =>
+      batchResolveFindings(ids, status),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["matter-findings-all", matterId] });
+      queryClient.invalidateQueries({ queryKey: ["matter", matterId] });
+      toast({ title: `${data.updated} findings resolved` });
+    },
+    onError: () => {
+      toast({ title: "Failed to batch resolve findings", variant: "destructive" });
     },
   });
 
@@ -137,7 +213,16 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
   const allFindings = data?.categories?.flatMap((c) => c.findings) || [];
   const categoryKeys = data ? [...new Set(data.categories.map((c) => c.categoryKey))] : [];
 
-  if (!data || allFindings.length === 0) {
+  // Collect IDs for batch actions
+  const pendingIds = allFindings.filter((f: any) => f.status === "pending").map((f: any) => f.id);
+  const conflictIds = allFindings.filter((f: any) => f.status === "conflict").map((f: any) => f.id);
+  const reviewableIds = [...pendingIds, ...conflictIds];
+
+  const totalAcrossAllStatuses = statusCounts
+    ? Object.values(statusCounts).reduce((a, b) => a + b, 0)
+    : 0;
+
+  if (!data || totalAcrossAllStatuses === 0) {
     return (
       <Card className="p-8">
         <EmptyState
@@ -147,6 +232,8 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
       </Card>
     );
   }
+
+  const isBusy = resolve.isPending || revise.isPending || batchResolve.isPending;
 
   return (
     <div className="space-y-4">
@@ -206,6 +293,35 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
         </div>
       </div>
 
+      {/* Batch action buttons */}
+      {reviewableIds.length > 0 && (
+        <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2">
+          <span className="text-xs text-slate-500 mr-1">
+            {reviewableIds.length} findings need review
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50"
+            onClick={() => batchResolve.mutate({ ids: pendingIds, status: "accepted" })}
+            disabled={isBusy || pendingIds.length === 0}
+          >
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Accept All Pending ({pendingIds.length})
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs text-red-700 border-red-300 hover:bg-red-50"
+            onClick={() => batchResolve.mutate({ ids: reviewableIds, status: "rejected" })}
+            disabled={isBusy || reviewableIds.length === 0}
+          >
+            <XCircle className="h-3 w-3 mr-1" />
+            Reject All ({reviewableIds.length})
+          </Button>
+        </div>
+      )}
+
       {/* Category filter chips */}
       {categoryKeys.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
@@ -230,11 +346,22 @@ export function FindingsTab({ matterId }: FindingsTabProps) {
       )}
 
       {/* Findings panel (reuses existing component) */}
-      <FindingsPanel
-        findings={allFindings}
-        onResolve={(id, status) => resolve.mutate({ id, status })}
-        isResolving={resolve.isPending}
-      />
+      {allFindings.length === 0 && statusFilter !== "all" ? (
+        <Card className="p-6 text-center text-sm text-slate-400">
+          No findings match the &ldquo;{STATUS_FILTERS.find((f) => f.key === statusFilter)?.label}
+          &rdquo; filter.{" "}
+          <button className="text-blue-500 hover:underline" onClick={() => setStatusFilter("all")}>
+            Show all
+          </button>
+        </Card>
+      ) : (
+        <FindingsPanel
+          findings={allFindings}
+          onResolve={(id, status) => resolve.mutate({ id, status })}
+          onRevise={(id, correctedValue, scope) => revise.mutate({ id, correctedValue, scope })}
+          isResolving={isBusy}
+        />
+      )}
     </div>
   );
 }

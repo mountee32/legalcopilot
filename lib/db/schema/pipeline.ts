@@ -62,7 +62,11 @@ export const pipelineFindingStatusEnum = pgEnum("pipeline_finding_status", [
   "rejected", // Rejected by user
   "auto_applied", // Auto-applied above confidence threshold
   "conflict", // Conflicts with existing data
+  "revised", // User corrected the value
 ]);
+
+/** Entity correction scope — case-level or firm-wide */
+export const entityCorrectionScopeEnum = pgEnum("entity_correction_scope", ["case", "firm"]);
 
 /** Finding impact level */
 export const pipelineFindingImpactEnum = pgEnum("pipeline_finding_impact", [
@@ -320,6 +324,40 @@ export const pipelineActions = pgTable(
   })
 );
 
+/**
+ * Entity corrections — audit trail for user corrections to extracted findings.
+ * Supports two-level learning: case-scoped (this matter only) and firm-wide (all matters).
+ */
+export const entityCorrections = pgTable(
+  "entity_corrections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    firmId: uuid("firm_id")
+      .notNull()
+      .references(() => firms.id, { onDelete: "cascade" }),
+
+    /** Null for firm-wide corrections */
+    matterId: uuid("matter_id").references(() => matters.id, { onDelete: "set null" }),
+
+    /** The finding that was corrected — preserved even if finding is deleted */
+    findingId: uuid("finding_id").references(() => pipelineFindings.id, { onDelete: "set null" }),
+
+    categoryKey: text("category_key").notNull(),
+    fieldKey: text("field_key").notNull(),
+    originalValue: text("original_value"),
+    correctedValue: text("corrected_value").notNull(),
+    scope: entityCorrectionScopeEnum("scope").notNull().default("case"),
+
+    correctedBy: uuid("corrected_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    firmIdx: index("entity_corrections_firm_idx").on(t.firmId),
+    fieldIdx: index("entity_corrections_field_idx").on(t.firmId, t.categoryKey, t.fieldKey),
+  })
+);
+
 // ---------------------------------------------------------------------------
 // Type exports
 // ---------------------------------------------------------------------------
@@ -332,3 +370,6 @@ export type NewPipelineFinding = typeof pipelineFindings.$inferInsert;
 
 export type PipelineAction = typeof pipelineActions.$inferSelect;
 export type NewPipelineAction = typeof pipelineActions.$inferInsert;
+
+export type EntityCorrection = typeof entityCorrections.$inferSelect;
+export type NewEntityCorrection = typeof entityCorrections.$inferInsert;

@@ -50,12 +50,21 @@ export const GET = withErrorHandler(
       }
 
       // Status counts
+      const pendingCount = allFindings.filter((f) => f.status === "pending").length;
+      const conflictCount = allFindings.filter((f) => f.status === "conflict").length;
       const statusCounts = {
-        pending: allFindings.filter((f) => f.status === "pending").length,
+        pending: pendingCount,
         accepted: allFindings.filter((f) => f.status === "accepted").length,
         rejected: allFindings.filter((f) => f.status === "rejected").length,
         auto_applied: allFindings.filter((f) => f.status === "auto_applied").length,
-        conflict: allFindings.filter((f) => f.status === "conflict").length,
+        conflict: conflictCount,
+        revised: allFindings.filter((f) => f.status === "revised").length,
+      };
+
+      const reviewSummary = {
+        pendingCount,
+        conflictCount,
+        needsReview: pendingCount + conflictCount,
       };
 
       const categories = Array.from(byCategory.entries()).map(([key, findings]) => ({
@@ -68,6 +77,7 @@ export const GET = withErrorHandler(
         matterId,
         total: filtered.length,
         statusCounts,
+        reviewSummary,
         categories,
       };
     });

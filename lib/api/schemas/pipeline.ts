@@ -25,7 +25,7 @@ export const PipelineStageStatusSchema = z
   .openapi("PipelineStageStatus");
 
 export const PipelineFindingStatusSchema = z
-  .enum(["pending", "accepted", "rejected", "auto_applied", "conflict"])
+  .enum(["pending", "accepted", "rejected", "auto_applied", "conflict", "revised"])
   .openapi("PipelineFindingStatus");
 
 export const PipelineFindingImpactSchema = z
@@ -126,9 +126,30 @@ export const PipelineFindingSchema = z
 
 export const ResolveFindingSchema = z
   .object({
+    status: z.enum(["accepted", "rejected", "revised"]),
+    correctedValue: z.string().min(1).optional(),
+    correctionScope: z.enum(["case", "firm"]).optional(),
+  })
+  .refine(
+    (data) => data.status !== "revised" || (!!data.correctedValue && !!data.correctionScope),
+    { message: "correctedValue and correctionScope are required when status is revised" }
+  )
+  .openapi("ResolveFindingRequest");
+
+export const BatchResolveFindingsSchema = z
+  .object({
+    findingIds: z.array(z.string().uuid()).min(1).max(100),
     status: z.enum(["accepted", "rejected"]),
   })
-  .openapi("ResolveFindingRequest");
+  .openapi("BatchResolveFindingsRequest");
+
+export const ReviewSummarySchema = z
+  .object({
+    pendingCount: z.number().int(),
+    conflictCount: z.number().int(),
+    needsReview: z.number().int(),
+  })
+  .openapi("ReviewSummary");
 
 // ---------------------------------------------------------------------------
 // Pipeline Action schemas
@@ -182,3 +203,5 @@ export type PipelineFinding = z.infer<typeof PipelineFindingSchema>;
 export type PipelineAction = z.infer<typeof PipelineActionSchema>;
 export type ResolveFinding = z.infer<typeof ResolveFindingSchema>;
 export type ResolveAction = z.infer<typeof ResolveActionSchema>;
+export type BatchResolveFindings = z.infer<typeof BatchResolveFindingsSchema>;
+export type ReviewSummary = z.infer<typeof ReviewSummarySchema>;

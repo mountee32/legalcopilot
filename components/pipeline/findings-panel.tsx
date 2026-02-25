@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Zap,
   Clock,
+  Pencil,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ interface Finding {
 interface FindingsPanelProps {
   findings: Finding[];
   onResolve?: (findingId: string, status: "accepted" | "rejected") => void;
+  onRevise?: (findingId: string, correctedValue: string, scope: "case" | "firm") => void;
   isResolving?: boolean;
 }
 
@@ -47,6 +49,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   rejected: <XCircle className="h-4 w-4 text-red-500" />,
   auto_applied: <Zap className="h-4 w-4 text-blue-500" />,
   conflict: <AlertTriangle className="h-4 w-4 text-orange-500" />,
+  revised: <Pencil className="h-4 w-4 text-violet-500" />,
 };
 
 function ConfidenceBar({ confidence }: { confidence: number }) {
@@ -63,18 +66,79 @@ function ConfidenceBar({ confidence }: { confidence: number }) {
   );
 }
 
+function ScopeToggle({
+  value,
+  onChange,
+}: {
+  value: "case" | "firm";
+  onChange: (v: "case" | "firm") => void;
+}) {
+  return (
+    <div className="flex rounded-full bg-slate-100 p-0.5 text-xs">
+      <button
+        type="button"
+        onClick={() => onChange("case")}
+        className={`px-3 py-1 rounded-full transition-colors ${
+          value === "case" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+        }`}
+      >
+        This case
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("firm")}
+        className={`px-3 py-1 rounded-full transition-colors ${
+          value === "firm" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
+        }`}
+      >
+        All cases
+      </button>
+    </div>
+  );
+}
+
 function FindingCard({
   finding,
   onResolve,
+  onRevise,
   isResolving,
 }: {
   finding: Finding;
   onResolve?: FindingsPanelProps["onResolve"];
+  onRevise?: FindingsPanelProps["onRevise"];
   isResolving?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showCorrection, setShowCorrection] = useState(false);
+  const [correctedValue, setCorrectedValue] = useState("");
+  const [correctionScope, setCorrectionScope] = useState<"case" | "firm">("case");
+  const [conflictChoice, setConflictChoice] = useState<"new" | "existing" | "custom">("new");
   const impact = IMPACT_STYLES[finding.impact] || IMPACT_STYLES.info;
   const confidence = parseFloat(finding.confidence);
+
+  const handleReviseSubmit = () => {
+    if (!onRevise || !correctedValue.trim()) return;
+    onRevise(finding.id, correctedValue.trim(), correctionScope);
+    setShowCorrection(false);
+    setCorrectedValue("");
+  };
+
+  const handleConflictResolve = () => {
+    if (!onRevise) return;
+    if (conflictChoice === "new") {
+      // Accept the new extracted value as-is
+      onResolve?.(finding.id, "accepted");
+    } else if (conflictChoice === "existing") {
+      // Revise back to existing value
+      if (!finding.existingValue) return;
+      onRevise(finding.id, finding.existingValue, correctionScope);
+    } else {
+      // Custom value — use the correction form
+      onRevise(finding.id, correctedValue.trim(), correctionScope);
+    }
+  };
+
+  const isActionable = finding.status === "pending" || finding.status === "conflict";
 
   return (
     <div className="border rounded-lg p-3 bg-white hover:bg-slate-50 transition-colors">
@@ -114,40 +178,167 @@ function FindingCard({
             </div>
           )}
 
-          {finding.status === "conflict" && finding.existingValue && (
+          {/* Conflict resolution UI */}
+          {finding.status === "conflict" && finding.existingValue && onRevise && (
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-orange-700">Resolve conflict:</div>
+              <label className="flex items-start gap-2 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name={`conflict-${finding.id}`}
+                  checked={conflictChoice === "new"}
+                  onChange={() => setConflictChoice("new")}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">Use new value:</span> {finding.value}
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name={`conflict-${finding.id}`}
+                  checked={conflictChoice === "existing"}
+                  onChange={() => setConflictChoice("existing")}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">Keep existing:</span> {finding.existingValue}
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name={`conflict-${finding.id}`}
+                  checked={conflictChoice === "custom"}
+                  onChange={() => setConflictChoice("custom")}
+                  className="mt-0.5"
+                />
+                <span className="font-medium">Enter custom value</span>
+              </label>
+              {conflictChoice === "custom" && (
+                <input
+                  type="text"
+                  value={correctedValue}
+                  onChange={(e) => setCorrectedValue(e.target.value)}
+                  placeholder="Enter corrected value..."
+                  className="w-full text-xs border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              <div className="flex items-center gap-2 pt-1">
+                <ScopeToggle value={correctionScope} onChange={setCorrectionScope} />
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleConflictResolve();
+                  }}
+                  disabled={isResolving || (conflictChoice === "custom" && !correctedValue.trim())}
+                >
+                  Resolve
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Existing value display for non-interactive conflict view */}
+          {finding.status === "conflict" && finding.existingValue && !onRevise && (
             <div className="text-xs bg-orange-50 rounded p-2 border-l-2 border-orange-300 text-orange-700">
               <span className="font-medium">Existing value:</span> {finding.existingValue}
             </div>
           )}
 
-          {finding.status === "pending" && onResolve && (
+          {/* Action buttons for pending findings */}
+          {finding.status === "pending" && (onResolve || onRevise) && (
             <div className="flex gap-2 pt-1">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onResolve(finding.id, "accepted");
-                }}
-                disabled={isResolving}
-              >
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Accept
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs text-red-700 border-red-300 hover:bg-red-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onResolve(finding.id, "rejected");
-                }}
-                disabled={isResolving}
-              >
-                <XCircle className="h-3 w-3 mr-1" />
-                Reject
-              </Button>
+              {onResolve && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onResolve(finding.id, "accepted");
+                    }}
+                    disabled={isResolving}
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs text-red-700 border-red-300 hover:bg-red-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onResolve(finding.id, "rejected");
+                    }}
+                    disabled={isResolving}
+                  >
+                    <XCircle className="h-3 w-3 mr-1" />
+                    Reject
+                  </Button>
+                </>
+              )}
+              {onRevise && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs text-violet-700 border-violet-300 hover:bg-violet-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCorrection(!showCorrection);
+                    if (!correctedValue) setCorrectedValue(finding.value || "");
+                  }}
+                  disabled={isResolving}
+                >
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Correct
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Inline correction form */}
+          {showCorrection && finding.status === "pending" && onRevise && (
+            <div className="space-y-2 pt-1 border-t border-slate-100">
+              <input
+                type="text"
+                value={correctedValue}
+                onChange={(e) => setCorrectedValue(e.target.value)}
+                placeholder="Enter corrected value..."
+                className="w-full text-xs border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
+              <div className="flex items-center gap-2">
+                <ScopeToggle value={correctionScope} onChange={setCorrectionScope} />
+                <Button
+                  size="sm"
+                  className="h-7 text-xs bg-violet-600 hover:bg-violet-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReviseSubmit();
+                  }}
+                  disabled={isResolving || !correctedValue.trim()}
+                >
+                  Save Correction
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCorrection(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -156,7 +347,7 @@ function FindingCard({
   );
 }
 
-export function FindingsPanel({ findings, onResolve, isResolving }: FindingsPanelProps) {
+export function FindingsPanel({ findings, onResolve, onRevise, isResolving }: FindingsPanelProps) {
   // Group by category
   const byCategory = new Map<string, Finding[]>();
   for (const f of findings) {
@@ -209,6 +400,7 @@ export function FindingsPanel({ findings, onResolve, isResolving }: FindingsPane
                 key={finding.id}
                 finding={finding}
                 onResolve={onResolve}
+                onRevise={onRevise}
                 isResolving={isResolving}
               />
             ))}

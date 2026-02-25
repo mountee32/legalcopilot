@@ -119,6 +119,9 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
 
   // AI task suggestion events
   "ai_tasks_suggested",
+
+  // Entity review events
+  "finding_revised",
 ]);
 
 export const timelineEvents = pgTable(

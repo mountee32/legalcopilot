@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -964,6 +964,29 @@ function PipelineTab({ matterId }: { matterId: string }) {
                   onResolve={(id: string, status: "accepted" | "rejected") =>
                     resolveFinding.mutate({ id, status })
                   }
+                  onRevise={(id: string, correctedValue: string, scope: "case" | "firm") => {
+                    fetch(`/api/pipeline/findings/${id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        status: "revised",
+                        correctedValue,
+                        correctionScope: scope,
+                      }),
+                      credentials: "include",
+                    })
+                      .then(async (res) => {
+                        if (!res.ok) throw new Error("Failed to revise finding");
+                        queryClient.invalidateQueries({
+                          queryKey: ["pipeline-run", selectedRunId],
+                        });
+                        queryClient.invalidateQueries({ queryKey: ["pipeline-runs", matterId] });
+                        toast({ title: "Finding corrected" });
+                      })
+                      .catch(() => {
+                        toast({ title: "Failed to correct finding", variant: "destructive" });
+                      });
+                  }}
                   isResolving={resolveFinding.isPending}
                 />
                 <ActionsPanel
@@ -994,6 +1017,14 @@ export default function MatterDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
+
+  const handleReviewSummary = useCallback(
+    (summary: { pendingCount: number; conflictCount: number; needsReview: number }) => {
+      setReviewCount(summary.needsReview);
+    },
+    []
+  );
 
   const {
     data: matter,
@@ -1059,6 +1090,15 @@ export default function MatterDetailPage() {
                   {matter.practiceArea.replace("_", " ").toUpperCase()}
                 </span>
                 {matter.riskScore !== null && <RiskIndicator score={matter.riskScore} />}
+                {reviewCount > 0 && (
+                  <button
+                    onClick={() => setActiveTab("findings")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-sm font-medium hover:bg-amber-200 transition-colors"
+                  >
+                    <Brain className="w-3.5 h-3.5" />
+                    {reviewCount} to review
+                  </button>
+                )}
               </div>
             </div>
             <Button variant="outline" size="sm">
@@ -1096,9 +1136,14 @@ export default function MatterDetailPage() {
               <Workflow className="w-4 h-4" />
               Workflow
             </TabsTrigger>
-            <TabsTrigger value="findings" className="gap-2">
+            <TabsTrigger value="findings" className="gap-2 relative">
               <Brain className="w-4 h-4" />
               Findings
+              {reviewCount > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1">
+                  {reviewCount}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="pipeline" className="gap-2">
               <Zap className="w-4 h-4" />
@@ -1141,7 +1186,7 @@ export default function MatterDetailPage() {
           </TabsContent>
 
           <TabsContent value="findings">
-            <FindingsTab matterId={matterId} />
+            <FindingsTab matterId={matterId} onReviewSummary={handleReviewSummary} />
           </TabsContent>
 
           <TabsContent value="pipeline">
