@@ -20,6 +20,10 @@ import {
   GitBranch,
   Shield,
   Activity,
+  ClipboardCheck,
+  FileStack,
+  FileSignature,
+  Receipt,
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { UserMenu } from "./user-menu";
@@ -32,11 +36,15 @@ const secondaryNavItems = [
   { href: "/analytics", icon: Activity, label: "Analytics" },
   { href: "/reports", icon: BarChart3, label: "Reports" },
   { href: "/compliance", icon: Shield, label: "Compliance" },
+  { href: "/approvals", icon: ClipboardCheck, label: "Approvals" },
   { href: "/settings/workflows", icon: GitBranch, label: "Workflows" },
+  { href: "/templates", icon: FileStack, label: "Templates" },
+  { href: "/e-signatures", icon: FileSignature, label: "E-Signatures" },
 ];
 
 const tertiaryNavItems = [
   { href: "/leads", icon: Filter, label: "Leads" },
+  { href: "/quotes", icon: Receipt, label: "Quotes" },
   { href: "/team", icon: UsersRound, label: "Team" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];

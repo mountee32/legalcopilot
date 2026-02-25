@@ -36,6 +36,10 @@ vi.mock("lucide-react", () => {
     GitBranch: createMockIcon("GitBranch"),
     Activity: createMockIcon("Activity"),
     Bell: createMockIcon("Bell"),
+    ClipboardCheck: createMockIcon("ClipboardCheck"),
+    FileStack: createMockIcon("FileStack"),
+    FileSignature: createMockIcon("FileSignature"),
+    Receipt: createMockIcon("Receipt"),
     ChevronUp: createMockIcon("ChevronUp"),
     User: createMockIcon("User"),
     LogOut: createMockIcon("LogOut"),
@@ -112,13 +116,17 @@ describe("Sidebar", () => {
     expect(screen.getByTestId("nav-item-analytics")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-reports")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-compliance")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-approvals")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-workflows")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-templates")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-e-signatures")).toBeInTheDocument();
   });
 
   it("renders tertiary navigation items", () => {
     render(<Sidebar />);
 
     expect(screen.getByTestId("nav-item-leads")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-quotes")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-team")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-settings")).toBeInTheDocument();
   });
