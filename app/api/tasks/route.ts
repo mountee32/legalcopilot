@@ -5,6 +5,7 @@ import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { CreateTaskSchema, TaskQuerySchema } from "@/lib/api/schemas";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
+import { createNotification } from "@/lib/notifications/create";
 import { withAuth } from "@/middleware/withAuth";
 import { NotFoundError, withErrorHandler } from "@/middleware/withErrorHandler";
 import { withPermission } from "@/middleware/withPermission";
@@ -107,6 +108,18 @@ export const POST = withErrorHandler(
           occurredAt: new Date(),
           metadata: { priority: task.priority, assigneeId: task.assigneeId },
         });
+
+        if (data.assigneeId && data.assigneeId !== user.user.id) {
+          await createNotification(tx, {
+            firmId,
+            userId: data.assigneeId,
+            type: "task_assigned",
+            title: `You've been assigned: ${task.title}`,
+            body: task.description ?? undefined,
+            link: `/matters/${task.matterId}?tab=tasks`,
+            metadata: { taskId: task.id, matterId: task.matterId },
+          });
+        }
 
         return task;
       });

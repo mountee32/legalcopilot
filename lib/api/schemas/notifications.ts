@@ -19,6 +19,9 @@ export const NotificationTypeSchema = z
     "document_uploaded",
     "invoice_paid",
     "payment_received",
+    "stage_gate_blocked",
+    "evidence_required",
+    "task_approval_needed",
     "system",
   ])
   .openapi("NotificationType");

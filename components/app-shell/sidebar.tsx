@@ -8,6 +8,7 @@ import {
   Users,
   FileText,
   CheckSquare,
+  Bell,
   Calendar,
   Clock,
   BarChart3,
@@ -24,16 +25,7 @@ import { NavItem } from "./nav-item";
 import { UserMenu } from "./user-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-
-const mainNavItems = [
-  { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/inbox", icon: Inbox, label: "AI Inbox" },
-  { href: "/matters", icon: FolderKanban, label: "Cases" },
-  { href: "/clients", icon: Users, label: "Clients" },
-  { href: "/documents", icon: FileText, label: "Documents" },
-  { href: "/tasks", icon: CheckSquare, label: "Tasks" },
-  { href: "/calendar", icon: Calendar, label: "Calendar" },
-];
+import { useUnreadCount } from "@/lib/hooks/use-notifications";
 
 const secondaryNavItems = [
   { href: "/billing", icon: Clock, label: "Time & Billing" },
@@ -50,6 +42,19 @@ const tertiaryNavItems = [
 ];
 
 export function Sidebar() {
+  const unreadCount = useUnreadCount();
+
+  const mainNavItems = [
+    { href: "/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/inbox", icon: Inbox, label: "AI Inbox" },
+    { href: "/matters", icon: FolderKanban, label: "Cases" },
+    { href: "/clients", icon: Users, label: "Clients" },
+    { href: "/documents", icon: FileText, label: "Documents" },
+    { href: "/tasks", icon: CheckSquare, label: "Tasks" },
+    { href: "/notifications", icon: Bell, label: "Notifications", badge: unreadCount },
+    { href: "/calendar", icon: Calendar, label: "Calendar" },
+  ];
+
   return (
     <aside
       className="hidden md:flex h-screen w-64 flex-col border-r bg-background"

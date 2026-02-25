@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { pipelineRuns, pipelineFindings, matters } from "@/lib/db/schema";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
 import { calculateRiskScore } from "@/lib/pipeline/risk-score";
+import { createNotification } from "@/lib/notifications/create";
 import type { PipelineStageName } from "../pipeline";
 
 /**
@@ -114,7 +115,11 @@ export async function markStageCompleted(
  */
 export async function markPipelineCompleted(runId: string) {
   const [run] = await db
-    .select({ firmId: pipelineRuns.firmId, matterId: pipelineRuns.matterId })
+    .select({
+      firmId: pipelineRuns.firmId,
+      matterId: pipelineRuns.matterId,
+      triggeredBy: pipelineRuns.triggeredBy,
+    })
     .from(pipelineRuns)
     .where(eq(pipelineRuns.id, runId));
 
@@ -144,6 +149,23 @@ export async function markPipelineCompleted(runId: string) {
         `[pipeline-helpers] Risk recalculation failed for matter ${run.matterId}:`,
         err
       );
+    }
+
+    // Notify the user who triggered the pipeline — non-fatal
+    if (run.triggeredBy) {
+      try {
+        await createNotification(db, {
+          firmId: run.firmId,
+          userId: run.triggeredBy,
+          type: "system",
+          title: "Document pipeline completed",
+          body: "All stages finished successfully. Findings are ready to review.",
+          link: `/matters/${run.matterId}?tab=pipeline`,
+          metadata: { runId },
+        });
+      } catch (err) {
+        console.error(`[pipeline-helpers] Notification failed for run ${runId}:`, err);
+      }
     }
   }
 }
@@ -185,6 +207,7 @@ export async function markPipelineFailed(runId: string, stage: PipelineStageName
       stageStatuses: pipelineRuns.stageStatuses,
       firmId: pipelineRuns.firmId,
       matterId: pipelineRuns.matterId,
+      triggeredBy: pipelineRuns.triggeredBy,
     })
     .from(pipelineRuns)
     .where(eq(pipelineRuns.id, runId));
@@ -219,5 +242,22 @@ export async function markPipelineFailed(runId: string, stage: PipelineStageName
       occurredAt: new Date(),
       metadata: { stage, error, runId },
     });
+
+    // Notify the user who triggered the pipeline — non-fatal
+    if (run.triggeredBy) {
+      try {
+        await createNotification(db, {
+          firmId: run.firmId,
+          userId: run.triggeredBy,
+          type: "system",
+          title: `Pipeline failed at stage: ${stage}`,
+          body: "A pipeline stage encountered an error. Check the pipeline tab for details.",
+          link: `/matters/${run.matterId}?tab=pipeline`,
+          metadata: { runId, stage },
+        });
+      } catch (err) {
+        console.error(`[pipeline-helpers] Notification failed for run ${runId}:`, err);
+      }
+    }
   }
 }

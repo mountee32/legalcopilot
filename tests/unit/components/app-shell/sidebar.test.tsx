@@ -35,6 +35,7 @@ vi.mock("lucide-react", () => {
     Shield: createMockIcon("Shield"),
     GitBranch: createMockIcon("GitBranch"),
     Activity: createMockIcon("Activity"),
+    Bell: createMockIcon("Bell"),
     ChevronUp: createMockIcon("ChevronUp"),
     User: createMockIcon("User"),
     LogOut: createMockIcon("LogOut"),
@@ -53,6 +54,11 @@ vi.mock("@/components/ui/separator", () => ({
 // Mock UserMenu since it uses complex radix-ui components
 vi.mock("@/components/app-shell/user-menu", () => ({
   UserMenu: () => <button data-testid="user-menu-trigger">User Menu</button>,
+}));
+
+// Mock notification hooks
+vi.mock("@/lib/hooks/use-notifications", () => ({
+  useUnreadCount: vi.fn(() => 3),
 }));
 
 // Mock Better Auth client
@@ -95,6 +101,7 @@ describe("Sidebar", () => {
     expect(screen.getByTestId("nav-item-clients")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-documents")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-tasks")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-notifications")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-calendar")).toBeInTheDocument();
   });
 

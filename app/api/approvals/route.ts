@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { approvalRequests } from "@/lib/db/schema";
+import { approvalRequests, users, roles } from "@/lib/db/schema";
 import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { ApprovalQuerySchema, CreateApprovalRequestSchema } from "@/lib/api/schemas";
+import { createNotifications } from "@/lib/notifications/create";
 import { withAuth } from "@/middleware/withAuth";
 import { withErrorHandler } from "@/middleware/withErrorHandler";
 import { withPermission } from "@/middleware/withPermission";
@@ -78,6 +79,38 @@ export const POST = withErrorHandler(
             executionStatus: "not_executed",
           })
           .returning();
+
+        // Notify users who can decide approvals (including wildcard permissions)
+        const deciders = await tx
+          .select({ id: users.id })
+          .from(users)
+          .innerJoin(roles, eq(users.roleId, roles.id))
+          .where(
+            and(
+              eq(users.firmId, firmId),
+              sql`(
+                ${roles.permissions} @> '["approvals:decide"]'::jsonb OR
+                ${roles.permissions} @> '["approvals:*"]'::jsonb OR
+                ${roles.permissions} @> '["*"]'::jsonb
+              )`
+            )
+          );
+
+        if (deciders.length > 0) {
+          await createNotifications(
+            tx,
+            deciders.map((u) => ({
+              firmId,
+              userId: u.id,
+              type: "approval_required" as const,
+              title: `Approval required: ${data.action}`,
+              body: data.summary,
+              link: data.matterId ? `/matters/${data.matterId}` : "/dashboard",
+              metadata: { approvalId: approval.id, action: data.action },
+            }))
+          );
+        }
+
         return approval;
       });
 

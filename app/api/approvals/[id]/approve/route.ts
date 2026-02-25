@@ -5,6 +5,7 @@ import { withFirmDb } from "@/lib/db/tenant";
 import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { ApproveRequestSchema } from "@/lib/api/schemas";
 import { createTimelineEvent } from "@/lib/timeline/createEvent";
+import { createNotification } from "@/lib/notifications/create";
 import { executeApprovalIfSupported } from "@/lib/approvals/execute";
 import { withAuth } from "@/middleware/withAuth";
 import { ValidationError, withErrorHandler, NotFoundError } from "@/middleware/withErrorHandler";
@@ -88,6 +89,19 @@ export const POST = withErrorHandler(
               metadata: { approvalRequestId: updated.id, status: updated.status },
             });
           }
+        }
+
+        // Notify the original requester that their request was approved
+        if (updated?.sourceId && updated.sourceId !== user.user.id) {
+          await createNotification(tx, {
+            firmId,
+            userId: updated.sourceId,
+            type: "approval_decided",
+            title: "Your approval request was approved",
+            body: decisionReason ?? undefined,
+            link: updated.matterId ? `/matters/${updated.matterId}` : "/dashboard",
+            metadata: { approvalId: updated.id, status: "approved" },
+          });
         }
 
         if (updated) {

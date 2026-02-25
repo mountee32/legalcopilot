@@ -53,7 +53,7 @@ export function NotificationPanel() {
           <Separator />
           <div className="p-2">
             <Button variant="ghost" size="sm" className="w-full" asChild>
-              <Link href="/settings/notifications">View All Notifications</Link>
+              <Link href="/notifications">View All Notifications</Link>
             </Button>
           </div>
         </>
