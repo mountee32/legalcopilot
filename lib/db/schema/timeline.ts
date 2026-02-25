@@ -116,6 +116,9 @@ export const timelineEventTypeEnum = pgEnum("timeline_event_type", [
 
   // AI chat events
   "ai_chat_started",
+
+  // AI task suggestion events
+  "ai_tasks_suggested",
 ]);
 
 export const timelineEvents = pgTable(

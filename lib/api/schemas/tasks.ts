@@ -80,6 +80,14 @@ export const TaskQuerySchema = PaginationSchema.extend({
   assigneeId: UuidSchema.optional(),
   status: TaskStatusSchema.optional(),
   priority: TaskPrioritySchema.optional(),
+  aiGenerated: z
+    .preprocess((v) => {
+      if (v === undefined || v === "") return undefined;
+      if (v === "true") return true;
+      if (v === "false") return false;
+      return v;
+    }, z.boolean().optional())
+    .optional(),
 }).openapi("TaskQuery");
 
 export const TaskListSchema = z

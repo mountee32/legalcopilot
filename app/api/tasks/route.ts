@@ -23,6 +23,8 @@ export const GET = withErrorHandler(
       if (query.assigneeId) whereClauses.push(eq(tasks.assigneeId, query.assigneeId));
       if (query.status) whereClauses.push(eq(tasks.status, query.status));
       if (query.priority) whereClauses.push(eq(tasks.priority, query.priority));
+      if (query.aiGenerated !== undefined)
+        whereClauses.push(eq(tasks.aiGenerated, query.aiGenerated));
 
       const where = and(...whereClauses);
 

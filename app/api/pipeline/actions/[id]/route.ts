@@ -2,6 +2,8 @@
  * PATCH /api/pipeline/actions/[id]
  *
  * Resolve a pipeline action — accept, dismiss, or mark as executed/failed.
+ * When accepting create_task or create_deadline actions, executes side effects
+ * (creates actual tasks or calendar events).
  */
 
 import { NextResponse } from "next/server";
@@ -12,6 +14,7 @@ import { getOrCreateFirmIdForUser } from "@/lib/tenancy";
 import { withAuth } from "@/middleware/withAuth";
 import { withErrorHandler, NotFoundError, ValidationError } from "@/middleware/withErrorHandler";
 import { ResolveActionSchema } from "@/lib/api/schemas/pipeline";
+import { executeActionSideEffects } from "./execute";
 
 const VALID_STATUSES = ["accepted", "dismissed", "executed", "failed", "pending"] as const;
 
@@ -46,7 +49,28 @@ export const PATCH = withErrorHandler(
         .where(eq(pipelineActions.id, actionId))
         .returning();
 
-      return updated;
+      // Execute side effects for accepted create_task / create_deadline actions
+      let sideEffectExecuted = false;
+      if (body.status === "accepted") {
+        try {
+          const result = await executeActionSideEffects(tx, action, user.user.id);
+          sideEffectExecuted = result.executed;
+          if (result.error) {
+            await tx
+              .update(pipelineActions)
+              .set({ error: result.error })
+              .where(eq(pipelineActions.id, actionId));
+          }
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          await tx
+            .update(pipelineActions)
+            .set({ error: errorMsg })
+            .where(eq(pipelineActions.id, actionId));
+        }
+      }
+
+      return { ...updated, sideEffectExecuted };
     });
 
     return NextResponse.json(result);

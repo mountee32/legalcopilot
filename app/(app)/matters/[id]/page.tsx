@@ -31,6 +31,7 @@ import { RiskGauge } from "@/components/matter/risk-gauge";
 import { FindingsTab } from "@/components/matter/findings-tab";
 import { GenerateDocumentDialog } from "@/components/matter/generate-document-dialog";
 import { CaseChatPanel } from "@/components/matter/case-chat-panel";
+import { SuggestTasksPanel } from "@/components/matter/suggest-tasks-panel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -109,6 +110,7 @@ interface OverviewTabProps {
   onNavigateToWorkflow: () => void;
   onGenerateDocument: () => void;
   onAskAI: () => void;
+  onSuggestTasks: () => void;
 }
 
 function OverviewTab({
@@ -116,6 +118,7 @@ function OverviewTab({
   onNavigateToWorkflow,
   onGenerateDocument,
   onAskAI,
+  onSuggestTasks,
 }: OverviewTabProps) {
   return (
     <div className="grid md:grid-cols-3 gap-6">
@@ -203,7 +206,12 @@ function OverviewTab({
               <MessageSquare className="w-4 h-4 mr-2" />
               Ask AI about this case
             </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={onSuggestTasks}
+            >
               <ListTodo className="w-4 h-4 mr-2" />
               Generate tasks
             </Button>
@@ -499,6 +507,7 @@ function TasksTab({ matterId, practiceArea, subType }: TasksTabProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [showSuggestPanel, setShowSuggestPanel] = useState(false);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -599,10 +608,25 @@ function TasksTab({ matterId, practiceArea, subType }: TasksTabProps) {
     <>
       <TemplateStatusCard matterId={matterId} onAddSkippedTasks={() => setShowSkippedTasks(true)} />
 
+      {/* AI Suggest Tasks Panel */}
+      {showSuggestPanel && (
+        <SuggestTasksPanel
+          matterId={matterId}
+          onCreated={() => {
+            setShowSuggestPanel(false);
+            handleTasksChanged();
+          }}
+        />
+      )}
+
       {/* Header with action buttons */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-slate-900">Tasks ({activeTasks.length})</h3>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowSuggestPanel((v) => !v)}>
+            <Brain className="w-4 h-4 mr-2" />
+            Suggest Tasks
+          </Button>
           <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Task
@@ -1088,6 +1112,7 @@ export default function MatterDetailPage() {
               onNavigateToWorkflow={() => setActiveTab("workflow")}
               onGenerateDocument={() => setGenerateDialogOpen(true)}
               onAskAI={() => setChatPanelOpen(true)}
+              onSuggestTasks={() => setActiveTab("tasks")}
             />
           </TabsContent>
 

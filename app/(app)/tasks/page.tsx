@@ -40,6 +40,7 @@ async function fetchTasks(params: {
   search?: string;
   status?: string;
   priority?: string;
+  aiGenerated?: string;
 }): Promise<TaskListResponse> {
   const searchParams = new URLSearchParams();
   searchParams.set("page", params.page.toString());
@@ -47,6 +48,7 @@ async function fetchTasks(params: {
   if (params.search) searchParams.set("search", params.search);
   if (params.status) searchParams.set("status", params.status);
   if (params.priority) searchParams.set("priority", params.priority);
+  if (params.aiGenerated) searchParams.set("aiGenerated", params.aiGenerated);
 
   const res = await fetch(`/api/tasks?${searchParams}`, {
     credentials: "include",
@@ -162,15 +164,17 @@ export default function TasksPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
+  const [aiFilter, setAiFilter] = useState("");
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["tasks", page, search, statusFilter, priorityFilter],
+    queryKey: ["tasks", page, search, statusFilter, priorityFilter, aiFilter],
     queryFn: () =>
       fetchTasks({
         page,
         search: search || undefined,
         status: statusFilter || undefined,
         priority: priorityFilter || undefined,
+        aiGenerated: aiFilter || undefined,
       }),
     staleTime: 30_000,
   });
@@ -251,6 +255,18 @@ export default function TasksPage() {
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
+            </select>
+            <select
+              value={aiFilter}
+              onChange={(e) => {
+                setAiFilter(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 border border-slate-300 rounded-md bg-white text-sm"
+            >
+              <option value="">All Sources</option>
+              <option value="true">AI Generated</option>
+              <option value="false">Manual</option>
             </select>
           </div>
         </div>

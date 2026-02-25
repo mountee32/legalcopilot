@@ -49,6 +49,7 @@ export * from "./email-imports";
 export * from "./generation";
 export * from "./case-chat";
 export * from "./analytics";
+export * from "./tasks-ai";
 
 // TODO: Add as implemented:
 // export * from "./users";
