@@ -69,7 +69,7 @@
     "ioredis": "^5.4.1",
     "lucide-react": "^0.454.0",
     "mammoth": "^1.7.1",
-    "minio": "^8.0.2",
+    "minio": "^8.0.7",
     "next": "^15.0.3",
     "pdf-parse": "^1.1.1",
     "postgres": "^3.4.4",
